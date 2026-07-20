@@ -38,8 +38,6 @@ toolbox/
    新オリジン `https://crplayground.github.io` を含む値に更新済み。`cd workers/request && npx wrangler deploy` で反映する。
    （更新しないと新URLからの依頼フォーム送信がCORSで拒否される）
 2. **GitHub Pages を有効化**：Settings → Pages → Source: `main` / root。
-3. **Actions（日次通知）はまだ有効化していない**：`workers/project-board/daily-task-notify.yml` は参照用。
-   稼働させるには `.github/workflows/` に移し、Secrets を新リポジトリに再登録し、`notify.py` のパスを合わせる必要がある（別作業）。
 
 ## セキュリティ
 
