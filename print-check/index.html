@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>入稿前 チェックリスト</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet"></noscript>
+<style>
+  :root {
+    --bg: #f5f4f1;
+    --surface: #ffffff;
+    --surface2: #f8f7f5;
+    --border: #e5e3de;
+    --border2: #d4d1cb;
+    --text-primary: #1a1915;
+    --text-secondary: #5a5850;
+    --text-muted: #9a9890;
+    --accent: #e8613a;
+    --accent-hover: #d45530;
+    --accent-light: #fdf0ec;
+    --required: #b83228;
+    --required-bg: #fdf0ef;
+    --required-header: #f9eae8;
+    --required-border: #e8b0aa;
+    --recommended: #7a6a2a;
+    --recommended-bg: #fdf8e8;
+    --recommended-header: #faf5e0;
+    --recommended-border: #ddd080;
+    --check-color: #2e9e6a;
+    --check-bg: #edf7f2;
+    --hint-bg: #f8f7f5;
+    --hint-border: #d4d1cb;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+    --radius: 8px;
+    --radius-sm: 5px;
+    --radius-lg: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', "Hiragino Sans", "Yu Gothic UI", sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Sticky wrapper（ヘッダー＋タブバーをまとめて固定） ── */
+  .sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.14);
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .header-left { min-width: 0; flex: 1 1 auto; }
+  .header-left h1 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  .header-left p {
+    font-size: 11.5px;
+    opacity: 0.72;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .progress-text {
+    font-size: 12.5px;
+    opacity: 0.9;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-bar-outer {
+    width: 140px;
+    height: 7px;
+    background: rgba(255,255,255,0.22);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%;
+    background: #7ecfaa;
+    border-radius: 99px;
+    transition: width 0.35s ease;
+    width: 0%;
+  }
+  .reset-btn-header {
+    padding: 6px 14px;
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.88);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .reset-btn-header:hover { background: rgba(255,255,255,0.2); }
+
+  /* ── Tab bar（ヘッダー直下の独立した白帯） ── */
+  .tab-bar {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    padding: 0 28px;
+  }
+  .tab-btn {
+    padding: 11px 22px;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px; /* border-bottomに重ねてアクティブラインを描画 */
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab-btn:hover:not(.active) {
+    color: var(--text-primary);
+    background: var(--surface2);
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ── Page layout ── */
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+  }
+
+  /* ── Completion banner ── */
+  .completion-banner {
+    background: var(--check-bg);
+    border: 1px solid #a8d9bc;
+    border-radius: var(--radius);
+    padding: 13px 20px;
+    text-align: center;
+    color: var(--check-color);
+    font-weight: 600;
+    margin-bottom: 24px;
+    display: none;
+    font-size: 14px;
+  }
+  .completion-banner.show { display: block; }
+
+  /* ── Priority section ── */
+  .priority-section { margin-bottom: 32px; }
+
+  .priority-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border: 1px solid transparent;
+    border-bottom: none;
+  }
+  .priority-header.required {
+    background: var(--required-header);
+    border-color: var(--required-border);
+  }
+  .priority-header.recommended {
+    background: var(--recommended-header);
+    border-color: var(--recommended-border);
+  }
+  .priority-label {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .priority-header.required .priority-label { color: var(--required); }
+  .priority-header.recommended .priority-label { color: var(--recommended); }
+  .priority-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    flex: 1;
+  }
+  .priority-prog {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .priority-header.required .priority-prog { color: var(--required); }
+  .priority-header.recommended .priority-prog { color: var(--recommended); }
+  .priority-mini-bar {
+    width: 100px;
+    height: 5px;
+    border-radius: 99px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .priority-header.required .priority-mini-bar { background: #f0c8c4; }
+  .priority-header.recommended .priority-mini-bar { background: #e8dc9a; }
+  .priority-mini-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.35s ease;
+    width: 0%;
+  }
+  .priority-header.required .priority-mini-fill { background: var(--required); }
+  .priority-header.recommended .priority-mini-fill { background: var(--recommended); }
+
+  .priority-body {
+    border: 1px solid transparent;
+    border-top: none;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    padding: 16px 16px 4px;
+    background: var(--surface);
+  }
+  .priority-section:has(.priority-header.required) .priority-body { border-color: var(--required-border); }
+  .priority-section:has(.priority-header.recommended) .priority-body { border-color: var(--recommended-border); }
+
+  /* ── Sub-category ── */
+  .sub-group { margin-bottom: 16px; }
+  .sub-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 4px 8px;
+  }
+  .sub-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sub-name { font-size: 12px; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.02em; }
+  .sub-progress { margin-left: auto; font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+  /* ── Item card ── */
+  .item-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.15s, border-color 0.15s, opacity 0.2s;
+  }
+  .item-card:last-child { margin-bottom: 0; }
+  .item-card:hover { box-shadow: var(--shadow-md); border-color: #d4d0c8; }
+  .item-card.checked { opacity: 0.5; }
+  .item-card.checked .item-label { text-decoration: line-through; color: var(--text-muted); }
+  .item-card.open-hint { border-color: var(--hint-border); box-shadow: 0 0 0 2px rgba(44,95,138,0.1), var(--shadow); }
+
+  .item-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .custom-check {
+    width: 19px; height: 19px;
+    border: 2px solid #ccc8be;
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+    background: #fff;
+  }
+  .item-card.checked .custom-check { background: var(--check-color); border-color: var(--check-color); }
+  .check-icon { display: none; color: #fff; font-size: 11px; font-weight: 800; }
+  .item-card.checked .check-icon { display: block; }
+  .item-label { flex: 1; font-size: 13.5px; transition: color 0.15s; }
+  .hint-toggle {
+    padding: 3px 9px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    font-family: inherit;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .hint-toggle:hover,
+  .item-card.open-hint .hint-toggle { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+
+  .hint-panel {
+    display: none;
+    border-top: 1px solid var(--border);
+    background: var(--hint-bg);
+    padding: 11px 14px 11px 45px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    border-left: 3px solid var(--accent);
+  }
+  .hint-panel.open { display: block; }
+  .hint-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  /* ── Responsive ── */
+
+  /* タブレット〜小さいウィンドウ（720px以下）：ヘッダーだけ調整 */
+  @media (max-width: 720px) {
+    header { padding: 13px 20px; gap: 12px; }
+    .header-left h1 { font-size: 15px; }
+    .progress-bar-outer { width: 90px; }
+    .page { padding: 20px 16px 40px; }
+    .tab-bar { padding: 0 16px; }
+  }
+
+  /* スマートフォン（480px以下）：進捗テキストを非表示 */
+  @media (max-width: 480px) {
+    header { padding: 11px 14px; gap: 10px; }
+    .header-left p { display: none; }
+    .progress-text { display: none; }
+    .progress-bar-outer { width: 70px; }
+    .reset-btn-header { padding: 5px 10px; font-size: 11px; }
+    .tab-bar { padding: 0 10px; }
+    .tab-btn { padding: 10px 14px; font-size: 12px; }
+    .priority-header { gap: 10px; padding: 12px 14px; }
+    .priority-desc { display: none; }
+    .item-main { padding: 10px 12px; gap: 10px; }
+    .page { padding: 14px 10px 32px; }
+  }
+
+  /* 極小（360px以下）：進捗バーも非表示 */
+  @media (max-width: 360px) {
+    .progress-wrap { display: none; }
+    .priority-mini-bar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー＋タブバーをまとめてスティッキー -->
+<div class="sticky-top">
+  <header>
+    <div class="header-left">
+      <h1 onclick="window.scrollTo({top:0,behavior:'smooth'})" title="トップへ戻る">入稿前 チェックリスト</h1>
+      <p id="headerDesc">入稿前に全項目を確認してください</p>
+    </div>
+    <div class="header-right">
+      <div class="progress-wrap">
+        <span class="progress-text" id="progressText">0 / 24 完了</span>
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner" id="progressBar"></div>
+        </div>
+      </div>
+      <button class="reset-btn-header" onclick="resetAll()">✕ リセット</button>
+    </div>
+  </header>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabDesigner" onclick="switchTab('designer')">デザイナー向け</button>
+    <button class="tab-btn" id="tabNonDesigner" onclick="switchTab('non-designer')">依頼者向け</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="completion-banner" id="completionBanner">
+    🎉 すべてのチェックが完了しました！入稿準備OKです。
+  </div>
+  <div id="mainContent"></div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// ── デザイナー向け Items ──
+// ════════════════════════════════════════════
+const ITEMS_D = [
+  // ── 必須 ──
+  { id:1,  cat:"データ整理", label:"パッケージ機能を使い、入稿データをまとめた。",                                                                           priority:"必須", hint:'メニューのファイル内もしくはショートカット「Alt+Shift+Ctrl+P」で機能が使えます。InDesignにも同様の機能があります。' },
+  { id:2,  cat:"データ整理", label:"入稿時にオンラインの自動データチェックを用いる場合、aiデータの保存時に「PDF互換ファイルを作成」にチェックを入れた。",     priority:"必須", hint:'別名保存時にチェック欄が表示されます。' },
+  { id:3,  cat:"データ整理", label:"非表示のオブジェクトがなく、全て表示されている。",                                                                         priority:"必須", hint:'「cmd+option+3」で全ての隠れオブジェクトを表示し、アウトライン化ミスを防いだり、不要な画像リンクを削除しましょう。' },
+  { id:4,  cat:"テキスト確認",       label:"全てのテキストがアウトライン化されている。",                                                                               priority:"必須", hint:'アウトライン化が必須ではないケースがあります。<br>・PDF入稿の場合：PDF x-1a保存時にフォント埋め込みを設定。<br>・InDesignデータの場合：inddデータはアウトライン化不要です。特殊な書体だけ必要な場合があります。<br>ただし、印刷会社によってはPDF入稿でもアウトライン化を求められるケースがあるので、事前に入稿仕様を確認しましょう。' },
+  { id:5,  cat:"テキスト確認",       label:"テキストフレームのオーバーセット（テキストのあふれ）がないか確認した。",                                                   priority:"必須", hint:'オーバーセットはテキストが枠外に溢れている状態です。印刷データに含まれないため、意図しない文字落ちが発生します。' },
+  { id:6,  cat:"カラー",     label:"ドキュメントとリンク画像のカラーモードがCMYKに設定されている。",                                                           priority:"必須", hint:'リンク画像も同様の処理を行うこと。' },
+  { id:7,  cat:"画像",       label:"画像のリンクが外れていない、または埋め込みされている。",                                                                   priority:"必須", hint:'入稿用デザインデータとリンク画像フォルダは必ず同一階層に格納すること。パッケージ機能で自動的にセットされます。' },
+  { id:8,  cat:"画像",       label:"リンク画像の解像度が適切に設定されている（300〜350dpi）。",                                                               priority:"必須", hint:'A2以上の大サイズデータの場合、適宜解像度を下げた方が綺麗に印刷されます。データサイズも削減できます。' },
+  { id:9,  cat:"版下",       label:"適切なサイズでトリムマークが作成されている。",                                                                             priority:"必須", hint:'トリムマーク作成する際オブジェクトに線が入っていると線幅込みで作成されてしまうので注意。' },
+  { id:10, cat:"版下",       label:"塗りたし3mmが確保されている。",                                                                                           priority:"必須", hint:'断裁ズレで白地が出ないよう、背景を外側に3mm伸ばす。' },
+  { id:11, cat:"特殊加工",   label:"型抜き（トムソン加工）、シール印刷、箱印刷や布プリントなど、印刷会社の指定の仕様に沿って特殊加工・特殊印刷用データを作成した。",             priority:"必須", hint:'カットパスの作成、専用レイヤーの作成、塗りたし範囲の指定は、印刷会社によって異なります。先んじて印刷方法と印刷会社について確認しておきましょう。' },
+  { id:12, cat:"保存形式",   label:"PDF入稿の場合、保存形式がPDF x-1aに設定されている。",                                                                     priority:"必須", hint:'入稿規定に沿った標準的な保存形式ですが、印刷所によって異なるので注意。' },
+  { id:13, cat:"保存形式",   label:"印刷会社に対応するバージョンでデータが作成されている。",                                                                   priority:"必須", hint:'新聞広告など印刷所によって古いバージョン形式で保存する必要があります。' },
+  // ── 推奨 ──
+  { id:14, cat:"データ整理", label:"孤立点が削除されている。",                                                                                                 priority:"推奨", hint:'現在の出力機ではほぼ問題ないが、データを流用する際の邪魔になったり、特色指定が残っていると入稿時にエラーを起こす原因になります。' },
+  { id:15, cat:"データ整理", label:"全てのオブジェクトのロックが解除されている。",                                                                             priority:"推奨", hint:'一部フォントだけアウトラインがとられていないなどを防止するため、「cmd+option+2」で予めロックを解除しておきましょう。' },
+  { id:16, cat:"テキスト確認",       label:"異体字が反映される書体を使用した。",                                                                                       priority:"推奨", hint:'髙など形が違う漢字が登録されていない書体を使っている場合は、該当文字のみ書体を変えて正式名で表示しましょう。' },
+  { id:17, cat:"カラー",     label:"不要なスウォッチが削除されている。",                                                                                       priority:"推奨", hint:'不使用の特色など、未使用のスウォッチは可能な限り削除すること。' },
+  { id:18, cat:"カラー",     label:"インキの総量（CMYK値の合計）が350%を超える箇所がない。",                                                                   priority:"推奨", hint:'インキの総量が多すぎると、乾燥不良や裏移りの原因になります。特に新聞印刷では細かい指定があるので予め入稿仕様を取り寄せること。' },
+  { id:19, cat:"カラー",     label:"線幅0.2pt以上に設定した。",                                                                                               priority:"推奨", hint:'細すぎる線は印刷で消える可能性があります。0.2pt未満の線がないか確認してください。' },
+  { id:20, cat:"カラー",     label:"オーバープリントの設定が解除されている。",                                                                                 priority:"推奨", hint:'意図しない色の出方が発生する原因になります。オブジェクトを選択した状態で属性パネルをチェックすることで状態を確認できます。' },
+  { id:21, cat:"カラー",     label:"黒100%によるオーバープリントを考慮してデザインされている。",                                                               priority:"推奨", hint:'黒100%は自動的にオーバープリントになるため、色の境目にスミ100%のオブジェクトを置かないデータの作りを心がけましょう。' },
+  { id:22, cat:"画像",       label:"画像サイズが適切にリサイズされている。",                                                                                   priority:"推奨", hint:'印刷画質の向上と全体のデータサイズが削減できます。' },
+  { id:23, cat:"版下",       label:"版下データ外に不要なデータが残っていない。",                                                                               priority:"推奨", hint:'データサイズの削減、および、引き継ぎ時の混乱を避けるため綺麗にしておきましょう。' },
+  { id:24, cat:"保存形式",   label:"オンライン上のデータチェックを用いないため「PDF互換ファイルを作成」のチェックを外して保存した。",                           priority:"推奨", hint:'データ容量を大幅に削減できますが、オンライン上の入稿データチェック機能を使う場合はチェックが必要です。' },
+];
+
+const CAT_COLORS_D = {
+  "データ整理": "#8b5cf6",
+  "テキスト確認": "#0ea5e9",
+  "カラー":     "#f97316",
+  "画像":       "#22c55e",
+  "版下":       "#ef4444",
+  "特殊加工":   "#ec4899",
+  "保存形式":   "#14b8a6",
+};
+
+const PRIORITIES_D = [
+  { key: "必須", cls: "required",    desc: "印刷トラブル防止のため、入稿前に必ず確認してください。" },
+  { key: "推奨", cls: "recommended", desc: "品質向上・データを流用する際の使いやすさの観点で確認してください。" },
+];
+
+// ════════════════════════════════════════════
+// ── 非デザイナー向け Items ──
+// ════════════════════════════════════════════
+const ITEMS_ND = [
+  // ── 必須 ──
+  { id:102, cat:"サイズ確認",   label:"スライドや新規書類のサイズが、印刷する用紙のサイズ通りになっている。",                                                               priority:"必須", hint:'・Canvaの場合：新規書類作成時あるいはページを追加する際に「カスタムサイズ」を選択することで、単位をmm指定で設定できます。<br>・Keynote、Pagesの場合：画面右上の書類アイコンを選択。右のメニューバー内下部にある「スライドのサイズ」からカスタム設定できます。ただしKeynoteは単位がptしか選べません。A4用紙に印刷する場合は「幅595pt / 高さ842pt」に設定しましょう。' },
+  { id:110, cat:"サイズ確認",   label:"端ギリギリに配置した重要な文字・ロゴがないか確認した（印刷は端から3mm程度が断裁されます）。",                                           priority:"必須", hint:'印刷物は断裁時に最大2〜3mmのズレが生じます。電話番号・ロゴ・重要なテキストが端から余裕を持った位置に配置されているか確認しましょう。また、切れてもいい画像や背景が印刷会社のデータチェックでエラーを起こす時があります。それでも問題ない場合があるので、都度デザイン担当者に確認をとりましょう。' },
+  { id:104, cat:"素材・権利",   label:"使用している写真・イラスト・ロゴはすべて商用・印刷利用が許可された素材である。",                                                       priority:"必須", hint:'フリー画像にも商用利用不可のケースがあります。また生成AIもツールの種類やプラン内容によって商用利用不可の場合があります。規約をチェックした上で、不明な場合はデザイン担当者に確認をしましょう。' },
+  { id:105, cat:"レビュー確認", label:"印刷会社の印刷方法の情報を確認した／デザイン担当者に情報を共有した。",                                                   priority:"必須", hint:'印刷会社や入稿方法によってデータの作成方法が通常と大きく異なるケースがあります。早めに情報を確認し、関係者に共有しておきましょう。' },
+  { id:103, cat:"テキスト確認", label:"電話番号・日付・住所・金額・固有名詞など重要な情報に誤りがない。",                                                                     priority:"必須", hint:'修正作業によって先祖帰り（修正前の状態に戻っていること）を起こしている可能性があるため、印刷・校了前は必ず最終確認しましょう。' },
+  { id:106, cat:"テキスト確認", label:"誤字・脱字・言い回しのミスがないか確認した。",                                                                                        priority:"必須", hint:'レイアウト調整や書体変換によって誤字や脱字が発生する可能性があります。原稿内容は最終的に依頼者が確認し、校了の指示を出しましょう。' },
+  // ── 推奨 ──
+  { id:113, cat:"サイズ確認",   label:"社内印刷の場合、白フチを考慮したデザインになっているか。",                                                                             priority:"推奨", hint:'社内プリンターは原理上、周囲に白い枠（フチ）が残ったまま印刷されます。不自然に写真や背景が切れたりすることで、やっつけ感や素人感が出るので、白フチを考慮した紙面設計を心がけましょう。' },
+  { id:109, cat:"素材・権利",   label:"スクショ画像やLINEアルバムの画像から流用した画像は低解像度であることを確認した。",                                                     priority:"推奨", hint:'もとの解像度が著しく低い画像は、画質向上が難しいです。画質を考慮したうえで校了の判断をしましょう。' },
+  { id:107, cat:"レビュー確認", label:"上長・法務など関係部署の確認・承認を事前に得ている（日付・価格・キャンペーン内容など承認が必要な情報が含まれる場合）。",                              priority:"必須", hint:'価格・キャンペーン期間など、正確性が求められる情報や、対外的に公表される内容は、関係者の承認を経てから入稿するようにしましょう。' },
+  { id:111, cat:"冊子の場合",   label:"冊子データの場合、ページの開き（右開き／左開き）が適切か確認した。",                                                                     priority:"推奨", hint:'基本の文字組みが縦読み設定の場合、ページの開きは右開きが適切です。また、文字組みが横読み設定の場合、ページの開きは左開きが適切です。' },
+  { id:114, cat:"カラー",     label:"印刷用のVIデータを使用した／デザイン担当者に共有した。",                                                                                    priority:"推奨", hint:'VIデータにはWEB・画面表示用（RGB）と印刷用（CMYK）の2種類のデータがあります。外部デザイン担当者にデータを共有する際は両方のデータを送付しておくと楽です。<br>社員が自らデザインをする場合、Canvaのプロプラン以外では印刷用VIデータは使用できないため、RGBデータの使用を許可します。' },
+  { id:112, cat:"テキスト確認", label:"ノンブル（ページ番号）を確認した。",                                                                                                  priority:"必須", hint:'ページ番号の割り振りが正しいか、そもそもページ順は合っているのか、最終的に確認しましょう。' },
+];
+
+const CAT_COLORS_ND = {
+  "サイズ確認":   "#8b5cf6",
+  "素材・権利":   "#ec4899",
+  "レビュー確認": "#f97316",
+  "冊子の場合":   "#84cc16",
+  "テキスト確認": "#0ea5e9",
+  "カラー":       "#f59e0b",
+};
+
+const PRIORITIES_ND = [
+  { key: "必須", cls: "required",    desc: "入稿前に必ず確認してください。確認漏れは刷り直しの原因になります。" },
+  { key: "推奨", cls: "recommended", desc: "ミスの防止・品質向上のため、確認を推奨します。" },
+];
+
+// ════════════════════════════════════════════
+// ── State 管理 ──
+// ════════════════════════════════════════════
+let currentMode = 'designer';
+const stateD  = { checked: new Set(), openHint: null };
+const stateND = { checked: new Set(), openHint: null };
+
+try {
+  const s = localStorage.getItem('printChecklist_v3');
+  if (s) JSON.parse(s).forEach(id => stateD.checked.add(id));
+} catch(e) {}
+try {
+  const s = localStorage.getItem('printChecklist_nd_v1');
+  if (s) JSON.parse(s).forEach(id => stateND.checked.add(id));
+} catch(e) {}
+
+function currentItems()      { return currentMode === 'designer' ? ITEMS_D      : ITEMS_ND;      }
+function currentState()      { return currentMode === 'designer' ? stateD       : stateND;       }
+function currentCatColors()  { return currentMode === 'designer' ? CAT_COLORS_D : CAT_COLORS_ND; }
+function currentPriorities() { return currentMode === 'designer' ? PRIORITIES_D : PRIORITIES_ND; }
+function currentStorageKey() { return currentMode === 'designer' ? 'printChecklist_v3' : 'printChecklist_nd_v1'; }
+
+// ════════════════════════════════════════════
+// ── Core 関数 ──
+// ════════════════════════════════════════════
+function save() {
+  try { localStorage.setItem(currentStorageKey(), JSON.stringify([...currentState().checked])); } catch(e) {}
+}
+
+function toggleCheck(id, e) {
+  e.stopPropagation();
+  const s = currentState();
+  s.checked.has(id) ? s.checked.delete(id) : s.checked.add(id);
+  save(); refreshCard(id); refreshProgress();
+}
+
+function toggleHint(id, e) {
+  e.stopPropagation();
+  const s = currentState();
+  s.openHint = (s.openHint === id) ? null : id;
+  currentItems().forEach(item => refreshCard(item.id));
+}
+
+function refreshCard(id) {
+  const card = document.getElementById('c' + id);
+  if (!card) return;
+  const hintEl = document.getElementById('h' + id);
+  const s = currentState();
+  const isChecked = s.checked.has(id);
+  const isOpen = s.openHint === id;
+  card.classList.toggle('checked', isChecked);
+  card.classList.toggle('open-hint', isOpen);
+  if (hintEl) hintEl.classList.toggle('open', isOpen);
+  const btn = card.querySelector('.hint-toggle');
+  if (btn) btn.textContent = isOpen ? '閉じる' : '詳細';
+  const item = currentItems().find(i => i.id === id);
+  if (item) { refreshSubProg(item.priority, item.cat); refreshPriorityProg(item.priority); }
+}
+
+function refreshSubProg(priority, cat) {
+  const items = currentItems(); const s = currentState();
+  const relevant = items.filter(i => i.priority === priority && i.cat === cat);
+  const done = relevant.filter(i => s.checked.has(i.id)).length;
+  const el = document.getElementById('sp_' + priority + '_' + cat);
+  if (el) el.textContent = done + ' / ' + relevant.length;
+}
+
+function refreshPriorityProg(priority) {
+  const items = currentItems(); const s = currentState();
+  const relevant = items.filter(i => i.priority === priority);
+  const done = relevant.filter(i => s.checked.has(i.id)).length;
+  const total = relevant.length;
+  const progEl = document.getElementById('pp_' + priority);
+  const fillEl = document.getElementById('pf_' + priority);
+  if (progEl) progEl.textContent = done + ' / ' + total;
+  if (fillEl) fillEl.style.width = (done / total * 100) + '%';
+}
+
+function refreshProgress() {
+  const items = currentItems(); const s = currentState();
+  const total = items.length;
+  const done = items.filter(i => s.checked.has(i.id)).length;
+  document.getElementById('progressText').textContent = done + ' / ' + total + ' 完了';
+  document.getElementById('progressBar').style.width = (done / total * 100) + '%';
+  document.getElementById('completionBanner').classList.toggle('show', done === total);
+}
+
+function resetAll() {
+  if (!confirm('このリストのチェックをすべてリセットしますか？')) return;
+  const s = currentState();
+  s.checked.clear(); s.openHint = null; save();
+  currentItems().forEach(item => refreshCard(item.id));
+  currentPriorities().forEach(p => refreshPriorityProg(p.key));
+  refreshProgress();
+}
+
+function switchTab(mode) {
+  if (currentMode === mode) return;
+  currentMode = mode;
+  document.getElementById('tabDesigner').classList.toggle('active', mode === 'designer');
+  document.getElementById('tabNonDesigner').classList.toggle('active', mode === 'non-designer');
+  document.getElementById('headerDesc').textContent =
+    mode === 'designer' ? '入稿前に全項目を確認してください' : '入稿データを送る前に全項目を確認してください';
+  rebuild();
+}
+
+// ── DOM 構築 ──
+function rebuild() {
+  const container = document.getElementById('mainContent');
+  container.innerHTML = '';
+  const items = currentItems();
+  const priorities = currentPriorities();
+  const catColors = currentCatColors();
+  const s = currentState();
+
+  priorities.forEach(p => {
+    const priorityItems = items.filter(i => i.priority === p.key);
+    const total = priorityItems.length;
+    const section = document.createElement('div');
+    section.className = 'priority-section';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'priority-header ' + p.cls;
+    hdr.innerHTML = `
+      <span class="priority-label">${p.key}</span>
+      <span class="priority-desc">${p.desc}</span>
+      <span class="priority-prog" id="pp_${p.key}">0 / ${total}</span>
+      <div class="priority-mini-bar"><div class="priority-mini-fill" id="pf_${p.key}"></div></div>
+    `;
+    section.appendChild(hdr);
+
+    const body = document.createElement('div');
+    body.className = 'priority-body';
+
+    [...new Set(priorityItems.map(i => i.cat))].forEach(cat => {
+      const catItems = priorityItems.filter(i => i.cat === cat);
+      const color = catColors[cat] || '#888';
+      const key = p.key + '_' + cat;
+
+      const subGroup = document.createElement('div');
+      subGroup.className = 'sub-group';
+      const subHdr = document.createElement('div');
+      subHdr.className = 'sub-header';
+      subHdr.innerHTML = `
+        <span class="sub-dot" style="background:${color}"></span>
+        <span class="sub-name">${cat}</span>
+        <span class="sub-progress" id="sp_${key}">0 / ${catItems.length}</span>
+      `;
+      subGroup.appendChild(subHdr);
+
+      catItems.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.id = 'c' + item.id;
+        card.innerHTML = `
+          <div class="item-main" onclick="toggleHint(${item.id}, event)">
+            <div class="custom-check" onclick="toggleCheck(${item.id}, event)"><span class="check-icon">✓</span></div>
+            <span class="item-label">${item.label}</span>
+            <button class="hint-toggle" onclick="toggleHint(${item.id}, event)" title="対応策を見る">詳細</button>
+          </div>
+          <div class="hint-panel" id="h${item.id}">
+            <div class="hint-tag">💡 対応策・ヒント</div><br>${item.hint}
+          </div>
+        `;
+        subGroup.appendChild(card);
+      });
+      body.appendChild(subGroup);
+    });
+
+    section.appendChild(body);
+    container.appendChild(section);
+  });
+
+  items.forEach(item => { if (s.checked.has(item.id)) refreshCard(item.id); });
+  priorities.forEach(p => refreshPriorityProg(p.key));
+  refreshProgress();
+}
+
+rebuild();
+</script>
+</body>
+</html>

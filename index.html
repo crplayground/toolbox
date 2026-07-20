@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CR室 ツールボックス</title>
+<style>
+  :root{ --ink:#1a1a1a; --sub:#6b6b6b; --line:#e6e6e6; --bg:#fafafa; --card:#fff; --accent:#7c5cff; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+        background:var(--bg); color:var(--ink); line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:760px; margin:0 auto; padding:64px 24px 80px; }
+  header{ margin-bottom:40px; }
+  .eyebrow{ font-size:12px; letter-spacing:.14em; color:var(--sub); text-transform:uppercase; }
+  h1{ font-size:30px; font-weight:700; margin-top:6px; letter-spacing:.01em; }
+  .lead{ color:var(--sub); font-size:15px; margin-top:10px; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; }
+  @media(max-width:560px){ .grid{ grid-template-columns:1fr; } }
+  a.card{ display:block; background:var(--card); border:1px solid var(--line); border-radius:14px;
+          padding:20px 22px; text-decoration:none; color:inherit; transition:.15s ease; }
+  a.card:hover{ border-color:var(--accent); transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.05); }
+  .card h2{ font-size:16px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .card p{ font-size:13px; color:var(--sub); margin-top:6px; }
+  .dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); flex:none; }
+  footer{ margin-top:48px; font-size:12px; color:var(--sub); border-top:1px solid var(--line); padding-top:20px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">CRAZY / Creative Room</div>
+      <h1>ツールボックス</h1>
+      <p class="lead">CR室の業務効率化ツール群。使いたいツールを選んでください。</p>
+    </header>
+
+    <div class="grid">
+      <a class="card" href="./print-check/">
+        <h2><span class="dot"></span>入稿前チェック</h2>
+        <p>印刷物の入稿前チェックリスト（デザイナー／依頼者）</p>
+      </a>
+      <a class="card" href="./revision-request/">
+        <h2><span class="dot"></span>修正依頼</h2>
+        <p>外部制作会社への修正指示を作成・URL共有</p>
+      </a>
+      <a class="card" href="./project-board/">
+        <h2><span class="dot"></span>タスクボード</h2>
+        <p>Notion連携のタスク管理（カンバン／リスト／カレンダー）</p>
+      </a>
+      <a class="card" href="./request/">
+        <h2><span class="dot"></span>制作依頼フォーム</h2>
+        <p>CR室への制作依頼を受付（Notion登録・Slack通知）</p>
+      </a>
+    </div>
+
+    <footer>
+      株式会社CRAZY クリエイティブ室 ／ crplayground/toolbox
+    </footer>
+  </div>
+</body>
+</html>

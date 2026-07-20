@@ -1,0 +1,11 @@
+# Cloudflare Worker 設定ファイル（本番用）
+# テスト用(revision-share-test)とは別の独立したWorker・KVを使う
+
+name = "revision-share"
+main = "src/worker.js"
+compatibility_date = "2025-06-01"
+
+# 本番用の倉庫(KV)。SETUP-PROD.md の手順で取得したIDに置き換える
+[[kv_namespaces]]
+binding = "REVISIONS"
+id = "943362cbf9d447c8ac213ad14eba8dc3"

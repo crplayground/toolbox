@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REQUEST | クリ室制作依頼</title>
+<style>
+  :root{
+    --bg:#f5f5f3; --card:#ffffff; --ink:#1c1c1a; --sub:#6b6b66;
+    --line:#e3e3df; --accent:#1a1a1a; --accent-ink:#fff;
+    --req:#c0392b; --blue:#2d6cdf; --green:#2e8b57; --yellow:#b8860b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:680px;margin:0 auto;padding:32px 20px 80px;}
+  h1{font-size:22px;margin:0 0 4px;letter-spacing:.02em;}
+  .lead{color:var(--sub);font-size:13.5px;margin:0 0 28px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px;margin-bottom:18px;}
+  .step-label{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.08em;
+    text-transform:uppercase;margin:0 0 12px;}
+  .types{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .type-btn{appearance:none;border:1.5px solid var(--line);background:#fff;border-radius:12px;
+    padding:14px 8px;cursor:pointer;text-align:center;transition:.15s;font-family:inherit;}
+  .type-btn:hover{border-color:#bcbcb6;}
+  .type-btn .t{font-size:15px;font-weight:700;display:block;}
+  .type-btn .d{font-size:11px;color:var(--sub);display:block;margin-top:3px;}
+  .type-btn[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);}
+  .type-btn[aria-pressed="true"] .t{color:#fff;}
+  .type-btn[aria-pressed="true"] .d{color:#cfcfcf;}
+  .field{margin-bottom:16px;}
+  .field:last-child{margin-bottom:0;}
+  label.fl{display:block;font-size:13px;font-weight:600;margin-bottom:6px;}
+  .req{color:var(--req);font-size:11px;margin-left:5px;}
+  .opt{color:var(--sub);font-size:11px;margin-left:5px;font-weight:400;}
+  .hint{font-size:11.5px;color:var(--sub);margin:5px 0 0;}
+  input[type=text],input[type=url],input[type=email],input[type=date],select,textarea{
+    width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;
+    font-size:14px;font-family:inherit;background:#fff;color:var(--ink);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
+  textarea{resize:vertical;min-height:74px;}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .checks{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch;}
+  @media(max-width:520px){.checks{grid-template-columns:1fr;}}
+  .chk{display:flex;align-items:flex-start;gap:8px;border:1px solid var(--line);border-radius:9px;
+    padding:9px 11px;font-size:13px;cursor:pointer;background:#fff;}
+  .chk input{width:auto;margin:0;}
+  .chk:hover{border-color:#bcbcb6;}
+  .chk-text{flex:1;line-height:1.4;}
+  .chk .sub{display:block;color:#a3a39c;font-size:11px;font-weight:400;margin-top:3px;}
+  .addurl{background:#fff;border:1px dashed var(--line);border-radius:9px;padding:8px 12px;font-size:12.5px;color:var(--sub);cursor:pointer;font-family:inherit;margin-top:2px;}
+  .addurl:hover{border-color:#bcbcb6;}
+  .single-chk{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer;}
+  .single-chk input{width:auto;}
+  .sectionhead{font-size:13px;font-weight:700;margin:24px 0 14px;padding-bottom:8px;
+    border-bottom:1px dashed var(--line);}
+  .sectionhead:first-child{margin-top:2px;}
+  .hidden{display:none;}
+  .submit{width:100%;background:var(--accent);color:var(--accent-ink);border:none;
+    border-radius:12px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;
+    font-family:inherit;margin-top:6px;}
+  .submit:disabled{opacity:.4;cursor:not-allowed;}
+  .flow{font-size:11.5px;color:var(--sub);text-align:center;margin-top:14px;}
+  .err{background:#fdecea;border:1px solid #f5c6c2;color:#a33027;font-size:12.5px;
+    border-radius:9px;padding:10px 13px;margin-top:14px;}
+  /* 完了画面 */
+  .done{text-align:center;padding:30px 22px;}
+  .done .ic{font-size:40px;}
+  .done h2{font-size:19px;margin:10px 0 6px;}
+  .done p{color:var(--sub);font-size:13.5px;margin:0 0 18px;}
+  .done a.btn{display:block;text-decoration:none;border-radius:10px;padding:12px;font-size:14px;
+    font-weight:600;margin:8px 0;}
+  .done a.share{background:#eef3ff;color:var(--blue);border:1px solid #d3e0fb;}
+  .done a.notion{background:#f4f4f2;color:var(--ink);border:1px solid var(--line);}
+  .done .again{margin-top:18px;background:none;border:none;color:var(--sub);font-size:12.5px;
+    text-decoration:underline;cursor:pointer;font-family:inherit;}
+  /* 納期目安を確認ボタン */
+  .nd-btn{display:inline-flex;align-items:center;gap:5px;margin-top:8px;background:#eef3ff;
+    color:var(--blue);border:1px solid #d3e0fb;border-radius:8px;padding:8px 13px;
+    font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .nd-btn:hover{background:#e3ecfd;}
+  /* 納期目安モーダル */
+  .modal-overlay{position:fixed;inset:0;background:rgba(20,20,18,.55);display:flex;
+    align-items:center;justify-content:center;padding:20px;z-index:100;}
+  .modal-overlay.hidden{display:none;}
+  .modal{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:85vh;
+    overflow-y:auto;padding:26px 26px 22px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+  .modal-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;
+    background:#f0f0ed;border-radius:50%;font-size:18px;line-height:1;cursor:pointer;color:var(--sub);}
+  .modal-close:hover{background:#e3e3df;}
+  .modal-title{font-size:18px;margin:0 0 8px;}
+  .modal-lead{font-size:12.5px;color:var(--sub);margin:0 0 16px;line-height:1.65;}
+  .nd-item{padding:13px 0;border-bottom:1px solid var(--line);}
+  .nd-item:last-child{border-bottom:none;}
+  .nd-name{font-size:14px;font-weight:700;}
+  .nd-period{font-size:13.5px;font-weight:700;color:var(--blue);margin-top:2px;}
+  .nd-note{font-size:12px;color:var(--sub);margin-top:4px;line-height:1.6;}
+  /* スケジュール感（マイルストーン） */
+  .ms-row{display:grid;grid-template-columns:150px 1fr 38px;gap:8px;margin-bottom:8px;align-items:center;}
+  .ms-del{border:1px solid var(--line);background:#fff;border-radius:8px;height:40px;
+    cursor:pointer;color:var(--sub);font-size:16px;line-height:1;padding:0;}
+  .ms-del:hover{border-color:#bcbcb6;}
+  @media(max-width:520px){
+    .ms-row{grid-template-columns:1fr 38px;}
+    .ms-row .ms-date{grid-column:1/-1;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>REQUEST</h1>
+  <p class="lead">クリ室への制作依頼フォームです。まず依頼の種別を選んでください。</p>
+
+  <!-- 完了画面（送信後に表示） -->
+  <div class="card done hidden" id="doneCard">
+    <div class="ic">✅</div>
+    <h2>依頼を受け付けました</h2>
+    <p>共有ページが発行され、Notionに登録されました。<br>進行は受付チャンネルのスレッドで行います。</p>
+    <a class="btn share" id="doneShare" href="#" target="_blank">📄 共有ページを開く</a>
+    <a class="btn notion" id="doneNotion" href="#" target="_blank">🗂 Notionで見る</a>
+    <button type="button" class="again" id="againBtn">続けて別の依頼を出す</button>
+  </div>
+
+  <div id="formArea">
+    <!-- 依頼者（手入力：v1。将来Googleログイン自動取得に置換） -->
+    <div class="card">
+      <p class="step-label">依頼者</p>
+      <div class="field">
+        <label class="fl">部署<span class="req">必須</span></label>
+        <select id="requesterDept">
+          <option value="">選択してください</option>
+          <option>BP</option>
+          <option>P</option>
+          <option>D</option>
+          <option>CCA</option>
+          <option>CA</option>
+          <option>ハピネス室</option>
+          <option>マリンチーム（Pやサービスなど全て含む）</option>
+          <option>MKT・広報</option>
+          <option>採用</option>
+          <option>CC</option>
+          <option>その他</option>
+        </select>
+      </div>
+      <div class="two">
+        <div class="field" style="margin:0">
+          <label class="fl">お名前<span class="req">必須</span></label>
+          <input type="text" id="requesterName" placeholder="例：宮川 雄気">
+        </div>
+        <div class="field" style="margin:0">
+          <label class="fl">メール<span class="req">必須</span></label>
+          <input type="email" id="requesterEmail" placeholder="you@crazy.co.jp">
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP1 種別 -->
+    <div class="card">
+      <p class="step-label">STEP 1 ─ 依頼の種別</p>
+      <div class="types">
+        <button type="button" class="type-btn" data-type="新規" aria-pressed="false">
+          <span class="t">新規</span><span class="d">クリエイティブプロセスを<br>始める</span>
+        </button>
+        <button type="button" class="type-btn" data-type="改訂" aria-pressed="false">
+          <span class="t">改訂</span><span class="d">既存の制作物の一部修正<br>画像差し替えのみの場合</span>
+        </button>
+        <button type="button" class="type-btn" data-type="相談" aria-pressed="false">
+          <span class="t">相談</span><span class="d">一旦話しながら考えたい方<br>制作依頼以外の方はこちら</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP2 内容 -->
+    <form id="form">
+      <div class="card hidden" id="detailCard">
+        <p class="step-label">STEP 2 ─ 内容</p>
+
+        <!-- 共通：案件名 -->
+        <div class="field">
+          <label class="fl">案件名<span class="req">必須</span></label>
+          <input type="text" name="title" placeholder="例：6月◯◯フェア 集客バナー">
+        </div>
+
+        <!-- 対象ブランド・部署：新規・相談 -->
+        <div class="field" data-types="新規">
+          <label class="fl">対象ブランド・部署<span class="req">必須</span></label>
+          <select name="brand">
+            <option value="">選択してください</option>
+            <option value="ANV">ANV｜アニバに関する制作物</option>
+            <option value="CAREER">CAREER｜CRAZY CAREERに関する制作物</option>
+            <option value="CCA">CCA｜CCA事業に関する制作物</option>
+            <option value="CGM-PSC">CGM-PSC｜PARKSIDE CAFEに関する制作物</option>
+            <option value="CGM-レストラン">CGM-レストラン｜レストランに関する制作物</option>
+            <option value="CGM-館内">CGM-館内｜館内全般に関する制作物</option>
+            <option value="CGM-婚礼">CGM-婚礼｜婚礼に関する制作物</option>
+            <option value="CRAZY">CRAZY｜全社周年・組織戦略・マガジン等に関する制作物</option>
+            <option value="CW">CW｜CWに関する制作物</option>
+            <option value="HR">HR｜採用・人事・労務等に関する制作物</option>
+            <option value="IWAI-館内">IWAI-館内｜館内全般に関する制作物</option>
+            <option value="IWAI-婚礼">IWAI-婚礼｜婚礼に関する制作物</option>
+            <option value="MT-the Terrace">MT-the Terrace｜the Terraceに関する制作物</option>
+            <option value="MT-館内">MT-館内｜館内全般に関する制作物</option>
+            <option value="MT-婚礼">MT-婚礼｜婚礼に関する制作物</option>
+          </select>
+          <p class="hint">保管先フォルダの振り分けに使います。</p>
+        </div>
+
+        <!-- 改訂元のデータ：改訂（URL欄を＋で追加可） -->
+        <div class="field" data-types="改訂">
+          <label class="fl">改訂元のデータ<span class="opt">任意</span></label>
+          <div id="srcUrls">
+            <input type="text" class="src-url" placeholder="ドライブフォルダのURLを記入" style="margin-bottom:8px">
+          </div>
+          <button type="button" class="addurl" id="addSrcUrl">＋ URLを追加</button>
+          <p class="hint">データの所在が不明な場合は画像を添付してください。</p>
+        </div>
+
+        <!-- 制作物の種別：新規 -->
+        <div id="prodTypeField" class="field" data-types="新規">
+          <label class="fl">制作物の種別<span class="req">必須</span><span class="opt">複数選択可</span></label>
+          <div class="checks" id="prodTypes">
+            <label class="chk"><input type="checkbox" value="企画から一緒に"><span class="chk-text">企画から一緒に<span class="sub">コンセプト・ステートメントなどのコピーを含む</span></span></label>
+            <label class="chk"><input type="checkbox" value="KV・トンマナ"><span class="chk-text">KV・トンマナ<span class="sub">イベント・キャンペーンなど</span></span></label>
+            <label class="chk"><input type="checkbox" value="スライド"><span class="chk-text">スライド<span class="sub">営業・登壇・案内資料など</span></span></label>
+            <label class="chk"><input type="checkbox" value="バナー・SNS画像"><span class="chk-text">バナー・SNS画像<span class="sub">NEWS・マガジン・フィード投稿など</span></span></label>
+            <label class="chk"><input type="checkbox" value="LP・WEBサイト"><span class="chk-text">LP・WEBサイト<span class="sub">ディレクション、サイト内パーツ制作など</span></span></label>
+            <label class="chk"><input type="checkbox" value="チラシ・リーフレット"><span class="chk-text">チラシ・リーフレット<span class="sub">2ページまでのペラ・4ページまでの冊子</span></span></label>
+            <label class="chk"><input type="checkbox" value="パネル・ポスター"><span class="chk-text">パネル・ポスター<span class="sub">A3以上の印刷物</span></span></label>
+            <label class="chk"><input type="checkbox" value="看板・サイン"><span class="chk-text">看板・サイン<span class="sub">案内看板・表札・サイネージなど</span></span></label>
+            <label class="chk"><input type="checkbox" value="パンフレット"><span class="chk-text">パンフレット<span class="sub">6ページ以上の冊子</span></span></label>
+            <label class="chk"><input type="checkbox" value="ペーパーアイテム"><span class="chk-text">ペーパーアイテム<span class="sub">メニュー・席札・手紙・カードなど</span></span></label>
+            <label class="chk"><input type="checkbox" value="招待状・紙袋"><span class="chk-text">招待状・紙袋<span class="sub">製造に数ヶ月かかります</span></span></label>
+            <label class="chk"><input type="checkbox" value="その他"><span class="chk-text">その他<span class="sub">名入れ対応・足拭きマットなど</span></span></label>
+          </div>
+        </div>
+
+        <!-- 与件整理：新規 -->
+        <div data-types="新規">
+          <p class="sectionhead">与件整理</p>
+          <div class="field">
+            <label class="fl">目的<span class="opt">任意</span></label>
+            <input type="text" name="purpose" placeholder="何のための企画・アイテムですか？">
+          </div>
+          <div class="field">
+            <label class="fl">現状の課題<span class="opt">任意</span></label>
+            <textarea name="issue" placeholder="現在抱えている課題感や依頼背景はありますか？"></textarea>
+          </div>
+          <div class="field">
+            <label class="fl">ターゲット<span class="opt">任意</span></label>
+            <textarea name="target" placeholder="ペルソナ像やどんなインサイト（本音）を抱えているか教えてください"></textarea>
+          </div>
+          <div class="field">
+            <label class="fl">依頼概要<span class="opt">任意</span></label>
+            <textarea name="overview" placeholder="イベントや制作物の内容について教えてください"></textarea>
+          </div>
+          <div class="field">
+            <label class="fl">実施日・使用開始日<span class="opt">任意</span></label>
+            <input type="text" name="useDate" placeholder="例：7/20開催、8月初旬から使用開始">
+          </div>
+          <div class="field">
+            <label class="fl">使用場所・使用シーン<span class="opt">任意</span></label>
+            <input type="text" name="usePlace" placeholder="例：IWAI・FDの途中で使用、MTで開催するイベント受付で配布">
+          </div>
+          <div class="field">
+            <label class="fl">得たい成果<span class="opt">任意</span></label>
+            <textarea name="outcome" placeholder="定量的・定性的な成果はありますか？"></textarea>
+          </div>
+          <div class="field">
+            <label class="fl">体験後や読後感の感情<span class="opt">任意</span></label>
+            <textarea name="afterFeeling" placeholder="ターゲットの心に残る感情や余韻は？"></textarea>
+          </div>
+          <div class="field">
+            <label class="fl">予算感<span class="opt">任意</span></label>
+            <input type="text" name="budget" placeholder="例：印刷費6千円、立て看板購入費1万円など">
+          </div>
+          <div class="field">
+            <label class="fl">スケジュール感<span class="opt">任意</span></label>
+            <p class="hint" style="margin:0 0 8px">社内確認・印刷入稿・公開日など、決まっている日程やマイルストーンがあれば記入してください。</p>
+            <div id="msRows">
+              <div class="ms-row">
+                <input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">
+                <input type="text" class="ms-text" placeholder="内容 / 担当者">
+                <button type="button" class="ms-del" aria-label="この行を削除">×</button>
+              </div>
+            </div>
+            <button type="button" class="addurl" id="addMs">＋ マイルストーンを追加</button>
+          </div>
+        </div>
+
+        <!-- 希望納期：新規・改訂 -->
+        <div class="field" data-types="新規,改訂">
+          <label class="fl">希望納期<span class="opt">任意</span></label>
+          <input type="date" name="deadline" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">
+          <br><button type="button" class="nd-btn" id="ndOpen">📅 納期目安を確認する</button>
+        </div>
+
+        <!-- 制作内容：新規 -->
+        <div data-types="新規">
+          <p class="sectionhead">制作内容</p>
+          <div class="field">
+            <label class="fl">制作物の詳細と原稿（コピペできるように）<span class="opt">任意</span></label>
+            <textarea name="manuscript" placeholder="アウトプットの形状や種類・掲載文言・写真など使用素材の共有URL"></textarea>
+            <p class="hint">NEWSバナー・ストーリーズ・ハガキ両面・蛇腹冊子など、サイズ感や形状が分かるように記載してください。</p>
+          </div>
+          <div class="field">
+            <label class="fl">プロトタイプ<span class="opt">任意</span></label>
+            <textarea name="prototype" placeholder="Canva・Figma・KeynoteなどのURLを共有、もしくは画像を添付してください"></textarea>
+          </div>
+          <div class="field">
+            <label class="fl">参考・インスピレーション<span class="opt">任意</span></label>
+            <textarea name="reference" placeholder="雰囲気・既存事例・NG例などの共有"></textarea>
+          </div>
+        </div>
+
+        <!-- 原稿（コピペできるように）：改訂 -->
+        <div class="field" data-types="改訂">
+          <label class="fl">制作物の詳細と原稿（コピペできるように）<span class="opt">任意</span></label>
+          <textarea name="reviseManuscript" placeholder="変更したい箇所の文言・写真など使用素材の指示を記入"></textarea>
+        </div>
+
+        <!-- 参考画像を添付：新規・改訂 -->
+        <div class="field" data-types="新規,改訂">
+          <label class="fl">参考画像を添付<span class="opt">任意・最大10枚</span></label>
+          <input type="file" id="images" accept="image/*" multiple>
+          <p class="hint">参考画像やラフなど。送信時に自動で軽量化され、共有ページに表示されます。</p>
+          <div id="imgPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+        </div>
+
+        <!-- 依頼意図・広報：新規 -->
+        <div data-types="新規">
+          <div class="field">
+            <label class="fl">依頼意図（想い・情熱）<span class="opt">任意</span></label>
+            <textarea name="intentSeisaku" placeholder="今回の制作物がどうなったら理想に近づくか、なぜ依頼をしたのかを教えてください。"></textarea>
+          </div>
+          <div class="field">
+            <label class="fl">企画について広報チームの確認状況<span class="opt">任意</span></label>
+            <select id="prStatus">
+              <option value="">選択してください</option>
+              <option>相談・共有済み</option>
+              <option>これから</option>
+              <option>必要なし</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 相談 -->
+        <div data-types="相談">
+          <p class="sectionhead">相談</p>
+          <div class="field">
+            <label class="fl">相談内容<span class="req">必須</span></label>
+            <textarea name="consultDetail" placeholder="ざっくりでOK。やりたいこと、困っていることなど相談したいことを記入してください"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="submit" id="submitBtn" disabled>送信する</button>
+      <div class="err hidden" id="errBox"></div>
+      <p class="flow">送信すると受付チャンネル #83_creative_クリ室依頼受付 に要約が投稿され、そのスレッドで進行します。</p>
+    </form>
+  </div>
+</div>
+
+<!-- 納期目安モーダル（UIのみ・Notion非連携） -->
+<div class="modal-overlay hidden" id="ndModal" role="dialog" aria-modal="true" aria-labelledby="ndTitle">
+  <div class="modal">
+    <button type="button" class="modal-close" id="ndClose" aria-label="閉じる">×</button>
+    <h2 class="modal-title" id="ndTitle">納期目安表</h2>
+    <p class="modal-lead">必要な原稿が揃っている状態での制作着手から納品までの目安です。<br>納期短縮も可能なので、まずはスケジュールを組んだ上でご相談ください。</p>
+    <div class="nd-list">
+      <div class="nd-item">
+        <div class="nd-name">KV・トンマナ</div>
+        <div class="nd-period">2週間〜</div>
+        <div class="nd-note">小規模のイベントやキャンペーンの場合の目安です。展開物の作成は別途工数が必要になります。ロゴやトンマナの作成は企画内容によって変わります。</div>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">スライド</div>
+        <div class="nd-period">2週間</div>
+        <div class="nd-note">ページ数や内容によって変わります。</div>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">バナー・SNS画像</div>
+        <div class="nd-period">1週間</div>
+        <div class="nd-note">ビジュアル作成のみを想定しています。</div>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">LP・WEBサイト</div>
+        <div class="nd-period">LP：3〜4週間／Webサイト：3ヶ月〜</div>
+        <div class="nd-note">LPの新規制作は開発期間を含みます。Webサイトはサイト規模によって変わります（3ヶ月を目安）。</div>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">チラシ・リーフレット</div>
+        <div class="nd-period">1〜2週間（社外印刷 +1週間）</div>
+        <div class="nd-note">印刷コストを上げることで納期短縮が可能。加工や特殊印刷を行う場合、納期が伸びます。</div>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">パネル・ポスター</div>
+        <div class="nd-period">1〜2週間（社外印刷 +1週間）</div>
+        <div class="nd-note">枚数や使用用途によって変わります。</div>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">看板・サイン</div>
+        <div class="nd-period">1〜2週間（社外印刷 +1週間）</div>
+        <div class="nd-note">表札の場合、プレートや取り付け方法によって工期が必要です。</div>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">パンフレット</div>
+        <div class="nd-period">2週間（社外印刷 +1週間）</div>
+        <div class="nd-note">ページ数や内容によって変わります。</div>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">ペーパーアイテム</div>
+        <div class="nd-period">1〜2週間（色校正 +1週間、社外印刷 +1週間）</div>
+        <div class="nd-note">席札・ポップ・手紙・カードなどの簡易制作は1週間。メニュー表など先々の運用設計まで必要な場合は要相談。</div>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">招待状・紙袋</div>
+        <div class="nd-period">2週間（色校正＆海外製造 +2ヶ月半〜3ヶ月）</div>
+        <div class="nd-note">国内製造の場合でも加工内容によって同等の期間が必要です。</div>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">その他</div>
+        <div class="nd-period">要確認</div>
+        <div class="nd-note">発注先に事前に、データ入稿後の納期目安を確認してください。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===== 設定 =====
+  var ENDPOINT = "https://creative-request.yukimiyakawa.workers.dev/submit";
+
+  var typeBtns = document.querySelectorAll(".type-btn");
+  var detailCard = document.getElementById("detailCard");
+  var branchEls = document.querySelectorAll("#detailCard [data-types]");
+  var submitBtn = document.getElementById("submitBtn");
+  var errBox = document.getElementById("errBox");
+  var form = document.getElementById("form");
+  var current = null;
+  var idemKey = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+  var sending = false;
+
+  function show(el, on){ el.classList.toggle("hidden", !on); }
+
+  typeBtns.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      current = btn.dataset.type;
+      typeBtns.forEach(function(b){ b.setAttribute("aria-pressed", b===btn); });
+      show(detailCard, true);
+      branchEls.forEach(function(el){
+        var t = el.getAttribute("data-types").split(",");
+        show(el, t.indexOf(current) !== -1);
+      });
+      submitBtn.disabled = false;
+      errBox.classList.add("hidden");
+      detailCard.scrollIntoView({behavior:"smooth", block:"start"});
+    });
+  });
+
+  function val(name){
+    var el = form.querySelector('[name="'+name+'"]');
+    return el ? el.value.trim() : "";
+  }
+  function collectProdTypes(){
+    var out = [];
+    document.querySelectorAll("#prodTypes input:checked").forEach(function(c){ out.push(c.value); });
+    return out;
+  }
+  function collectSrcUrls(){
+    var out = [];
+    document.querySelectorAll("#srcUrls .src-url").forEach(function(i){ var v=i.value.trim(); if(v) out.push(v); });
+    return out;
+  }
+  function showErr(msg){
+    errBox.textContent = msg;
+    errBox.classList.remove("hidden");
+    errBox.scrollIntoView({behavior:"smooth", block:"center"});
+  }
+
+  // ===== 画像添付（送信時に共有ページへ埋め込み・自動軽量化） =====
+  var MAX_IMAGES = 10;
+  var imageData = [];
+  var imgInput = document.getElementById("images");
+  var imgPreview = document.getElementById("imgPreview");
+
+  function compressImage(file){
+    return new Promise(function(resolve){
+      var reader = new FileReader();
+      reader.onload = function(){
+        var img = new Image();
+        img.onload = function(){
+          var max = 1600, w = img.width, h = img.height;
+          if (w > max || h > max){
+            if (w >= h){ h = Math.round(h * max / w); w = max; }
+            else { w = Math.round(w * max / h); h = max; }
+          }
+          var c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          try { resolve(c.toDataURL("image/jpeg", 0.72)); }
+          catch(e){ resolve(null); }
+        };
+        img.onerror = function(){ resolve(null); };
+        img.src = reader.result;
+      };
+      reader.onerror = function(){ resolve(null); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderImgPreview(){
+    if (!imgPreview) return;
+    imgPreview.innerHTML = "";
+    imageData.forEach(function(src, i){
+      var box = document.createElement("div");
+      box.style.cssText = "position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--line)";
+      var im = document.createElement("img");
+      im.src = src; im.style.cssText = "width:100%;height:100%;object-fit:cover";
+      var x = document.createElement("button");
+      x.type = "button"; x.textContent = "\u00d7";
+      x.style.cssText = "position:absolute;top:0;right:0;border:none;background:rgba(0,0,0,.6);color:#fff;width:18px;height:18px;line-height:18px;cursor:pointer;font-size:12px";
+      x.addEventListener("click", function(){ imageData.splice(i,1); renderImgPreview(); });
+      box.appendChild(im); box.appendChild(x);
+      imgPreview.appendChild(box);
+    });
+  }
+
+  if (imgInput){
+    imgInput.addEventListener("change", function(){
+      errBox.classList.add("hidden");
+      var files = Array.prototype.slice.call(imgInput.files);
+      var room = MAX_IMAGES - imageData.length;
+      if (room <= 0){ showErr("画像は最大" + MAX_IMAGES + "枚までです。"); imgInput.value=""; return; }
+      files = files.slice(0, room);
+      Promise.all(files.map(compressImage)).then(function(results){
+        results.forEach(function(d){ if (d) imageData.push(d); });
+        renderImgPreview();
+        imgInput.value = "";
+      });
+    });
+  }
+
+  // ===== 改訂元のデータ：URL欄を＋で追加 =====
+  var addSrcUrlBtn = document.getElementById("addSrcUrl");
+  if (addSrcUrlBtn){
+    addSrcUrlBtn.addEventListener("click", function(){
+      var i = document.createElement("input");
+      i.type = "text"; i.className = "src-url";
+      i.placeholder = "ドライブフォルダのURLを記入";
+      i.style.marginBottom = "8px";
+      document.getElementById("srcUrls").appendChild(i);
+      i.focus();
+    });
+  }
+
+  // ===== 納期目安モーダル（UIのみ） =====
+  var ndModal = document.getElementById("ndModal");
+  var ndOpen = document.getElementById("ndOpen");
+  var ndClose = document.getElementById("ndClose");
+  function setNd(on){ show(ndModal, on); }
+  if (ndOpen) ndOpen.addEventListener("click", function(){ setNd(true); });
+  if (ndClose) ndClose.addEventListener("click", function(){ setNd(false); });
+  if (ndModal) ndModal.addEventListener("click", function(e){ if (e.target === ndModal) setNd(false); });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && ndModal && !ndModal.classList.contains("hidden")) setNd(false);
+  });
+
+  // ===== スケジュール感（マイルストーン行の追加・削除・収集） =====
+  var msRows = document.getElementById("msRows");
+  var addMsBtn = document.getElementById("addMs");
+  if (addMsBtn && msRows){
+    addMsBtn.addEventListener("click", function(){
+      var row = document.createElement("div");
+      row.className = "ms-row";
+      row.innerHTML =
+        '<input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">' +
+        '<input type="text" class="ms-text" placeholder="内容 / 担当者">' +
+        '<button type="button" class="ms-del" aria-label="この行を削除">×</button>';
+      msRows.appendChild(row);
+    });
+    msRows.addEventListener("click", function(e){
+      var btn = e.target.closest ? e.target.closest(".ms-del") : null;
+      if (!btn) return;
+      var rows = msRows.querySelectorAll(".ms-row");
+      if (rows.length > 1){ btn.parentNode.remove(); }
+      else { // 最後の1行は消さずに中身だけクリア
+        var r = btn.parentNode;
+        r.querySelector(".ms-date").value = "";
+        r.querySelector(".ms-text").value = "";
+      }
+    });
+  }
+  function collectSchedule(){
+    var out = [];
+    document.querySelectorAll("#msRows .ms-row").forEach(function(r){
+      var d = (r.querySelector(".ms-date") || {}).value || "";
+      var t = (r.querySelector(".ms-text") || {}).value || "";
+      d = d.trim(); t = t.trim();
+      if (d || t) out.push({ date: d, text: t });
+    });
+    return out;
+  }
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    if (sending) return;
+    errBox.classList.add("hidden");
+
+    var dept = document.getElementById("requesterDept").value.trim();
+    var name = document.getElementById("requesterName").value.trim();
+    var email = document.getElementById("requesterEmail").value.trim();
+    var title = val("title");
+    var brand = val("brand");
+    var prodTypes = collectProdTypes();
+
+    // 共通必須
+    if (!dept){ showErr("部署を選んでください。"); return; }
+    if (!name || !email){ showErr("お名前とメールを入力してください。"); return; }
+    if (!/.+@crazy\.co\.jp$/i.test(email)){ showErr("メールは @crazy.co.jp のアドレスを入力してください。"); return; }
+    if (!current){ showErr("依頼の種別を選んでください。"); return; }
+    if (!title){ showErr("案件名は必須です。"); return; }
+    // 対象ブランド・部署は新規のみ必須
+    if (current === "新規" && !brand){ showErr("対象ブランド・部署を選んでください。"); return; }
+
+    var payload = {
+      idempotencyKey: idemKey,
+      category: current,
+      title: title,
+      requesterDept: dept,
+      requesterName: name,
+      requesterEmail: email
+    };
+    if (current === "新規" && brand) payload.brand = brand;
+
+    if (current === "相談"){
+      var consult = val("consultDetail");
+      if (!consult){ showErr("相談内容は必須です。"); return; }
+      payload.consultDetail = consult;
+    } else if (current === "改訂"){
+      var srcUrls = collectSrcUrls();
+      if (srcUrls.length) payload.sourceUrls = srcUrls;
+      payload.deadline = val("deadline");
+      var rm = val("reviseManuscript");
+      if (rm) payload.reviseManuscript = rm;
+      if (imageData.length) payload.images = imageData;
+    } else {
+      // 新規
+      if (prodTypes.length === 0){ showErr("制作物の種別を1つ以上選んでください。"); return; }
+      payload.productTypes = prodTypes;
+      payload.deadline = val("deadline");
+      payload.purpose = val("purpose");
+      payload.issue = val("issue");
+      payload.target = val("target");
+      payload.overview = val("overview");
+      payload.useDate = val("useDate");
+      payload.usePlace = val("usePlace");
+      payload.outcome = val("outcome");
+      payload.afterFeeling = val("afterFeeling");
+      payload.budget = val("budget");
+      var sched = collectSchedule();
+      if (sched.length) payload.schedule = sched;
+      payload.manuscript = val("manuscript");
+      payload.prototype = val("prototype");
+      payload.reference = val("reference");
+      payload.intent = val("intentSeisaku");
+      var pr = document.getElementById("prStatus").value.trim();
+      if (pr) payload.prStatus = pr;
+      if (imageData.length) payload.images = imageData;
+    }
+
+    sending = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "送信中…";
+
+    fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+    .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+    .then(function(res){
+      if (!res.ok || !res.j || !res.j.ok){
+        var m = (res.j && res.j.error) ? res.j.error : "送信に失敗しました。時間をおいて再度お試しください。";
+        throw new Error(m);
+      }
+      // 完了画面
+      document.getElementById("formArea").classList.add("hidden");
+      var done = document.getElementById("doneCard");
+      document.getElementById("doneShare").href = res.j.shareUrl;
+      document.getElementById("doneNotion").href = res.j.notionUrl;
+      show(done, true);
+      window.scrollTo({top:0, behavior:"smooth"});
+    })
+    .catch(function(err){
+      showErr(String(err.message || err));
+      sending = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = "送信する";
+    });
+  });
+
+  document.getElementById("againBtn").addEventListener("click", function(){
+    location.reload();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# Cloudflare Worker 設定ファイル（制作依頼ツール v1）
+# 既存ツール（revision-share / project-board）と命名の系統を揃える。
+
+name = "creative-request"
+main = "src/worker.js"
+compatibility_date = "2025-06-01"
+
+# 共有HTMLの保存先(KV)。SETUP.md の手順1で取得したIDに置き換える。
+[[kv_namespaces]]
+binding = "REQUESTS"
+id = "bbc21dc5a528436e8afe3623fdd282d6"
+
+# --- 非機密の設定はここに（vars）。機密は Secrets で登録する（SETUP.md 参照） ---
+[vars]
+# 許可するフォームのオリジン（カンマ区切り可）。GitHub Pages の公開URLを入れる。
+# 空のままだと全オリジン許可（開発初期のみ）。本番前に必ず設定する。
+# 【モノレポ移行 2026-07】新オリジン crplayground を先頭に追加。旧URLは切替期間中のみ残す。
+# 反映には `npx wrangler deploy` が必要（このファイルを書き換えただけでは反映されない）。
+# 旧URL(yuki-m-15)を退役させたら、下記から削除すること。
+ALLOWED_ORIGIN = "https://crplayground.github.io,https://yuki-m-15.github.io"
+# Notion APIバージョン（通常は変更不要）
+NOTION_VERSION = "2022-06-28"
+# 共有URLを書き込むNotionのURL型プロパティ名（任意・DBに用意したら設定）
+SHARE_URL_PROP = ""
+
+# --- 機密（NOTION_TOKEN / NOTION_DB_ID / SLACK_WEBHOOK_URL）は toml に書かない ---
+# 必ず `npx wrangler secret put <名前>` で登録する（SETUP.md 手順3）。
