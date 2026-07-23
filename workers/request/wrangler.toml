@@ -20,6 +20,10 @@ id = "bbc21dc5a528436e8afe3623fdd282d6"
 ALLOWED_ORIGIN = "https://crplayground.github.io,https://yuki-m-15.github.io"
 # Notion APIバージョン（通常は変更不要）
 NOTION_VERSION = "2022-06-28"
+# 【フェーズ1】GISのOAuthクライアントID（公開情報なのでvarsでOK）。
+# GCPで発行したIDに置き換える。フォーム側 index.html の GOOGLE_CLIENT_ID と同じ値にすること。
+# 空のままだと /submit が「サーバー設定が未完了です」を返す（＝ログイン必須が常に有効）。
+GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleusercontent.com"
 # 共有URLを書き込むNotionのURL型プロパティ名（任意・DBに用意したら設定）
 SHARE_URL_PROP = ""
 

@@ -98,6 +98,18 @@
   .nd-name{font-size:14px;font-weight:700;}
   .nd-period{font-size:13.5px;font-weight:700;color:var(--blue);margin-top:2px;}
   .nd-note{font-size:12px;color:var(--sub);margin-top:4px;line-height:1.6;}
+  /* Googleログイン（依頼者） */
+  .login-lead{font-size:13px;color:var(--sub);margin:0 0 12px;line-height:1.7;}
+  .user-chip{display:flex;align-items:center;gap:12px;border:1px solid var(--line);
+    border-radius:12px;padding:10px 14px;background:#fafaf8;}
+  .user-chip img{width:36px;height:36px;border-radius:50%;background:#e3e3df;}
+  .user-meta{flex:1;min-width:0;}
+  .user-meta b{display:block;font-size:14px;}
+  .user-meta span{display:block;font-size:12px;color:var(--sub);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;}
+  .user-switch{border:1px solid var(--line);background:#fff;border-radius:8px;
+    padding:6px 10px;font-size:12px;color:var(--sub);cursor:pointer;font-family:inherit;}
+  .user-switch:hover{border-color:#bcbcb6;}
   /* スケジュール感（マイルストーン） */
   .ms-row{display:grid;grid-template-columns:150px 1fr 38px;gap:8px;margin-bottom:8px;align-items:center;}
   .ms-del{border:1px solid var(--line);background:#fff;border-radius:8px;height:40px;
@@ -108,6 +120,7 @@
     .ms-row .ms-date{grid-column:1/-1;}
   }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -125,10 +138,30 @@
   </div>
 
   <div id="formArea">
-    <!-- 依頼者（手入力：v1。将来Googleログイン自動取得に置換） -->
+    <!-- 依頼者（フェーズ1：Googleログインで名前・メールを自動取得） -->
     <div class="card">
       <p class="step-label">依頼者</p>
-      <div class="field">
+
+      <!-- 未ログイン時 -->
+      <div id="loginBox">
+        <p class="login-lead">会社のGoogleアカウント（@crazy.co.jp）でログインしてください。<br>お名前とメールアドレスは自動で取得されます。</p>
+        <div id="gsiButton"></div>
+        <p class="hint" id="loginHint"></p>
+      </div>
+
+      <!-- ログイン済み時 -->
+      <div id="userBox" class="hidden">
+        <div class="user-chip">
+          <img id="userPic" alt="" referrerpolicy="no-referrer">
+          <div class="user-meta">
+            <b id="userName"></b>
+            <span id="userEmail"></span>
+          </div>
+          <button type="button" class="user-switch" id="switchUser">別のアカウント</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:16px">
         <label class="fl">部署<span class="req">必須</span></label>
         <select id="requesterDept">
           <option value="">選択してください</option>
@@ -144,16 +177,6 @@
           <option>CC</option>
           <option>その他</option>
         </select>
-      </div>
-      <div class="two">
-        <div class="field" style="margin:0">
-          <label class="fl">お名前<span class="req">必須</span></label>
-          <input type="text" id="requesterName" placeholder="例：宮川 雄気">
-        </div>
-        <div class="field" style="margin:0">
-          <label class="fl">メール<span class="req">必須</span></label>
-          <input type="email" id="requesterEmail" placeholder="you@crazy.co.jp">
-        </div>
       </div>
     </div>
 
@@ -432,6 +455,95 @@
 <script>
   // ===== 設定 =====
   var ENDPOINT = "https://creative-request.yukimiyakawa.workers.dev/submit";
+  // GCPで発行したOAuthクライアントID（公開情報なのでここに直書きでOK）。
+  // Worker側（wrangler.toml の GOOGLE_CLIENT_ID）にも同じ値を設定すること。
+  var GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleusercontent.com";
+  var HOSTED_DOMAIN = "crazy.co.jp";
+
+  // ===== Googleログイン（GIS）=====
+  // idToken: Googleが発行する署名付きJWT。送信時にWorkerへ渡し、Worker側で署名検証する。
+  var auth = { idToken: null, payload: null };
+
+  function b64urlDecode(s){
+    s = s.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    return decodeURIComponent(Array.prototype.map.call(atob(s), function(c){
+      return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(""));
+  }
+  function parseJwtPayload(token){
+    try { return JSON.parse(b64urlDecode(token.split(".")[1])); }
+    catch(e){ return null; }
+  }
+  function authExpired(){
+    // 期限60秒前から「切れた」扱いにして、送信直前の失敗を防ぐ
+    return !auth.payload || (auth.payload.exp * 1000) < (Date.now() + 60 * 1000);
+  }
+
+  function onCredential(response){
+    var p = parseJwtPayload(response.credential);
+    if (!p){ setLoginHint("ログイン情報の読み取りに失敗しました。もう一度お試しください。"); return; }
+    var email = String(p.email || "");
+    // 画面側の先回りチェック（最終判定はWorker側の署名検証）
+    if (p.hd !== HOSTED_DOMAIN || !/@crazy\.co\.jp$/i.test(email)){
+      setLoginHint("@crazy.co.jp のアカウントでログインしてください（" + email + " は使用できません）。");
+      if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
+      return;
+    }
+    auth.idToken = response.credential;
+    auth.payload = p;
+    document.getElementById("userName").textContent = p.name || email;
+    document.getElementById("userEmail").textContent = email;
+    var pic = document.getElementById("userPic");
+    if (p.picture) { pic.src = p.picture; pic.style.display = ""; } else { pic.style.display = "none"; }
+    show(document.getElementById("loginBox"), false);
+    show(document.getElementById("userBox"), true);
+    errBox.classList.add("hidden");
+  }
+
+  function setLoginHint(msg){
+    var el = document.getElementById("loginHint");
+    el.textContent = msg || "";
+  }
+
+  function initGsi(){
+    if (!window.google || !google.accounts){ setTimeout(initGsi, 200); return; }
+    if (GOOGLE_CLIENT_ID.indexOf("PASTE_CLIENT_ID_HERE") === 0){
+      setLoginHint("⚠️ 管理者向け：GOOGLE_CLIENT_ID が未設定です（index.html の設定欄を確認）。");
+      return;
+    }
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      hd: HOSTED_DOMAIN,           // 表示ヒント（強制はWorker側で実施）
+      callback: onCredential,
+      auto_select: true,
+      itp_support: true
+    });
+    google.accounts.id.renderButton(document.getElementById("gsiButton"), {
+      type: "standard", theme: "outline", size: "large",
+      text: "signin_with", shape: "pill", logo_alignment: "left", locale: "ja"
+    });
+    google.accounts.id.prompt(); // One Tap（右上ポップアップ）
+  }
+  initGsi();
+
+  function requireLogin(){
+    // 期限切れ（約1時間）ならログインカードに戻して再ログインしてもらう
+    auth.idToken = null; auth.payload = null;
+    show(document.getElementById("userBox"), false);
+    show(document.getElementById("loginBox"), true);
+    setLoginHint("");
+    if (window.google && google.accounts) google.accounts.id.prompt();
+    document.querySelector(".card").scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  var switchBtn = document.getElementById("switchUser");
+  if (switchBtn){
+    switchBtn.addEventListener("click", function(){
+      if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
+      requireLogin();
+    });
+  }
 
   var typeBtns = document.querySelectorAll(".type-btn");
   var detailCard = document.getElementById("detailCard");
@@ -610,16 +722,14 @@
     errBox.classList.add("hidden");
 
     var dept = document.getElementById("requesterDept").value.trim();
-    var name = document.getElementById("requesterName").value.trim();
-    var email = document.getElementById("requesterEmail").value.trim();
     var title = val("title");
     var brand = val("brand");
     var prodTypes = collectProdTypes();
 
     // 共通必須
+    if (!auth.idToken){ showErr("Googleログインが必要です。上の「依頼者」欄からログインしてください。"); requireLogin(); return; }
+    if (authExpired()){ showErr("ログインの有効期限（約1時間）が切れました。お手数ですがもう一度ログインしてください。入力内容はそのまま残ります。"); requireLogin(); return; }
     if (!dept){ showErr("部署を選んでください。"); return; }
-    if (!name || !email){ showErr("お名前とメールを入力してください。"); return; }
-    if (!/.+@crazy\.co\.jp$/i.test(email)){ showErr("メールは @crazy.co.jp のアドレスを入力してください。"); return; }
     if (!current){ showErr("依頼の種別を選んでください。"); return; }
     if (!title){ showErr("案件名は必須です。"); return; }
     // 対象ブランド・部署は新規のみ必須
@@ -630,8 +740,7 @@
       category: current,
       title: title,
       requesterDept: dept,
-      requesterName: name,
-      requesterEmail: email
+      idToken: auth.idToken  // 名前・メールはWorkerがトークン検証後に取り出す（手入力廃止）
     };
     if (current === "新規" && brand) payload.brand = brand;
 
@@ -680,9 +789,10 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     })
-    .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+    .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, status:r.status, j:j}; }); })
     .then(function(res){
       if (!res.ok || !res.j || !res.j.ok){
+        if (res.j && res.j.code === "AUTH"){ requireLogin(); } // 認証エラーは再ログインを促す
         var m = (res.j && res.j.error) ? res.j.error : "送信に失敗しました。時間をおいて再度お試しください。";
         throw new Error(m);
       }

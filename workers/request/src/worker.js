@@ -23,9 +23,16 @@
 // 環境変数（Secrets / Vars）：
 //   NOTION_TOKEN      （必須）Notion インテグレーションのトークン
 //   NOTION_DB_ID      （必須）登録先DBの database_id
+//   GOOGLE_CLIENT_ID  （必須・フェーズ1）GISのOAuthクライアントID。IDトークンの aud 検証に使用
 //   SLACK_WEBHOOK_URL （任意）受付chのIncoming Webhook。未設定ならSlack投稿はスキップ
 //   ALLOWED_ORIGIN    （任意）許可するフォームのオリジン。カンマ区切り可。未設定なら全許可
 //   NOTION_VERSION    （任意）Notion APIバージョン。未設定なら "2022-06-28"
+//
+// フェーズ1（Googleログイン・2026-07）：
+//   フォームは名前・メールを手入力せず、GISのIDトークン（JWT）を idToken として送る。
+//   Worker は Google の公開鍵（JWKS）で署名を検証し、iss / aud / exp / hd=crazy.co.jp /
+//   email_verified を確認したうえで、名前・メールをトークンから取り出して使う。
+//   クライアントが送ってきた requesterName / requesterEmail は一切信用しない。
 // ============================================================
 
 // ---- 種別ごとの「長文与件」項目（フォームのname → 見出しラベル） ----
@@ -143,6 +150,98 @@ function asProductTypeList(v) {
   if (Array.isArray(v)) return v.map((x) => String(x).trim()).filter(Boolean);
   if (typeof v === "string" && v.trim()) return v.split(",").map((x) => x.trim()).filter(Boolean);
   return [];
+}
+
+// ---- GoogleログインのIDトークン検証（フェーズ1） -----------------
+// GIS が発行する IDトークン（RS256署名のJWT）を検証する。
+//   1. Google の公開鍵一覧（JWKS）を取得（メモリに約1時間キャッシュ）
+//   2. WebCrypto で署名を検証
+//   3. iss / aud / exp / hd / email_verified をチェック
+// 検証に通ったときだけ { name, email } を返す。失敗は AuthError を投げる。
+
+const GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
+const ALLOWED_HD = "crazy.co.jp";
+let jwksCache = { keys: null, fetchedAt: 0 }; // Workerインスタンス単位のキャッシュ
+
+class AuthError extends Error {}
+
+function b64urlToBytes(s) {
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  const bin = atob(s);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function b64urlToJson(s) {
+  return JSON.parse(new TextDecoder().decode(b64urlToBytes(s)));
+}
+
+async function getGoogleJwks() {
+  const ONE_HOUR = 60 * 60 * 1000;
+  if (jwksCache.keys && Date.now() - jwksCache.fetchedAt < ONE_HOUR) return jwksCache.keys;
+  const res = await fetch(GOOGLE_JWKS_URL);
+  if (!res.ok) throw new AuthError("Googleの公開鍵の取得に失敗しました");
+  const body = await res.json();
+  jwksCache = { keys: body.keys || [], fetchedAt: Date.now() };
+  return jwksCache.keys;
+}
+
+async function verifyGoogleIdToken(idToken, env) {
+  if (typeof idToken !== "string" || idToken.split(".").length !== 3) {
+    throw new AuthError("ログイン情報がありません。Googleでログインしてから送信してください");
+  }
+  const clientId = (env.GOOGLE_CLIENT_ID || "").trim();
+  if (!clientId) throw new Error("サーバー設定が未完了です（GOOGLE_CLIENT_ID）");
+
+  const [headB64, payloadB64, sigB64] = idToken.split(".");
+  let header, payload;
+  try {
+    header = b64urlToJson(headB64);
+    payload = b64urlToJson(payloadB64);
+  } catch {
+    throw new AuthError("ログイン情報の形式が不正です");
+  }
+  if (header.alg !== "RS256") throw new AuthError("ログイン情報の形式が不正です（alg）");
+
+  // 署名検証（kidが見つからない場合は鍵ローテーション直後の可能性→キャッシュを捨てて1回だけ再取得）
+  let keys = await getGoogleJwks();
+  let jwk = keys.find((k) => k.kid === header.kid);
+  if (!jwk) {
+    jwksCache = { keys: null, fetchedAt: 0 };
+    keys = await getGoogleJwks();
+    jwk = keys.find((k) => k.kid === header.kid);
+  }
+  if (!jwk) throw new AuthError("ログインの検証に失敗しました。もう一度ログインしてください");
+
+  const key = await crypto.subtle.importKey(
+    "jwk", jwk,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false, ["verify"]
+  );
+  const valid = await crypto.subtle.verify(
+    "RSASSA-PKCS1-v1_5", key,
+    b64urlToBytes(sigB64),
+    new TextEncoder().encode(headB64 + "." + payloadB64)
+  );
+  if (!valid) throw new AuthError("ログインの検証に失敗しました。もう一度ログインしてください");
+
+  // クレーム検証
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.iss !== "https://accounts.google.com" && payload.iss !== "accounts.google.com") {
+    throw new AuthError("ログインの検証に失敗しました（発行元）");
+  }
+  if (payload.aud !== clientId) throw new AuthError("ログインの検証に失敗しました（対象クライアント）");
+  if (typeof payload.exp !== "number" || payload.exp < now - 60) {
+    throw new AuthError("ログインの有効期限が切れました。もう一度ログインしてください");
+  }
+  const email = String(payload.email || "");
+  if (payload.email_verified !== true) throw new AuthError("メールアドレスが未確認のアカウントです");
+  if (payload.hd !== ALLOWED_HD || !/@crazy\.co\.jp$/i.test(email)) {
+    throw new AuthError("@crazy.co.jp のアカウントでログインしてください");
+  }
+  return { name: String(payload.name || "") || email, email };
 }
 
 // ---- 共有HTMLの生成 --------------------------------------------
@@ -386,6 +485,19 @@ export default {
       }
       if (!data || !data.title || !data.category) {
         return json({ error: "案件名・依頼カテゴリは必須です" }, 400, request, env);
+      }
+
+      // Googleログイン検証（フェーズ1）：名前・メールは検証済みトークンからのみ採用する
+      try {
+        const user = await verifyGoogleIdToken(data.idToken, env);
+        data.requesterName = user.name;
+        data.requesterEmail = user.email;
+        delete data.idToken; // 以降の処理・ログにトークンを残さない
+      } catch (e) {
+        if (e instanceof AuthError) {
+          return json({ error: String(e.message || e), code: "AUTH" }, 403, request, env);
+        }
+        return json({ error: String(e.message || e) }, 500, request, env);
       }
 
       // 冪等キー
