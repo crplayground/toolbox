@@ -26,6 +26,16 @@ NOTION_VERSION = "2022-06-28"
 GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleusercontent.com"
 # 共有URLを書き込むNotionのURL型プロパティ名（任意・DBに用意したら設定）
 SHARE_URL_PROP = ""
+# 【フェーズ2】フォームの公開URL。共有ページ・完了画面の「編集する」ボタン(?edit=<id>)に使う。
+# 未設定なら worker.js の DEFAULT_FORM_URL（crplayground の公開URL）にフォールバックする。
+FORM_URL = "https://crplayground.github.io/toolbox/request/"
 
 # --- 機密（NOTION_TOKEN / NOTION_DB_ID / SLACK_WEBHOOK_URL）は toml に書かない ---
 # 必ず `npx wrangler secret put <名前>` で登録する（SETUP.md 手順3）。
+#
+# 【フェーズ2】CREATIVE_EDITOR_EMAILS（再編集を許可するメール・カンマ区切り）
+#   依頼者本人（保存メール）は自動で許可。ここには「クリ室メンバー」の追加分を入れる。
+#   メールは機密ではないが公開リポにコミットしたくないため vars ではなく Secret 推奨：
+#     npx wrangler secret put CREATIVE_EDITOR_EMAILS
+#     （入力例）yukimiyakawa@crazy.co.jp,member2@crazy.co.jp
+#   未設定でも動作する（その場合は「依頼者本人のみ」が編集可能）。
