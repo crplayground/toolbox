@@ -73,8 +73,7 @@
   .done p{color:var(--sub);font-size:13.5px;margin:0 0 18px;}
   .done a.btn{display:block;text-decoration:none;border-radius:10px;padding:12px;font-size:14px;
     font-weight:600;margin:8px 0;}
-  .done a.share{background:#eef3ff;color:var(--blue);border:1px solid #d3e0fb;}
-  .done a.notion{background:#f4f4f2;color:var(--ink);border:1px solid var(--line);}
+  .done a.notion{background:#1a1a1a;color:#fff;border:1px solid #1a1a1a;}
   .done .again{margin-top:18px;background:none;border:none;color:var(--sub);font-size:12.5px;
     text-decoration:underline;cursor:pointer;font-family:inherit;}
   /* 納期目安を確認ボタン */
@@ -127,19 +126,13 @@
   <h1>REQUEST</h1>
   <p class="lead" id="leadText">クリ室への制作依頼フォームです。まず依頼の種別を選んでください。</p>
 
-  <!-- 編集モードのお知らせ（?edit=<id> のときだけ表示） -->
-  <div class="card hidden" id="editBanner" style="border-color:#d3e0fb;background:#eef3ff;padding:14px 18px;">
-    <p style="margin:0;font-size:13px;font-weight:600;color:#2d6cdf" id="editBannerText">✏️ 編集モード</p>
-  </div>
-
   <!-- 完了画面（送信後に表示） -->
   <div class="card done hidden" id="doneCard">
     <div class="ic">✅</div>
     <h2 id="doneTitle">依頼を受け付けました</h2>
-    <p id="doneMsg">共有ページが発行され、Notionに登録されました。<br>進行は受付チャンネルのスレッドで行います。</p>
-    <a class="btn share" id="doneShare" href="#" target="_blank">📄 共有ページを開く</a>
-    <a class="btn notion" id="doneNotion" href="#" target="_blank">🗂 Notionで見る</a>
-    <a class="btn notion hidden" id="doneEdit" href="#">✏️ もう一度編集する</a>
+    <p id="doneMsg">Notionに依頼ページが作成されました。<br>進行は受付チャンネルのスレッドで行います。<br>内容の追記・修正はNotionページ上で直接どうぞ。</p>
+    <a class="btn notion" id="doneNotion" href="#" target="_blank">🗂 Notionページを開く</a>
+    <p class="hint" style="text-align:left">※初めて依頼した方は、ページを開くと「アクセスをリクエスト」と表示される場合があります。リクエストを送るとクリ室が承認しますので、少しだけお待ちください。</p>
     <button type="button" class="again" id="againBtn">続けて別の依頼を出す</button>
   </div>
 
@@ -354,7 +347,7 @@
         <div class="field" data-types="新規,改訂">
           <label class="fl">参考画像を添付<span class="opt">任意・最大10枚</span></label>
           <input type="file" id="images" accept="image/*" multiple>
-          <p class="hint">参考画像やラフなど。送信時に自動で軽量化され、共有ページに表示されます。</p>
+          <p class="hint">参考画像やラフなど。送信時に自動で軽量化され、Notionの依頼ページに掲載されます。</p>
           <div id="imgPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
         </div>
 
@@ -466,12 +459,6 @@
   var GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleusercontent.com";
   var HOSTED_DOMAIN = "crazy.co.jp";
 
-  // ===== 再編集モード（フェーズ2）=====
-  // ?edit=<id> が付いていれば「編集モード」。ログイン後に /form/<id> から復元してプリフィルする。
-  var EDIT_ID = (new URLSearchParams(location.search)).get("edit") || "";
-  var WORKER_BASE = ENDPOINT.replace(/\/submit$/, ""); // Worker のベースURL（/form/<id> に使う）
-  var editLoaded = false;
-
   // ===== Googleログイン（GIS）=====
   // idToken: Googleが発行する署名付きJWT。送信時にWorkerへ渡し、Worker側で署名検証する。
   var auth = { idToken: null, payload: null };
@@ -511,8 +498,6 @@
     show(document.getElementById("loginBox"), false);
     show(document.getElementById("userBox"), true);
     errBox.classList.add("hidden");
-    // 編集モードなら、ログイン完了後に保存済みの内容を読み込む
-    if (EDIT_ID) loadForEdit();
   }
 
   function setLoginHint(msg){
@@ -608,7 +593,7 @@
     errBox.scrollIntoView({behavior:"smooth", block:"center"});
   }
 
-  // ===== 画像添付（送信時に共有ページへ埋め込み・自動軽量化） =====
+  // ===== 画像添付（送信時にNotionページへ掲載・自動軽量化） =====
   var MAX_IMAGES = 10;
   var imageData = [];
   var imgInput = document.getElementById("images");
@@ -732,109 +717,6 @@
     return out;
   }
 
-  // ===== 編集モード：保存済み内容の読み込みとプリフィル（フェーズ2） =====
-  function showEditBanner(text, isErr){
-    var b = document.getElementById("editBanner");
-    var t = document.getElementById("editBannerText");
-    if (!b) return;
-    b.classList.remove("hidden");
-    if (t){ t.textContent = text; }
-    b.style.borderColor = isErr ? "#f5c6c2" : "#d3e0fb";
-    b.style.background = isErr ? "#fdecea" : "#eef3ff";
-    if (t) t.style.color = isErr ? "#a33027" : "#2d6cdf";
-  }
-  function setFieldValue(name, v){
-    var el = form.querySelector('[name="'+name+'"]');
-    if (el) el.value = (v==null ? "" : v);
-  }
-  function rebuildSchedule(list){
-    if (!msRows) return;
-    msRows.innerHTML = "";
-    var arr = (list && list.length) ? list : [{date:"",text:""}];
-    arr.forEach(function(m){
-      var row = document.createElement("div");
-      row.className = "ms-row";
-      row.innerHTML =
-        '<input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">' +
-        '<input type="text" class="ms-text" placeholder="内容 / 担当者">' +
-        '<button type="button" class="ms-del" aria-label="この行を削除">×</button>';
-      msRows.appendChild(row);
-      row.querySelector(".ms-date").value = (m && m.date) || "";
-      row.querySelector(".ms-text").value = (m && m.text) || "";
-    });
-  }
-  function rebuildSrcUrls(list){
-    var box = document.getElementById("srcUrls");
-    if (!box) return;
-    box.innerHTML = "";
-    var arr = (list && list.length) ? list : [""];
-    arr.forEach(function(u){
-      var i = document.createElement("input");
-      i.type = "text"; i.className = "src-url";
-      i.placeholder = "ドライブフォルダのURLを記入";
-      i.style.marginBottom = "8px";
-      i.value = u || "";
-      box.appendChild(i);
-    });
-  }
-  function checkProdTypes(list){
-    var set = {};
-    (list||[]).forEach(function(v){ set[v] = true; });
-    document.querySelectorAll("#prodTypes input").forEach(function(c){ c.checked = !!set[c.value]; });
-  }
-  function prefillForm(d){
-    if (!d) return;
-    if (d.category) applyType(d.category, false);           // 種別（分岐を展開）
-    if (d.requesterDept) document.getElementById("requesterDept").value = d.requesterDept;
-    setFieldValue("title", d.title);
-    setFieldValue("brand", d.brand);
-    checkProdTypes(d.productTypes);
-    setFieldValue("deadline", d.deadline);
-    setFieldValue("purpose", d.purpose);
-    setFieldValue("issue", d.issue);
-    setFieldValue("target", d.target);
-    setFieldValue("overview", d.overview);
-    setFieldValue("useDate", d.useDate);
-    setFieldValue("usePlace", d.usePlace);
-    setFieldValue("outcome", d.outcome);
-    setFieldValue("afterFeeling", d.afterFeeling);
-    setFieldValue("budget", d.budget);
-    rebuildSchedule(d.schedule);
-    setFieldValue("manuscript", d.manuscript);
-    setFieldValue("prototype", d.prototype);
-    setFieldValue("reference", d.reference);
-    setFieldValue("intentSeisaku", d.intent);
-    if (d.prStatus) document.getElementById("prStatus").value = d.prStatus;
-    rebuildSrcUrls(d.sourceUrls);
-    setFieldValue("reviseManuscript", d.reviseManuscript);
-    imageData = Array.isArray(d.images) ? d.images.slice(0, MAX_IMAGES) : [];
-    renderImgPreview();
-    submitBtn.textContent = "更新する";
-  }
-  function loadForEdit(){
-    if (!EDIT_ID || editLoaded || !auth.idToken) return;
-    showEditBanner("✏️ 編集モード：既存の依頼を読み込んでいます…", false);
-    fetch(WORKER_BASE + "/form/" + encodeURIComponent(EDIT_ID), {
-      headers: { "Authorization": "Bearer " + auth.idToken }
-    })
-    .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, status:r.status, j:j}; }); })
-    .then(function(res){
-      if (!res.ok || !res.j || !res.j.ok){
-        var code = res.j && res.j.code;
-        if (code === "AUTH"){ showEditBanner("ログインの有効期限が切れました。もう一度ログインしてください。", true); requireLogin(); return; }
-        if (code === "FORBIDDEN"){ showEditBanner("この依頼を編集する権限がありません（依頼者本人またはクリ室メンバーのみ）。", true); return; }
-        if (res.status === 404 || code === "NOTFOUND"){ showEditBanner("編集対象の依頼が見つかりませんでした。URLをご確認ください。", true); return; }
-        showEditBanner((res.j && res.j.error) || "読み込みに失敗しました。", true);
-        return;
-      }
-      editLoaded = true;
-      prefillForm(res.j.data || {});
-      var who = res.j.requesterName || res.j.requesterEmail || "";
-      showEditBanner("✏️ 編集モード：この依頼を上書き更新します（共有URLは変わりません）。依頼者：" + who, false);
-    })
-    .catch(function(err){ showEditBanner("読み込みエラー：" + (err.message || err), true); });
-  }
-
   form.addEventListener("submit", function(e){
     e.preventDefault();
     if (sending) return;
@@ -861,7 +743,6 @@
       requesterDept: dept,
       idToken: auth.idToken  // 名前・メールはWorkerがトークン検証後に取り出す（手入力廃止）
     };
-    if (EDIT_ID) payload.editId = EDIT_ID;  // 編集モード：Workerが同一IDを上書き更新する
     if (current === "新規" && brand) payload.brand = brand;
 
     if (current === "相談"){
@@ -916,23 +797,10 @@
         var m = (res.j && res.j.error) ? res.j.error : "送信に失敗しました。時間をおいて再度お試しください。";
         throw new Error(m);
       }
-      // 完了画面
+      // 完了画面（フェーズ3：Notionページが唯一の正本）
       document.getElementById("formArea").classList.add("hidden");
-      document.getElementById("editBanner").classList.add("hidden");
       var done = document.getElementById("doneCard");
-      document.getElementById("doneShare").href = res.j.shareUrl;
       document.getElementById("doneNotion").href = res.j.notionUrl || "#";
-      // 編集モードで更新したときは文言を差し替える
-      if (res.j.edited){
-        document.getElementById("doneTitle").textContent = "依頼を更新しました";
-        document.getElementById("doneMsg").innerHTML = "共有ページ（同じURL）とNotionを更新しました。<br>Notion本文には更新履歴（更新版）が追記されます。";
-      }
-      // もう一度編集するリンク（今作成／更新した依頼を対象に）
-      var de = document.getElementById("doneEdit");
-      if (de && res.j.id){
-        de.href = location.pathname + "?edit=" + encodeURIComponent(res.j.id);
-        show(de, true);
-      }
       show(done, true);
       window.scrollTo({top:0, behavior:"smooth"});
     })
@@ -947,15 +815,6 @@
   document.getElementById("againBtn").addEventListener("click", function(){
     location.reload();
   });
-
-  // 編集モードの初期表示（ログイン前）：バナーとリード文を切り替える
-  if (EDIT_ID){
-    var lead = document.getElementById("leadText");
-    if (lead) lead.textContent = "既存の依頼を編集します。ログインすると内容が自動で読み込まれます。";
-    showEditBanner("✏️ 編集モード：ログインすると内容が読み込まれます。", false);
-    // すでにログイン済み（One Tap自動選択など）なら即読み込み
-    if (auth.idToken) loadForEdit();
-  }
 </script>
 </body>
 </html>

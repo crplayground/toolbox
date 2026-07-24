@@ -1,11 +1,12 @@
-# Cloudflare Worker 設定ファイル（制作依頼ツール v1）
+# Cloudflare Worker 設定ファイル（制作依頼ツール REQUEST）
 # 既存ツール（revision-share / project-board）と命名の系統を揃える。
 
 name = "creative-request"
 main = "src/worker.js"
 compatibility_date = "2025-06-01"
 
-# 共有HTMLの保存先(KV)。SETUP.md の手順1で取得したIDに置き換える。
+# KVストア。フェーズ3以降の用途＝冪等キー(idem:)・既知依頼者リスト(guest:)。
+# form:/html: はフェーズ2以前の残置データ（読み出しのみ・TTLで自然消滅）。
 [[kv_namespaces]]
 binding = "REQUESTS"
 id = "bbc21dc5a528436e8afe3623fdd282d6"
@@ -13,29 +14,24 @@ id = "bbc21dc5a528436e8afe3623fdd282d6"
 # --- 非機密の設定はここに（vars）。機密は Secrets で登録する（SETUP.md 参照） ---
 [vars]
 # 許可するフォームのオリジン（カンマ区切り可）。GitHub Pages の公開URLを入れる。
-# 空のままだと全オリジン許可（開発初期のみ）。本番前に必ず設定する。
-# 【モノレポ移行 2026-07】新オリジン crplayground を先頭に追加。旧URLは切替期間中のみ残す。
+# 【フェーズ3 2026-07-24】旧オリジン yuki-m-15.github.io を退役（T4）。現行は crplayground のみ。
 # 反映には `npx wrangler deploy` が必要（このファイルを書き換えただけでは反映されない）。
-# 旧URL(yuki-m-15)を退役させたら、下記から削除すること。
-ALLOWED_ORIGIN = "https://crplayground.github.io,https://yuki-m-15.github.io"
+ALLOWED_ORIGIN = "https://crplayground.github.io"
 # Notion APIバージョン（通常は変更不要）
 NOTION_VERSION = "2022-06-28"
 # 【フェーズ1】GISのOAuthクライアントID（公開情報なのでvarsでOK）。
-# GCPで発行したIDに置き換える。フォーム側 index.html の GOOGLE_CLIENT_ID と同じ値にすること。
+# フォーム側 index.html の GOOGLE_CLIENT_ID と同じ値にすること。
 # 空のままだと /submit が「サーバー設定が未完了です」を返す（＝ログイン必須が常に有効）。
 GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleusercontent.com"
-# 共有URLを書き込むNotionのURL型プロパティ名（任意・DBに用意したら設定）
-SHARE_URL_PROP = ""
-# 【フェーズ2】フォームの公開URL。共有ページ・完了画面の「編集する」ボタン(?edit=<id>)に使う。
-# 未設定なら worker.js の DEFAULT_FORM_URL（crplayground の公開URL）にフォールバックする。
-FORM_URL = "https://crplayground.github.io/toolbox/request/"
 
 # --- 機密（NOTION_TOKEN / NOTION_DB_ID / SLACK_WEBHOOK_URL）は toml に書かない ---
 # 必ず `npx wrangler secret put <名前>` で登録する（SETUP.md 手順3）。
 #
-# 【フェーズ2】CREATIVE_EDITOR_EMAILS（再編集を許可するメール・カンマ区切り）
-#   依頼者本人（保存メール）は自動で許可。ここには「クリ室メンバー」の追加分を入れる。
-#   メールは機密ではないが公開リポにコミットしたくないため vars ではなく Secret 推奨：
-#     npx wrangler secret put CREATIVE_EDITOR_EMAILS
-#     （入力例）yukimiyakawa@crazy.co.jp,member2@crazy.co.jp
-#   未設定でも動作する（その場合は「依頼者本人のみ」が編集可能）。
+# 【フェーズ3】SLACK_WEBHOOK_URL はT0（前提タスク）で登録する。
+#   未登録の間はSlack投稿がスキップされ、初依頼者の「既知マーク」も付かない
+#   （＝登録後の最初の送信からきちんと通知される設計）。
+#
+# 【フェーズ3で不要になったもの】
+#   FORM_URL / SHARE_URL_PROP（vars）… 共有URL廃止に伴い削除済み
+#   CREATIVE_EDITOR_EMAILS（Secret）… 再編集機構の撤去で未使用。
+#     登録済みなら `npx wrangler secret delete CREATIVE_EDITOR_EMAILS` で消してよい（残っていても無害）

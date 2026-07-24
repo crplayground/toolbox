@@ -1,54 +1,53 @@
 // ============================================================
-// creative-request Worker（制作依頼ツール v1 の受け口）
+// creative-request Worker（制作依頼ツール／フェーズ3: Notion一本化）
 // ------------------------------------------------------------
 // 役割：依頼フォーム（静的HTML）から送られた1件の依頼を、サーバー側で一括処理する。
-//   ① KVに「共有HTML」を保存 → 社内共有URL /v/<id> を発行
-//   ② Notion DB に最小プロパティ＋共有URL を登録し、長文与件はページ本文へ転記
-//   ③ Slack 受付ch（#83_creative_クリ室依頼受付）へ Incoming Webhook で投稿
+//   ① Notion DB にページを作成（プロパティ＋本文全文＋参考画像）＝唯一の正本
+//   ② Slack 受付ch（#83_creative_クリ室依頼受付）へ Incoming Webhook で投稿
+//      （初依頼者なら「🆕要ゲスト招待」を付記）
 //
-// 設問は「v1-notionプロパティ一覧-修正_2026-06-14.csv」に準拠（2026-06-15 改訂）。
-//   - Notionプロパティ：案件名/依頼カテゴリ/対象ブランド・部署/制作物の種別/依頼者部署/依頼者名/依頼者メール/希望納期/データ格納先（共有URLは本文calloutのみ）
-//   - 長文与件（与件整理・制作内容・相談）はKVのHTML共有ページ＋Notionページ本文へ
+// フェーズ3（Notion一本化・2026-07）：
+//   - 共有URL（/v/<id>）の発行を廃止。依頼の正本は Notion ページただ1つ。
+//   - フェーズ2の再編集機構（form:<id>復元・?edit・更新版追記）を撤去。
+//     内容の修正は Notion ページ上で直接行う（履歴は Notion のページ履歴が担う）。
+//   - 参考画像は Notion File Upload API でページ本文に埋め込む（共有HTML廃止の代替）。
+//     アップロードに失敗した分は本文に「⚠️失敗N枚」と記録し、送信自体は成功させる。
+//   - 初依頼者検知：依頼者メールを KV の既知リスト guest:<email> と照合し、
+//     未知なら Slack 投稿に「🆕要ゲスト招待」を付記する。
+//     既知マークは「Slack投稿が実際に成功したときだけ」付ける（通知の取りこぼし防止。
+//     見落としても Notion 標準の「アクセスのリクエスト」承認が二層目の安全網になる）。
+//   - 移行措置：旧 /v/<id> は form:<id>（フェーズ2の残置データ・TTLで自然消滅）が
+//     残っていれば notionUrl へ302リダイレクト。無ければ案内ページを表示する。
 //
-// 設計の肝（BRIEF.md 3章・5章）：
-//   - 鍵はブラウザに置かない。Notionトークン／Slack Webhook URL は Worker環境変数で保持。
-//   - 二重送信は冪等キー（idempotencyKey）で防止。
-//   - POST は ALLOWED_ORIGIN で発信元を制限する。
-//
-// エンドポイント：
-//   POST /submit    … フォーム送信。新規は作成、editId 付きは既存依頼の上書き更新。
-//                      { ok, id, shareUrl, notionUrl, slackPosted, edited } を返す
-//   GET  /form/<id> … 【フェーズ2】再編集用に保存済みフォームJSONを返す（要ログイン・権限判定）
-//   GET  /v/<id>    … 保存した共有HTMLを表示（v1は閲覧制限なし）
-//   GET  /          … 稼働確認
-//
-// 環境変数（Secrets / Vars）：
-//   NOTION_TOKEN           （必須）Notion インテグレーションのトークン
-//   NOTION_DB_ID           （必須）登録先DBの database_id
-//   GOOGLE_CLIENT_ID       （必須・フェーズ1）GISのOAuthクライアントID。IDトークンの aud 検証に使用
-//   SLACK_WEBHOOK_URL      （任意）受付chのIncoming Webhook。未設定ならSlack投稿はスキップ
-//   ALLOWED_ORIGIN         （任意）許可するフォームのオリジン。カンマ区切り可。未設定なら全許可
-//   NOTION_VERSION         （任意）Notion APIバージョン。未設定なら "2022-06-28"
-//   FORM_URL               （任意・フェーズ2）フォームの公開URL。共有ページの編集ボタンに使う
-//   CREATIVE_EDITOR_EMAILS （任意・フェーズ2）依頼者本人に加えて再編集を許可するメール（カンマ区切り）。
-//                          クリ室メンバーを入れる。機密ではないが Secret 管理推奨（公開リポ回避）
-//
-// フェーズ2（再編集・2026-07）：
-//   /submit 時に「共有HTML」に加えて「フォームJSON」も form:<id> としてKVに保存する。
-//   これを /form/<id> で復元してフォームにプリフィルし、同じIDで上書き更新（共有URLは不変）。
-//   編集できるのは「依頼者本人（保存メールと一致）＋ CREATIVE_EDITOR_EMAILS の許可メール」。
-//   依頼者名・メールは原本を保持（クリ室が代理編集しても依頼者はすり替わらない）。
-//   Notion はプロパティをPATCH更新し、本文は上書きせず「🔄 更新版」を追記する（事故リスク回避）。
-//
-// フェーズ1（Googleログイン・2026-07）：
+// フェーズ1（Googleログイン・継続）：
 //   フォームは名前・メールを手入力せず、GISのIDトークン（JWT）を idToken として送る。
 //   Worker は Google の公開鍵（JWKS）で署名を検証し、iss / aud / exp / hd=crazy.co.jp /
 //   email_verified を確認したうえで、名前・メールをトークンから取り出して使う。
 //   クライアントが送ってきた requesterName / requesterEmail は一切信用しない。
+//
+// エンドポイント：
+//   POST /submit    … フォーム送信。{ ok, notionUrl, notionPageId, slackPosted, firstRequest } を返す
+//   GET  /v/<id>    … 【移行措置】Notionページへ302リダイレクト（記録が無い旧依頼は案内ページ）
+//   GET  /form/<id> … 【廃止】410 を返す（開きっぱなしの旧編集画面への案内用）
+//   GET  /          … 稼働確認
+//
+// 環境変数（Secrets / Vars）：
+//   NOTION_TOKEN      （必須）Notion インテグレーションのトークン
+//   NOTION_DB_ID      （必須）登録先DBの database_id
+//   GOOGLE_CLIENT_ID  （必須）GISのOAuthクライアントID。IDトークンの aud 検証に使用
+//   SLACK_WEBHOOK_URL （任意）受付chのIncoming Webhook。未設定ならSlack投稿はスキップ
+//                      ※未設定の間は初依頼者の「既知マーク」も付けない（通知が飛ばないため）
+//   ALLOWED_ORIGIN    （任意）許可するフォームのオリジン。カンマ区切り可。未設定なら全許可
+//   NOTION_VERSION    （任意）Notion APIバージョン。未設定なら "2022-06-28"
+//
+// KVキー（binding=REQUESTS）：
+//   idem:<key>     冪等キー（二重送信防止・7日保持）
+//   guest:<email>  既知依頼者リスト（恒久保存・フェーズ3新設）
+//   form:<id> / html:<id>  フェーズ2以前の残置データ（新規保存はしない。TTLで自然消滅）
 // ============================================================
 
 // ---- 種別ごとの「長文与件」項目（フォームのname → 見出しラベル） ----
-// 共有HTML／Notion本文の見出し構成に使う。順序＝表示順。
+// Notion本文の見出し構成に使う。順序＝表示順。
 const SEC_YOKEN = [
   ["purpose", "依頼の目的"],
   ["issue", "現状の課題"],
@@ -86,35 +85,11 @@ function sectionsFor(category) {
 
 const CORS_BASE = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  // フェーズ2：/form/<id> は Authorization ヘッダ（Bearer IDトークン）を使うため許可に追加
+  // Authorization は廃止済みの /form/<id>（410案内）へ旧画面が届くように残している
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
 // ---- 小物ユーティリティ ----------------------------------------
-
-function makeId() {
-  const bytes = crypto.getRandomValues(new Uint8Array(12));
-  return [...bytes].map((b) => b.toString(36).padStart(2, "0")).join("").slice(0, 16);
-}
-
-// フェーズ2：フォームJSONの保存・読み出し（再編集の元データ）。1年保持。
-const FORM_TTL = 60 * 60 * 24 * 365;
-async function saveFormRecord(env, id, record) {
-  await env.REQUESTS.put("form:" + id, JSON.stringify(record), { expirationTtl: FORM_TTL });
-}
-async function loadFormRecord(env, id) {
-  const raw = await env.REQUESTS.get("form:" + id);
-  if (raw === null) return null;
-  try { return JSON.parse(raw); } catch { return null; }
-}
-
-// フェーズ2：フォームの編集URL（?edit=<id>）を作る。FORM_URL 未設定時は既定の公開URLを使う。
-const DEFAULT_FORM_URL = "https://crplayground.github.io/toolbox/request/";
-function buildEditUrl(env, id) {
-  let base = (env.FORM_URL || DEFAULT_FORM_URL).trim().split("#")[0];
-  const sep = base.indexOf("?") === -1 ? "?" : "&";
-  return base + sep + "edit=" + encodeURIComponent(id);
-}
 
 function resolveCorsOrigin(request, env) {
   const allow = (env.ALLOWED_ORIGIN || "").trim();
@@ -142,14 +117,6 @@ function htmlResponse(html, status = 200) {
   });
 }
 
-function esc(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 function isAllowedOrigin(request, env) {
   const allow = (env.ALLOWED_ORIGIN || "").trim();
   if (!allow) return true; // 未設定＝制限なし（開発初期）
@@ -158,14 +125,17 @@ function isAllowedOrigin(request, env) {
   return list.includes(origin);
 }
 
-// 添付画像（data:image/ のみ許可・最大10枚）
+// 添付画像（安全な画像data URLのみ許可・最大10枚）
+// セキュリティ：MIMEとbase64本体まで厳密に検証し、スクリプト実行可能な svg+xml は許可しない。
+// フォームは image/jpeg base64 のみ生成する。
+const SAFE_IMAGE_RE = /^data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
 function asImageList(v) {
   if (!Array.isArray(v)) return [];
-  return v.filter((s) => typeof s === "string" && /^data:image\//.test(s)).slice(0, 10);
+  return v.filter((s) => typeof s === "string" && SAFE_IMAGE_RE.test(s)).slice(0, 10);
 }
 
 // スケジュール感（マイルストーン）：[{date, text}] を整形。最大20件。
-// ※Notionプロパティには入れず、共有HTML／Notion本文にのみ反映する。
+// ※Notionプロパティには入れず、ページ本文にのみ反映する。
 function asScheduleList(v) {
   if (!Array.isArray(v)) return [];
   return v
@@ -276,167 +246,72 @@ async function verifyGoogleIdToken(idToken, env) {
   return { name: String(payload.name || "") || email, email };
 }
 
-// Authorization: Bearer <idToken> を取り出す（/form/<id> の認証用）
-function bearerToken(request) {
-  const h = request.headers.get("Authorization") || request.headers.get("authorization") || "";
-  const m = /^Bearer\s+(.+)$/i.exec(h.trim());
-  return m ? m[1].trim() : "";
+// ---- 既知依頼者リスト（フェーズ3・ゲスト運用） -------------------
+// KV guest:<email> に「一度でも依頼したことがある人」を記録する。
+// 未知の人＝初依頼者。Slack投稿に「🆕要ゲスト招待」を付記して宮川へ知らせる。
+// 招待そのものは Notion に招待APIが無いため手動（DB単位・1人生涯1回で収束）。
+
+function normEmail(v) {
+  return String(v == null ? "" : v).trim().toLowerCase();
+}
+function guestKey(email) {
+  const e = normEmail(email);
+  return e ? "guest:" + e : "";
+}
+async function isKnownGuest(env, email) {
+  const k = guestKey(email);
+  if (!k) return true; // メール不明は「通知不要」扱い（通常は起こらない）
+  return (await env.REQUESTS.get(k)) !== null;
+}
+async function markGuestKnown(env, email, name) {
+  const k = guestKey(email);
+  if (!k) return;
+  // 恒久保存（TTLなし）。値は運用確認用のメモ程度
+  await env.REQUESTS.put(k, JSON.stringify({
+    email: normEmail(email),
+    name: name || "",
+    firstSeenAt: Date.now(),
+  }));
 }
 
-// ---- 再編集の権限（フェーズ2） --------------------------------
-// 許可されるのは「依頼者本人（保存メールと一致）」＋「CREATIVE_EDITOR_EMAILS の許可メール」。
-function editorEmailSet(env) {
-  return new Set(
-    (env.CREATIVE_EDITOR_EMAILS || "")
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean)
-  );
-}
-function canEdit(userEmail, ownerEmail, env) {
-  const u = String(userEmail || "").trim().toLowerCase();
-  if (!u) return false;
-  if (u === String(ownerEmail || "").trim().toLowerCase()) return true; // 依頼者本人
-  return editorEmailSet(env).has(u); // クリ室メンバー
+// ---- 移行措置（フェーズ3）：旧 /v/<id> の行き先 ------------------
+// フェーズ2までに保存された form:<id>（フォームJSON）が残っていれば notionUrl を取り出す。
+// 新規保存はしない（読み出し専用・TTL満了で自然消滅）。
+async function loadFormRecord(env, id) {
+  const raw = await env.REQUESTS.get("form:" + id);
+  if (raw === null) return null;
+  try { return JSON.parse(raw); } catch { return null; }
 }
 
-// 現在時刻を JST（Asia/Tokyo）の "YYYY-MM-DD HH:MM" で返す。
-// ※WorkerはUTC稼働。Intlに依存せず +9時間して整形する（環境差で壊れないように）。
-function jstStamp(ms) {
-  const base = (ms == null || Number.isNaN(ms)) ? Date.now() : ms;
-  const d = new Date(base + 9 * 60 * 60 * 1000);
-  const p = (n) => String(n).padStart(2, "0");
-  return (
-    d.getUTCFullYear() + "-" + p(d.getUTCMonth() + 1) + "-" + p(d.getUTCDate()) +
-    " " + p(d.getUTCHours()) + ":" + p(d.getUTCMinutes())
-  );
+// レコードからリダイレクト先（NotionページURL）を安全に取り出す。無ければ空文字。
+function redirectTargetFor(record) {
+  const u = record && typeof record.notionUrl === "string" ? record.notionUrl.trim() : "";
+  return /^https:\/\//i.test(u) ? u : "";
 }
 
-// 変更差分の検出（再編集時の「変更した項目」用）。値を文字列化して比較する。
-function normVal(v) {
-  if (Array.isArray(v)) return JSON.stringify(v.map((x) => (typeof x === "string" ? x : x)));
-  return String(v == null ? "" : v).trim();
-}
-function diffLabels(oldData, newData) {
-  const fields = [
-    ["title", "案件名"],
-    ["category", "依頼カテゴリ"],
-    ["brand", "対象ブランド・部署"],
-    ["requesterDept", "依頼者部署"],
-    ["productTypes", "制作物の種別"],
-    ["deadline", "希望納期"],
-    ["dataStorage", "データ格納先"],
-    ["schedule", "スケジュール感"],
-    ["images", "参考画像"],
-    ...SEC_YOKEN,
-    ...SEC_SEISAKU,
-    ...SEC_SOUDAN,
-    ...SEC_KAITEI,
-  ];
-  const out = [];
-  const seen = new Set();
-  for (const [k, label] of fields) {
-    if (seen.has(k)) continue;
-    seen.add(k);
-    if (normVal(oldData ? oldData[k] : "") !== normVal(newData ? newData[k] : "")) out.push(label);
-  }
-  return out;
-}
-
-// ---- 共有HTMLの生成 --------------------------------------------
-// editUrl を渡すと、フッターに「この依頼を編集する」ボタンを表示する（フェーズ2）。
-// ボタンはただのリンク。実際の編集可否はフォーム側のログイン＋Worker側の権限判定で担保する。
-function buildShareHtml(data, editUrl) {
-  const category = data.category || "（種別未設定）";
-  const title = data.title || "（無題）";
-  const sections = sectionsFor(data.category);
-  const productTypes = asProductTypeList(data.productTypes);
-  const images = asImageList(data.images);
-  const imgHtml = images.length
-    ? '<div class="imgs">' + images.map((src) => '<img src="' + src + '" alt="">').join("") + "</div>"
-    : "";
-
-  const rows = sections
-    .map(([name, label]) => {
-      const raw = data[name];
-      let body = "";
-      if (Array.isArray(raw)) {
-        const list = raw.map((x) => String(x).trim()).filter(Boolean);
-        if (!list.length) return "";
-        body = list
-          .map((u) => (/^https?:\/\//i.test(u)
-            ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u) + "</a>"
-            : esc(u)))
-          .join("<br>");
-      } else {
-        const v = (raw || "").toString().trim();
-        if (!v) return "";
-        body = /^https?:\/\//i.test(v)
-          ? '<a href="' + esc(v) + '" target="_blank" rel="noopener">' + esc(v) + "</a>"
-          : esc(v).replace(/\n/g, "<br>");
-      }
-      return '<div class="row"><div class="label">' + esc(label) + '</div><div class="val">' + body + "</div></div>";
-    })
-    .join("");
-
-  // スケジュール感（マイルストーン）
-  const schedule = asScheduleList(data.schedule);
-  const scheduleHtml = schedule.length
-    ? '<div class="row"><div class="label">スケジュール感</div><div class="val">' +
-      schedule
-        .map((m) => (m.date ? "<b>" + esc(m.date) + "</b>　" : "") + esc(m.text))
-        .join("<br>") +
-      "</div></div>"
-    : "";
-
-  const meta = [
-    ["依頼カテゴリ", category],
-    data.deadline ? ["希望納期", data.deadline] : null,
-    data.brand ? ["対象ブランド・部署", data.brand] : null,
-    ["依頼者部署", data.requesterDept || "－"],
-    productTypes.length ? ["制作物の種別", productTypes.join("、")] : null,
-    ["依頼者", (data.requesterName || "") + (data.requesterEmail ? "（" + data.requesterEmail + "）" : "")],
-  ]
-    .filter(Boolean)
-    .map(([k, v]) => '<div class="meta-item"><span>' + esc(k) + "</span><b>" + esc(v) + "</b></div>")
-    .join("");
-
+// 旧共有URLへの案内ページ（記録が無い／期限切れの依頼向け・静的）
+function buildGuideHtml() {
   return (
     '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
-    "<title>" + esc(title) + " ｜ 制作依頼</title><style>" +
-    "body{font-family:-apple-system,'Hiragino Kaku Gothic ProN',sans-serif;background:#f5f6f8;color:#1f2430;margin:0;padding:24px;line-height:1.7}" +
-    ".wrap{max-width:760px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 6px 30px rgba(0,0,0,.06);overflow:hidden}" +
-    ".head{padding:28px 32px;border-bottom:1px solid #eceef1}" +
-    ".kind{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:#2563eb;padding:3px 12px;border-radius:999px;margin-bottom:10px}" +
-    "h1{font-size:22px;margin:0}" +
-    ".meta{display:flex;flex-wrap:wrap;gap:18px;padding:18px 32px;background:#fafbfc;border-bottom:1px solid #eceef1}" +
-    ".meta-item{font-size:13px}.meta-item span{display:block;color:#8a92a0;margin-bottom:2px}.meta-item b{font-size:14px}" +
-    ".body{padding:24px 32px}" +
-    ".row{display:flex;gap:16px;padding:14px 0;border-bottom:1px dashed #eceef1}.row:last-child{border-bottom:none}" +
-    ".label{flex:0 0 150px;font-weight:700;color:#5b6472;font-size:14px}.val{flex:1;font-size:15px;word-break:break-word}" +
-    ".val a{color:#2563eb}" +
-    ".imgs{display:flex;flex-wrap:wrap;gap:10px;padding:14px 0}.imgs img{max-width:240px;max-height:240px;border-radius:10px;border:1px solid #eceef1}" +
-    ".foot{padding:16px 32px;color:#9aa1ad;font-size:12px;border-top:1px solid #eceef1;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}" +
-    ".edit-btn{display:inline-flex;align-items:center;gap:6px;text-decoration:none;background:#f4f4f2;color:#1f2430;border:1px solid #e3e3df;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:600}" +
-    ".edit-btn:hover{border-color:#bcbcb6}" +
+    "<title>共有ページはNotionに移行しました</title><style>" +
+    "body{font-family:-apple-system,'Hiragino Kaku Gothic ProN',sans-serif;background:#f5f6f8;color:#1f2430;margin:0;padding:24px;line-height:1.8}" +
+    ".wrap{max-width:620px;margin:40px auto;background:#fff;border-radius:14px;box-shadow:0 6px 30px rgba(0,0,0,.06);padding:32px}" +
+    "h1{font-size:19px;margin:0 0 12px}p{font-size:14px;margin:0 0 12px;color:#3a4150}" +
+    ".note{font-size:12.5px;color:#8a92a0;border-top:1px solid #eceef1;padding-top:14px;margin-top:18px}" +
     "</style></head><body><div class=\"wrap\">" +
-    '<div class="head"><span class="kind">' + esc(category) + '</span><h1>' + esc(title) + "</h1></div>" +
-    '<div class="meta">' + meta + "</div>" +
-    '<div class="body">' + ((rows + scheduleHtml) || '<p style="color:#9aa1ad">記載項目はありません。</p>') + imgHtml + "</div>" +
-    '<div class="foot"><span>制作依頼ツール ｜ CRAZY CREATIVE 室</span>' +
-    (editUrl ? '<a class="edit-btn" href="' + esc(editUrl) + '">✏️ この依頼を編集する</a>' : "") +
-    "</div>" +
+    "<h1>🗂 共有ページはNotionに移行しました</h1>" +
+    "<p>制作依頼の内容は、現在は Notion の「案件管理」データベースにのみ保存されています。このURLでの共有ページは公開を終了しました。</p>" +
+    "<p>依頼の内容は、Slack の受付チャンネル <b>#83_creative_クリ室依頼受付</b> の該当投稿にある Notion リンクから確認できます。</p>" +
+    "<p class=\"note\">見つからない場合は、クリエイティブ室（宮川）までお知らせください。</p>" +
     "</div></body></html>"
   );
 }
 
 // ---- Notion 登録 ------------------------------------------------
-// 最小プロパティ＋共有URL。長文与件はページ本文へ。
-// ※プロパティ名は DB「案件管理（テスト）」の確定名に合わせている。名称変更時はここを直す。
-// clearAbsent=true（再編集時）は、値が無くなった任意プロパティを明示的に空へ更新する。
-// （PATCHは送ったプロパティしか変えないため、これが無いと「消したのに古い値が残る」）
-function buildNotionProperties(data, shareUrl, clearAbsent) {
+// 最小プロパティ＋ページ本文（長文与件・スケジュール感・参考画像）。
+// ※プロパティ名は DB「案件管理」の確定名に合わせている。名称変更時はここを直す。
+function buildNotionProperties(data) {
   const props = {
     "案件名": { title: [{ text: { content: (data.title || "（無題）").slice(0, 2000) } }] },
     "依頼カテゴリ": { select: { name: data.category || "相談" } },
@@ -445,31 +320,17 @@ function buildNotionProperties(data, shareUrl, clearAbsent) {
   const productTypes = asProductTypeList(data.productTypes);
 
   if (data.brand) props["対象ブランド・部署"] = { select: { name: data.brand } };
-  else if (clearAbsent) props["対象ブランド・部署"] = { select: null };
-
   if (productTypes.length) props["制作物の種別"] = { multi_select: productTypes.map((n) => ({ name: n })) };
-  else if (clearAbsent) props["制作物の種別"] = { multi_select: [] };
-
   if (data.requesterDept) props["依頼者部署"] = { select: { name: data.requesterDept } };
-  else if (clearAbsent) props["依頼者部署"] = { select: null };
-
   if (data.requesterName) props["依頼者名"] = { rich_text: [{ text: { content: data.requesterName } }] };
-  else if (clearAbsent) props["依頼者名"] = { rich_text: [] };
-
   if (data.requesterEmail) props["依頼者メール"] = { email: data.requesterEmail };
-  else if (clearAbsent) props["依頼者メール"] = { email: null };
-
   if (data.deadline) props["希望納期"] = { date: { start: data.deadline } };
-  else if (clearAbsent) props["希望納期"] = { date: null };
-
   if (data.dataStorage) props["データ格納先"] = { url: data.dataStorage };
-  else if (clearAbsent) props["データ格納先"] = { url: null };
 
   return props;
 }
 
-// 長文与件のセクション本文ブロック（見出し＋本文＋スケジュール感）だけを組み立てる。
-// 新規作成の本文と、再編集時の「更新版」追記の両方で使い回す。
+// 長文与件のセクション本文ブロック（見出し＋本文＋スケジュール感）を組み立てる。
 function buildNotionSectionBlocks(data) {
   const blocks = [];
   const sections = sectionsFor(data.category);
@@ -510,70 +371,95 @@ function buildNotionSectionBlocks(data) {
   return blocks;
 }
 
-// 新規作成時のページ本文（callout共有URL ＋ 画像枚数 ＋ セクション本文）
-function buildNotionBlocks(data, shareUrl) {
-  const blocks = [];
-  if (shareUrl) {
+// ページ本文全体（セクション本文 → 参考画像）。
+// imageUploads = { ids: [file_upload_id...], failed: 失敗枚数 }（uploadImagesToNotion の結果）
+function buildNotionBlocks(data, imageUploads) {
+  const blocks = buildNotionSectionBlocks(data);
+  const up = imageUploads || { ids: [], failed: 0 };
+  if (up.ids.length || up.failed) {
     blocks.push({
       object: "block",
-      type: "callout",
-      callout: {
-        icon: { emoji: "🔗" },
-        rich_text: [
-          { type: "text", text: { content: "共有ページ: " } },
-          { type: "text", text: { content: shareUrl, link: { url: shareUrl } } },
-        ],
-      },
+      type: "heading_2",
+      heading_2: { rich_text: [{ type: "text", text: { content: "参考画像" } }] },
     });
+    for (const id of up.ids) {
+      blocks.push({
+        object: "block",
+        type: "image",
+        image: { type: "file_upload", file_upload: { id } },
+      });
+    }
+    if (up.failed) {
+      blocks.push({
+        object: "block",
+        type: "paragraph",
+        paragraph: { rich_text: [{ type: "text", text: { content: "⚠️ 参考画像のアップロードに失敗：" + up.failed + "枚（お手数ですが元データを直接共有してください）" } }] },
+      });
+    }
   }
-  const imgCount = asImageList(data.images).length;
-  if (imgCount) {
-    blocks.push({
-      object: "block",
-      type: "paragraph",
-      paragraph: { rich_text: [{ type: "text", text: { content: "添付画像：" + imgCount + "枚（共有ページに表示）" } }] },
-    });
-  }
-  return blocks.concat(buildNotionSectionBlocks(data));
+  return blocks;
 }
 
-// 再編集時にページ本文へ「追記」する更新版ブロック（本文は上書きしない・事故リスク回避）。
-// divider → 🔄更新版callout（日時・編集者）→ 変更した項目 → 更新後の全セクション本文。
-function buildNotionUpdateBlocks(data, changedLabels, editorName, whenMs) {
-  const stamp = jstStamp(whenMs);
-  const changedText = (changedLabels && changedLabels.length)
-    ? "変更した項目：" + changedLabels.join("、")
-    : "変更した項目：本文の変更なし（プロパティのみ／画像のみ 等）";
-  const imgCount = asImageList(data.images).length;
-  const blocks = [
-    { object: "block", type: "divider", divider: {} },
-    {
-      object: "block",
-      type: "callout",
-      callout: {
-        icon: { emoji: "🔄" },
-        rich_text: [
-          { type: "text", text: { content: "更新版　" + stamp + "（編集：" + (editorName || "不明") + "）" } },
-        ],
-      },
-    },
-    {
-      object: "block",
-      type: "paragraph",
-      paragraph: { rich_text: [{ type: "text", text: { content: changedText } }] },
-    },
-  ];
-  if (imgCount) {
-    blocks.push({
-      object: "block",
-      type: "paragraph",
-      paragraph: { rich_text: [{ type: "text", text: { content: "添付画像：" + imgCount + "枚（共有ページに最新版を表示）" } }] },
-    });
-  }
-  return blocks.concat(buildNotionSectionBlocks(data));
+// ---- 参考画像のNotionアップロード（フェーズ3・File Upload API） --
+// data:image/... base64 を Notion にアップロードし、file_upload の id を返す。
+// 手順：① POST /v1/file_uploads で枠を作成 → ② /send に multipart で本体送信。
+// 失敗しても依頼送信は止めない（buildNotionBlocks が「失敗N枚」を本文に記録する）。
+
+const IMAGE_DATA_RE = /^data:(image\/(?:png|jpe?g|gif|webp));base64,([A-Za-z0-9+/]+={0,2})$/;
+const IMAGE_EXT = { "image/png": "png", "image/jpeg": "jpg", "image/jpg": "jpg", "image/gif": "gif", "image/webp": "webp" };
+
+async function uploadOneImageToNotion(dataUrl, index, env) {
+  const m = IMAGE_DATA_RE.exec(dataUrl);
+  if (!m) return null;
+  const mime = m[1] === "image/jpg" ? "image/jpeg" : m[1];
+  const filename = "参考画像-" + (index + 1) + "." + (IMAGE_EXT[mime] || "bin");
+  const bin = atob(m[2]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+
+  const version = (env.NOTION_VERSION || "2022-06-28").trim();
+  const authHeaders = {
+    Authorization: "Bearer " + env.NOTION_TOKEN,
+    "Notion-Version": version,
+  };
+
+  // ① アップロード枠の作成
+  const createRes = await fetch("https://api.notion.com/v1/file_uploads", {
+    method: "POST",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify({ filename, content_type: mime }),
+  });
+  const created = await createRes.json().catch(() => ({}));
+  if (!createRes.ok || !created.id) return null;
+
+  // ② 本体の送信（multipart/form-data。Content-Typeはfetchが境界付きで自動設定）
+  const fd = new FormData();
+  fd.append("file", new Blob([bytes], { type: mime }), filename);
+  const sendRes = await fetch("https://api.notion.com/v1/file_uploads/" + created.id + "/send", {
+    method: "POST",
+    headers: authHeaders,
+    body: fd,
+  });
+  if (!sendRes.ok) return null;
+  return created.id;
 }
 
-async function createNotionPage(data, shareUrl, env) {
+async function uploadImagesToNotion(images, env) {
+  const ids = [];
+  let failed = 0;
+  for (let i = 0; i < images.length; i++) {
+    try {
+      const id = await uploadOneImageToNotion(images[i], i, env);
+      if (id) ids.push(id);
+      else failed++;
+    } catch {
+      failed++;
+    }
+  }
+  return { ids, failed };
+}
+
+async function createNotionPage(data, imageUploads, env) {
   const version = (env.NOTION_VERSION || "2022-06-28").trim();
   const res = await fetch("https://api.notion.com/v1/pages", {
     method: "POST",
@@ -584,8 +470,8 @@ async function createNotionPage(data, shareUrl, env) {
     },
     body: JSON.stringify({
       parent: { database_id: env.NOTION_DB_ID },
-      properties: buildNotionProperties(data, shareUrl),
-      children: buildNotionBlocks(data, shareUrl),
+      properties: buildNotionProperties(data),
+      children: buildNotionBlocks(data, imageUploads),
     }),
   });
   const body = await res.json().catch(() => ({}));
@@ -596,49 +482,11 @@ async function createNotionPage(data, shareUrl, env) {
   return { pageId: body.id, notionUrl: pageUrl };
 }
 
-// 再編集：既存ページのプロパティを更新（PATCH /v1/pages/<id>）
-async function updateNotionPageProps(pageId, data, shareUrl, env) {
-  const version = (env.NOTION_VERSION || "2022-06-28").trim();
-  const res = await fetch("https://api.notion.com/v1/pages/" + pageId, {
-    method: "PATCH",
-    headers: {
-      Authorization: "Bearer " + env.NOTION_TOKEN,
-      "Notion-Version": version,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ properties: buildNotionProperties(data, shareUrl, true) }),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error("Notionプロパティ更新に失敗: " + (body && body.message ? body.message : res.status));
-  return { notionUrl: body.url || ("https://www.notion.so/" + String(pageId || "").replace(/-/g, "")) };
-}
-
-// 再編集：ページ本文の末尾へブロックを追記（PATCH /v1/blocks/<id>/children）
-async function appendNotionBlocks(pageId, blocks, env) {
-  if (!blocks || !blocks.length) return;
-  const version = (env.NOTION_VERSION || "2022-06-28").trim();
-  // Notionは1リクエスト最大100ブロック。念のため100件ずつに分割して追記する。
-  for (let i = 0; i < blocks.length; i += 100) {
-    const chunk = blocks.slice(i, i + 100);
-    const res = await fetch("https://api.notion.com/v1/blocks/" + pageId + "/children", {
-      method: "PATCH",
-      headers: {
-        Authorization: "Bearer " + env.NOTION_TOKEN,
-        "Notion-Version": version,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ children: chunk }),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error("Notion本文の追記に失敗: " + (body && body.message ? body.message : res.status));
-  }
-}
-
 // ---- Slack 投稿（任意） ----------------------------------------
-async function postToSlack(data, shareUrl, notionUrl, env) {
-  const hook = (env.SLACK_WEBHOOK_URL || "").trim();
-  if (!hook) return { posted: false, reason: "SLACK_WEBHOOK_URL未設定" };
+// firstRequest=true なら「🆕初依頼者・要ゲスト招待」を付記する（フェーズ3）。
+function buildSlackText(data, notionUrl, firstRequest) {
   const productTypes = asProductTypeList(data.productTypes);
+  const imgCount = asImageList(data.images).length;
   const lines = [
     "*新規の制作依頼*［" + (data.category || "種別未設定") + "］",
     "案件名: " + (data.title || "（無題）"),
@@ -647,14 +495,25 @@ async function postToSlack(data, shareUrl, notionUrl, env) {
     data.requesterDept ? "依頼者部署: " + data.requesterDept : null,
     productTypes.length ? "制作物の種別: " + productTypes.join("、") : null,
     data.requesterName ? "依頼者: " + data.requesterName : null,
-    asImageList(data.images).length ? "添付画像: " + asImageList(data.images).length + "枚" : null,
-    "共有ページ: " + shareUrl,
+    imgCount ? "添付画像: " + imgCount + "枚（Notionページに掲載）" : null,
     notionUrl ? "Notion: " + notionUrl : null,
   ].filter(Boolean);
+  if (firstRequest) {
+    lines.push(
+      "🆕 初依頼の方です。" + (data.requesterName || "依頼者") + " さん（" + normEmail(data.requesterEmail) + "）を" +
+      "案件管理DBにゲスト招待してください（DB右上「共有」→メールを入力→「今はスキップ」）。招待は1人1回だけでOKです。"
+    );
+  }
+  return lines.join("\n");
+}
+
+async function postToSlack(data, notionUrl, firstRequest, env) {
+  const hook = (env.SLACK_WEBHOOK_URL || "").trim();
+  if (!hook) return { posted: false, reason: "SLACK_WEBHOOK_URL未設定" };
   const res = await fetch(hook, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: lines.join("\n") }),
+    body: JSON.stringify({ text: buildSlackText(data, notionUrl, firstRequest) }),
   });
   return { posted: res.ok, reason: res.ok ? "" : "Slack投稿HTTP " + res.status };
 }
@@ -688,7 +547,15 @@ export default {
         return json({ error: "案件名・依頼カテゴリは必須です" }, 400, request, env);
       }
 
-      // Googleログイン検証（フェーズ1）：操作者（新規＝依頼者本人／編集＝編集者）を特定する
+      // 【フェーズ3】再編集は廃止。開きっぱなしの旧編集画面（?edit）からの送信は明示的に断る
+      if (typeof data.editId === "string" && data.editId) {
+        return json({
+          error: "再編集機能は終了しました。内容の修正は、お手数ですがNotionページ上で直接行ってください。",
+          code: "EDIT_REMOVED",
+        }, 410, request, env);
+      }
+
+      // Googleログイン検証（フェーズ1）：依頼者本人を特定する
       let actor;
       try {
         actor = await verifyGoogleIdToken(data.idToken, env);
@@ -707,131 +574,56 @@ export default {
         if (cached) return json(JSON.parse(cached), 200, request, env);
       }
 
-      const editId = typeof data.editId === "string" ? data.editId.slice(0, 64) : "";
-      delete data.editId;
-
-      // ============ 再編集（editId 付き・フェーズ2） ============
-      if (editId) {
-        const rec = await loadFormRecord(env, editId);
-        if (!rec) {
-          return json({ error: "編集対象の依頼が見つかりません（削除済み、またはURLが正しくない可能性があります）" }, 404, request, env);
-        }
-        if (!canEdit(actor.email, rec.requesterEmail, env)) {
-          return json({ error: "この依頼を編集する権限がありません（依頼者本人またはクリ室メンバーのみ編集できます）", code: "AUTH" }, 403, request, env);
-        }
-        // 依頼者は原本を保持（代理編集でもすり替えない）
-        data.requesterName = rec.requesterName || (rec.data && rec.data.requesterName) || "";
-        data.requesterEmail = rec.requesterEmail || (rec.data && rec.data.requesterEmail) || "";
-
-        const shareUrl = `${url.origin}/v/${editId}`;
-        const editUrl = buildEditUrl(env, editId);
-
-        // ① 共有HTMLを同じIDで上書き（共有URLは不変）
-        const shareHtml = buildShareHtml(data, editUrl);
-        await env.REQUESTS.put(
-          "html:" + editId,
-          JSON.stringify({ html: shareHtml, category: data.category, title: data.title, savedAt: Date.now() }),
-          { expirationTtl: 60 * 60 * 24 * 365 }
-        );
-
-        // ② Notion更新（プロパティPATCH＋本文へ「更新版」を追記。本文は上書きしない）
-        const changed = diffLabels(rec.data || {}, data);
-        let notionUrl = rec.notionUrl || "";
-        if (rec.notionPageId) {
-          try {
-            const up = await updateNotionPageProps(rec.notionPageId, data, shareUrl, env);
-            notionUrl = up.notionUrl || notionUrl;
-            const upBlocks = buildNotionUpdateBlocks(data, changed, actor.name, Date.now());
-            await appendNotionBlocks(rec.notionPageId, upBlocks, env);
-          } catch (e) {
-            return json({ error: String(e.message || e), shareUrl }, 502, request, env);
-          }
-        }
-
-        // ③ form:<id> を更新（履歴を追記・直近50件保持）
-        const now = Date.now();
-        const history = Array.isArray(rec.history) ? rec.history.slice(-49) : [];
-        history.push({ at: now, editorName: actor.name, editorEmail: actor.email, changed });
-        await saveFormRecord(env, editId, {
-          data,
-          notionPageId: rec.notionPageId || "",
-          notionUrl,
-          requesterEmail: data.requesterEmail,
-          requesterName: data.requesterName,
-          createdAt: rec.createdAt || now,
-          updatedAt: now,
-          history,
-        });
-
-        const result = {
-          ok: true,
-          id: editId,
-          shareUrl,
-          notionUrl,
-          edited: true,
-          changed,
-          slackPosted: false,
-          slackNote: "再編集のためSlackは投稿しません（新規のみ投稿）",
-        };
-        if (idem) {
-          await env.REQUESTS.put("idem:" + idem, JSON.stringify(result), { expirationTtl: 60 * 60 * 24 * 7 });
-        }
-        return json(result, 200, request, env);
-      }
-
-      // ============ 新規作成 ============
       // 名前・メールは検証済みトークンからのみ採用する（手入力廃止・フェーズ1）
       data.requesterName = actor.name;
       data.requesterEmail = actor.email;
 
-      // ① KVへ共有HTMLを保存 → 共有URL確定
-      const id = makeId();
-      const shareUrl = `${url.origin}/v/${id}`;
-      const editUrl = buildEditUrl(env, id);
-      const shareHtml = buildShareHtml(data, editUrl);
-      await env.REQUESTS.put(
-        "html:" + id,
-        JSON.stringify({ html: shareHtml, category: data.category, title: data.title, savedAt: Date.now() }),
-        { expirationTtl: 60 * 60 * 24 * 365 }
-      );
-
-      // ② Notion登録
-      let notion;
+      // 【フェーズ3】初依頼者かどうかを既知リストと照合
+      let firstRequest = false;
       try {
-        notion = await createNotionPage(data, shareUrl, env);
-      } catch (e) {
-        return json({ error: String(e.message || e), shareUrl }, 502, request, env);
+        firstRequest = !(await isKnownGuest(env, actor.email));
+      } catch {
+        firstRequest = false; // 照合に失敗しても送信は止めない（安全網＝アクセスリクエスト承認）
       }
 
-      // フォームJSONをKVへ保存（再編集の元データ・フェーズ2）
-      const nowNew = Date.now();
-      await saveFormRecord(env, id, {
-        data,
-        notionPageId: notion.pageId || "",
-        notionUrl: notion.notionUrl || "",
-        requesterEmail: data.requesterEmail,
-        requesterName: data.requesterName,
-        createdAt: nowNew,
-        updatedAt: nowNew,
-        history: [],
-      });
+      // ① 参考画像を Notion にアップロード（失敗しても致命にしない）
+      const images = asImageList(data.images);
+      let uploads = { ids: [], failed: 0 };
+      if (images.length) {
+        uploads = await uploadImagesToNotion(images, env);
+      }
+
+      // ② Notionページ作成（唯一の正本）
+      let notion;
+      try {
+        notion = await createNotionPage(data, uploads, env);
+      } catch (e) {
+        return json({ error: String(e.message || e) }, 502, request, env);
+      }
 
       // ③ Slack投稿（任意・失敗しても致命にしない）
       let slack = { posted: false, reason: "" };
       try {
-        slack = await postToSlack(data, shareUrl, notion.notionUrl, env);
+        slack = await postToSlack(data, notion.notionUrl, firstRequest, env);
       } catch (e) {
         slack = { posted: false, reason: String(e.message || e) };
       }
 
+      // ④ 既知マークは「初依頼者の通知が実際に投稿できたとき」だけ付ける。
+      //    （Webhook未設定・投稿失敗のときは付けず、次回の送信で再通知させる）
+      if (firstRequest && slack.posted) {
+        try { await markGuestKnown(env, actor.email, actor.name); } catch {}
+      }
+
       const result = {
         ok: true,
-        id,
-        shareUrl,
         notionUrl: notion.notionUrl,
+        notionPageId: notion.pageId,
         slackPosted: slack.posted,
         slackNote: slack.reason,
-        edited: false,
+        firstRequest,
+        imagesUploaded: uploads.ids.length,
+        imagesFailed: uploads.failed,
       };
       if (idem) {
         await env.REQUESTS.put("idem:" + idem, JSON.stringify(result), { expirationTtl: 60 * 60 * 24 * 7 });
@@ -839,49 +631,23 @@ export default {
       return json(result, 200, request, env);
     }
 
-    // ②' 再編集用フォームJSONの取得：GET /form/<id>（要ログイン・権限判定・フェーズ2）
+    // ②【廃止】GET /form/<id> … 開きっぱなしの旧編集画面向けの案内
     if (request.method === "GET" && path.startsWith("/form/")) {
-      const id = path.slice("/form/".length);
-      if (!id) return json({ error: "IDがありません" }, 400, request, env);
-      const rec = await loadFormRecord(env, id);
-      if (!rec) return json({ error: "依頼が見つかりません", code: "NOTFOUND" }, 404, request, env);
-      let actor;
-      try {
-        actor = await verifyGoogleIdToken(bearerToken(request), env);
-      } catch (e) {
-        if (e instanceof AuthError) return json({ error: String(e.message || e), code: "AUTH" }, 403, request, env);
-        return json({ error: String(e.message || e) }, 500, request, env);
-      }
-      if (!canEdit(actor.email, rec.requesterEmail, env)) {
-        return json({ error: "この依頼を編集する権限がありません（依頼者本人またはクリ室メンバーのみ編集できます）", code: "FORBIDDEN" }, 403, request, env);
-      }
-      const data = rec.data || {};
       return json({
-        ok: true,
-        id,
-        category: data.category || "",
-        data,
-        requesterName: rec.requesterName || data.requesterName || "",
-        requesterEmail: rec.requesterEmail || data.requesterEmail || "",
-        updatedAt: rec.updatedAt || rec.createdAt || 0,
-        isOwner: String(actor.email).toLowerCase() === String(rec.requesterEmail || "").toLowerCase(),
-      }, 200, request, env);
+        error: "再編集機能は終了しました。内容の修正は、お手数ですがNotionページ上で直接行ってください。",
+        code: "EDIT_REMOVED",
+      }, 410, request, env);
     }
 
-    // ② 共有ページ表示：GET /v/<id>
+    // ③【移行措置】GET /v/<id> … Notionページへリダイレクト（記録が無ければ案内ページ）
     if (request.method === "GET" && path.startsWith("/v/")) {
       const id = path.slice(3);
-      const raw = await env.REQUESTS.get("html:" + id);
-      if (raw === null) {
-        return htmlResponse("この依頼ページは見つかりませんでした（削除済み、またはURLが正しくない可能性があります）。", 404);
+      const rec = id ? await loadFormRecord(env, id) : null;
+      const target = redirectTargetFor(rec);
+      if (target) {
+        return new Response(null, { status: 302, headers: { Location: target } });
       }
-      let record;
-      try {
-        record = JSON.parse(raw);
-      } catch {
-        record = { html: raw };
-      }
-      return htmlResponse(record.html);
+      return htmlResponse(buildGuideHtml(), 410);
     }
 
     // 稼働確認
@@ -891,4 +657,24 @@ export default {
 
     return new Response("Not Found", { status: 404, headers: corsHeaders(request, env) });
   },
+};
+
+// ---- テスト用エクスポート（test/unit.test.mjs から参照。動作には影響しない） ----
+export {
+  sectionsFor,
+  asImageList,
+  asScheduleList,
+  asProductTypeList,
+  normEmail,
+  guestKey,
+  redirectTargetFor,
+  buildGuideHtml,
+  buildNotionProperties,
+  buildNotionSectionBlocks,
+  buildNotionBlocks,
+  buildSlackText,
+  SEC_YOKEN,
+  SEC_SEISAKU,
+  SEC_SOUDAN,
+  SEC_KAITEI,
 };
