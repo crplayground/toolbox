@@ -21,6 +21,8 @@ import {
   buildNotionSectionBlocks,
   buildNotionBlocks,
   buildSlackText,
+  buildSlackBlocks,
+  CATEGORY_EMOJI,
   SEC_YOKEN,
   SEC_SEISAKU,
   SEC_SOUDAN,
@@ -132,6 +134,37 @@ const txtFirst = buildSlackText(slackData, "https://www.notion.so/abc", true);
 t("初依頼者は🆕付記", txtFirst.indexOf("🆕") !== -1);
 t("招待先メールを明記（正規化済み）", txtFirst.indexOf("taro@crazy.co.jp") !== -1);
 t("招待手順（共有→今はスキップ）を含む", txtFirst.indexOf("今はスキップ") !== -1);
+t("カテゴリ絵文字を含む（新規=🎨）", txtKnown.indexOf(CATEGORY_EMOJI["新規"]) === 0);
+
+// ---- 8b. Slack Block Kit整形（フェーズ4先行分・2026-07-25新設） ----
+section("8b. buildSlackBlocks（Block Kit整形）");
+const blocksKnown = buildSlackBlocks(slackData, "https://www.notion.so/abc", false);
+t("先頭はheaderブロック", blocksKnown[0].type === "header");
+t("headerに案件名を含む", blocksKnown[0].text.text.indexOf("夏フェア") !== -1);
+t("headerにカテゴリ絵文字（新規=🎨）", blocksKnown[0].text.text.indexOf("🎨") === 0);
+t("headerはplain_text（Block Kit仕様）", blocksKnown[0].text.type === "plain_text");
+const fieldSec = blocksKnown.find(b => b.type === "section" && Array.isArray(b.fields));
+t("概要フィールドのsectionがある", !!fieldSec);
+t("依頼カテゴリのフィールドを含む", fieldSec.fields.some(f => f.text.indexOf("依頼カテゴリ") !== -1));
+t("依頼者名＋部署を1フィールドに統合", fieldSec.fields.some(f => f.text.indexOf("太郎（MKT・広報）") !== -1));
+t("添付画像のフィールドを含む", fieldSec.fields.some(f => f.text.indexOf("添付画像") !== -1));
+t("空の項目はフィールドに出さない（納期なし）", !fieldSec.fields.some(f => f.text.indexOf("希望納期") !== -1));
+t("フィールドは最大10件以内", fieldSec.fields.length <= 10);
+const btnBlock = blocksKnown.find(b => b.type === "actions");
+t("Notionリンクボタンがある", !!btnBlock && btnBlock.elements[0].type === "button");
+t("ボタンのURLがnotionUrl", btnBlock.elements[0].url === "https://www.notion.so/abc");
+t("既知依頼者に🆕ブロックが無い", JSON.stringify(blocksKnown).indexOf("🆕") === -1);
+const blocksFirst = buildSlackBlocks(slackData, "https://www.notion.so/abc", true);
+t("初依頼者は🆕sectionが付く", JSON.stringify(blocksFirst).indexOf("🆕") !== -1);
+t("🆕sectionに正規化メールを含む", JSON.stringify(blocksFirst).indexOf("taro@crazy.co.jp") !== -1);
+t("🆕の前にdividerが入る", blocksFirst.some(b => b.type === "divider"));
+const blocksNoUrl = buildSlackBlocks(slackData, "", false);
+t("notionUrl無しならボタンを出さない", !blocksNoUrl.some(b => b.type === "actions"));
+const blocksLongTitle = buildSlackBlocks({ ...slackData, title: "あ".repeat(200) }, "https://www.notion.so/abc", false);
+t("headerは150字以内に切り詰め", blocksLongTitle[0].text.text.length <= 150);
+const blocksMin = buildSlackBlocks({ category: "相談", title: "相談だけ" }, "https://www.notion.so/abc", false);
+t("相談カテゴリの絵文字は💬", blocksMin[0].text.text.indexOf("💬") === 0);
+t("最小データでもfieldsが1件以上（Block Kit仕様）", blocksMin.find(b => b.fields).fields.length >= 1);
 
 // ---- 9. ソース検査：フェーズ2機構の撤去確認（T2） ----
 section("9. ソース検査（廃止機構が残っていないこと）");
@@ -147,6 +180,8 @@ t('form:<id> は読み出し専用（putしない）', src.indexOf('put("form:')
 t("guest:<email> 照合が実装されている", src.indexOf('"guest:"') !== -1);
 t("File Upload APIを使用", src.indexOf("/v1/file_uploads") !== -1);
 t("editId送信には410で案内", src.indexOf("EDIT_REMOVED") !== -1);
+t("Slack投稿にblocksを送信（Block Kit・フェーズ4先行分）", src.indexOf("blocks: buildSlackBlocks") !== -1);
+t("Slack投稿にfallback textも送信（通知用）", src.indexOf("text: buildSlackText") !== -1);
 
 // ---- 結果 ----
 console.log("\n============================");

@@ -4,7 +4,7 @@
 // 役割：依頼フォーム（静的HTML）から送られた1件の依頼を、サーバー側で一括処理する。
 //   ① Notion DB にページを作成（プロパティ＋本文全文＋参考画像）＝唯一の正本
 //   ② Slack 受付ch（#83_creative_クリ室依頼受付）へ Incoming Webhook で投稿
-//      （初依頼者なら「🆕要ゲスト招待」を付記）
+//      （初依頼者なら「🆕要ゲスト招待」を付記。フェーズ4先行分としてBlock Kit整形済み）
 //
 // フェーズ3（Notion一本化・2026-07）：
 //   - 共有URL（/v/<id>）の発行を廃止。依頼の正本は Notion ページただ1つ。
@@ -483,12 +483,22 @@ async function createNotionPage(data, imageUploads, env) {
 }
 
 // ---- Slack 投稿（任意） ----------------------------------------
+// 【フェーズ4先行分（2026-07-25）】投稿をBlock Kitで整形（Webhookのままで実装可能な範囲）。
+//   - buildSlackBlocks … 本体の見た目（ヘッダー・概要フィールド・Notionボタン・🆕招待案内）
+//   - buildSlackText   … 通知バナー・プッシュ通知用のfallbackテキスト（blocks非対応環境の保険）
 // firstRequest=true なら「🆕初依頼者・要ゲスト招待」を付記する（フェーズ3）。
+// ※スレッド化・自動メンション・投稿URLのNotion記録はBotトークンが必要（フェーズ4本体）。
+
+// 依頼カテゴリ→絵文字（ひと目で種別が分かるように）
+const CATEGORY_EMOJI = { "新規": "🎨", "改訂": "♻️", "相談": "💬" };
+
 function buildSlackText(data, notionUrl, firstRequest) {
   const productTypes = asProductTypeList(data.productTypes);
   const imgCount = asImageList(data.images).length;
+  const category = data.category || "種別未設定";
+  const emoji = CATEGORY_EMOJI[category] || "📩";
   const lines = [
-    "*新規の制作依頼*［" + (data.category || "種別未設定") + "］",
+    emoji + " *制作依頼を受け付けました*［" + category + "］",
     "案件名: " + (data.title || "（無題）"),
     data.deadline ? "希望納期: " + data.deadline : null,
     data.brand ? "対象ブランド/部署: " + data.brand : null,
@@ -507,13 +517,76 @@ function buildSlackText(data, notionUrl, firstRequest) {
   return lines.join("\n");
 }
 
+// Block Kit本体。Incoming Webhookは blocks に対応している（インタラクティブ要素は
+// 使えないが、URLを開くだけの「リンクボタン」は動作する）。
+function buildSlackBlocks(data, notionUrl, firstRequest) {
+  const productTypes = asProductTypeList(data.productTypes);
+  const imgCount = asImageList(data.images).length;
+  const category = data.category || "種別未設定";
+  const emoji = CATEGORY_EMOJI[category] || "📩";
+  const title = data.title || "（無題）";
+
+  const blocks = [];
+
+  // ① ヘッダー（plain_text限定・最大150字）
+  blocks.push({
+    type: "header",
+    text: { type: "plain_text", text: (emoji + " " + title).slice(0, 150), emoji: true },
+  });
+
+  // ② 概要フィールド（2列で並ぶ。空の項目は出さない・最大10件）
+  const fields = [
+    { type: "mrkdwn", text: "*依頼カテゴリ*\n" + category },
+    data.requesterName
+      ? { type: "mrkdwn", text: "*依頼者*\n" + data.requesterName + (data.requesterDept ? "（" + data.requesterDept + "）" : "") }
+      : null,
+    data.deadline ? { type: "mrkdwn", text: "*希望納期*\n" + data.deadline } : null,
+    data.brand ? { type: "mrkdwn", text: "*対象ブランド・部署*\n" + data.brand } : null,
+    productTypes.length ? { type: "mrkdwn", text: "*制作物の種別*\n" + productTypes.join("、").slice(0, 1900) } : null,
+    imgCount ? { type: "mrkdwn", text: "*添付画像*\n" + imgCount + "枚（Notionページに掲載）" } : null,
+  ].filter(Boolean).slice(0, 10);
+  blocks.push({ type: "section", fields });
+
+  // ③ Notionページへのリンクボタン（依頼の正本へ最短導線）
+  if (notionUrl) {
+    blocks.push({
+      type: "actions",
+      elements: [{
+        type: "button",
+        text: { type: "plain_text", text: "🗂 Notionで依頼内容を見る", emoji: true },
+        url: notionUrl,
+        style: "primary",
+      }],
+    });
+  }
+
+  // ④ 初依頼者の招待案内（フェーズ3の🆕検知をBlock Kitで表示）
+  if (firstRequest) {
+    blocks.push({ type: "divider" });
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text:
+          "🆕 *初依頼の方です。* " + (data.requesterName || "依頼者") + " さん（`" + normEmail(data.requesterEmail) + "`）を" +
+          "案件管理DBにゲスト招待してください（DB右上「共有」→メールを入力→「今はスキップ」）。招待は1人1回だけでOKです。",
+      },
+    });
+  }
+
+  return blocks;
+}
+
 async function postToSlack(data, notionUrl, firstRequest, env) {
   const hook = (env.SLACK_WEBHOOK_URL || "").trim();
   if (!hook) return { posted: false, reason: "SLACK_WEBHOOK_URL未設定" };
   const res = await fetch(hook, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: buildSlackText(data, notionUrl, firstRequest) }),
+    body: JSON.stringify({
+      text: buildSlackText(data, notionUrl, firstRequest), // 通知用fallback
+      blocks: buildSlackBlocks(data, notionUrl, firstRequest),
+    }),
   });
   return { posted: res.ok, reason: res.ok ? "" : "Slack投稿HTTP " + res.status };
 }
@@ -673,6 +746,8 @@ export {
   buildNotionSectionBlocks,
   buildNotionBlocks,
   buildSlackText,
+  buildSlackBlocks,
+  CATEGORY_EMOJI,
   SEC_YOKEN,
   SEC_SEISAKU,
   SEC_SOUDAN,
