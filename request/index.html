@@ -354,7 +354,7 @@
           </div>
           <div class="field">
             <label class="fl">得たい成果<span class="opt">任意</span></label>
-            <textarea name="outcome" placeholder="数字の目標でも、雰囲気の目標でも（例：申込30件／SNSで話題になる）"></textarea>
+            <textarea name="outcome" placeholder="具体的な数字の目標や定性的な目標を記入（例：申込30件／SNSで話題になる）"></textarea>
           </div>
           <div class="field">
             <label class="fl">読後感や体験後の感情<span class="opt">任意</span></label>
@@ -379,7 +379,7 @@
           <div id="msRows">
             <div class="ms-row">
               <input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">
-              <input type="text" class="ms-text" placeholder="原稿格納・デザイン確認・上長提案・公開など">
+              <input type="text" class="ms-text" placeholder="原稿格納・デザイン確認・上長提案など">
               <button type="button" class="ms-del" aria-label="この行を削除">×</button>
             </div>
           </div>
@@ -403,11 +403,15 @@
           <textarea name="manuscript" placeholder="アウトプットのサイズ・ページ数・印刷部数・掲載テキストや写真など"></textarea>
         </div>
 
-        <!-- 制作物の概要：改訂・流用 -->
+        <!-- サイズ表：新規 -->
+        <div class="field" data-types="新規">
+          <button type="button" class="nd-btn" id="szOpen">✏️ サイズ表をみる</button>
+        </div>
+
+        <!-- 制作内容：改訂・流用 -->
         <div class="field" data-types="改訂・流用">
-          <label class="fl">制作物の概要<span class="opt">任意</span></label>
-          <textarea name="reviseManuscript" placeholder="アウトプットのサイズ・ページ数・印刷部数・掲載テキストや写真など"></textarea>
-          <p class="hint">差し替える文言は、そのまま貼り付けられる確定テキストでいただけると転記ミスが防げます。</p>
+          <label class="fl">制作内容<span class="opt">任意</span></label>
+          <textarea name="reviseManuscript" placeholder="差し替える文言は、そのまま貼り付けられる確定テキストでいただけると転記ミスが防げます。"></textarea>
         </div>
 
         <!-- 構成ラフ・プロトタイプ：新規 -->
@@ -428,11 +432,6 @@
           <input type="file" id="images" accept="image/*" multiple class="file-native">
           <label for="images" class="addurl file-pick">＋ 画像を選ぶ</label>
           <div id="imgPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
-        </div>
-
-        <!-- サイズ表：新規 -->
-        <div class="field" data-types="新規">
-          <button type="button" class="nd-btn" id="szOpen">✏️ サイズ表をみる</button>
         </div>
 
         <!-- 制作物に対する想い・意気込み：新規 -->
@@ -847,7 +846,7 @@
       row.className = "ms-row";
       row.innerHTML =
         '<input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">' +
-        '<input type="text" class="ms-text" placeholder="原稿格納・デザイン確認・上長提案・公開など">' +
+        '<input type="text" class="ms-text">' +
         '<button type="button" class="ms-del" aria-label="この行を削除">×</button>';
       msRows.appendChild(row);
     });

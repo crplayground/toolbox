@@ -71,7 +71,7 @@ const SEC_SOUDAN = [
 // 改訂・流用は専用の最小構成（元データ＝URL配列／概要）
 const SEC_KAITEI = [
   ["sourceUrls", "改訂・流用元のデータ"],
-  ["reviseManuscript", "制作物の概要"],
+  ["reviseManuscript", "制作内容"],
 ];
 
 // 依頼種別 → 表示する長文セクション
