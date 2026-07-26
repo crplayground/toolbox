@@ -49,36 +49,35 @@
 // ---- 種別ごとの「長文与件」項目（フォームのname → 見出しラベル） ----
 // Notion本文の見出し構成に使う。順序＝表示順。
 const SEC_YOKEN = [
-  ["purpose", "依頼の目的"],
+  ["purpose", "依頼背景"],
   ["issue", "現状の課題"],
   ["target", "ターゲット"],
-  ["overview", "依頼概要"],
-  ["useDate", "実施日・使用開始日"],
+  ["useDate", "使用開始日"],
   ["usePlace", "使用場所・使用シーン"],
   ["outcome", "得たい成果"],
-  ["afterFeeling", "体験後や読後感の感情"],
+  ["afterFeeling", "読後感や体験後の感情"],
   ["budget", "予算感"],
 ];
 const SEC_SEISAKU = [
-  ["manuscript", "原稿"],
-  ["prototype", "プロトタイプ"],
+  ["prStatus", "広報チームへの共有状況"],
+  ["manuscript", "制作物の概要"],
+  ["prototype", "構成ラフ・プロトタイプ"],
   ["reference", "参考・インスピレーション"],
-  ["intent", "依頼意図（想い・情熱）"],
-  ["prStatus", "企画について広報チームの確認状況"],
+  ["intent", "制作物に対する想い・意気込み"],
 ];
 const SEC_SOUDAN = [
   ["consultDetail", "相談内容"],
 ];
-// 改訂は専用の最小構成（改訂元のデータ＝URL配列／原稿）
+// 改訂・流用は専用の最小構成（元データ＝URL配列／概要）
 const SEC_KAITEI = [
-  ["sourceUrls", "改訂元のデータ"],
-  ["reviseManuscript", "原稿（コピペできるように）"],
+  ["sourceUrls", "改訂・流用元のデータ"],
+  ["reviseManuscript", "制作物の概要"],
 ];
 
-// 依頼カテゴリ → 表示する長文セクション
+// 依頼種別 → 表示する長文セクション
 function sectionsFor(category) {
   if (category === "相談") return SEC_SOUDAN;
-  if (category === "改訂") return SEC_KAITEI;
+  if (category === "改訂・流用") return SEC_KAITEI;
   // 新規は与件整理＋制作内容
   return SEC_YOKEN.concat(SEC_SEISAKU);
 }
@@ -314,15 +313,15 @@ function buildGuideHtml() {
 function buildNotionProperties(data) {
   const props = {
     "案件名": { title: [{ text: { content: (data.title || "（無題）").slice(0, 2000) } }] },
-    "依頼カテゴリ": { select: { name: data.category || "相談" } },
+    "依頼種別": { select: { name: data.category || "相談" } },
   };
 
   const productTypes = asProductTypeList(data.productTypes);
 
-  if (data.brand) props["対象ブランド・部署"] = { select: { name: data.brand } };
+  if (data.brand) props["対象事業・部署"] = { select: { name: data.brand } };
   if (productTypes.length) props["制作物の種別"] = { multi_select: productTypes.map((n) => ({ name: n })) };
-  if (data.requesterDept) props["依頼者部署"] = { select: { name: data.requesterDept } };
-  if (data.requesterName) props["依頼者名"] = { rich_text: [{ text: { content: data.requesterName } }] };
+  if (data.requesterDept) props["所属部署"] = { select: { name: data.requesterDept } };
+  if (data.requesterName) props["担当者名"] = { rich_text: [{ text: { content: data.requesterName } }] };
   if (data.requesterEmail) props["依頼者メール"] = { email: data.requesterEmail };
   if (data.deadline) props["希望納期"] = { date: { start: data.deadline } };
   if (data.dataStorage) props["データ格納先"] = { url: data.dataStorage };
@@ -490,7 +489,7 @@ async function createNotionPage(data, imageUploads, env) {
 // ※スレッド化・自動メンション・投稿URLのNotion記録はBotトークンが必要（フェーズ4本体）。
 
 // 依頼カテゴリ→絵文字（ひと目で種別が分かるように）
-const CATEGORY_EMOJI = { "新規": "🎨", "改訂": "♻️", "相談": "💬" };
+const CATEGORY_EMOJI = { "新規": "🎨", "改訂・流用": "♻️", "相談": "💬" };
 
 function buildSlackText(data, notionUrl, firstRequest) {
   const productTypes = asProductTypeList(data.productTypes);
@@ -499,10 +498,10 @@ function buildSlackText(data, notionUrl, firstRequest) {
   const emoji = CATEGORY_EMOJI[category] || "📩";
   const lines = [
     emoji + " *制作依頼を受け付けました*［" + category + "］",
-    "案件名: " + (data.title || "（無題）"),
+    "依頼タイトル: " + (data.title || "（無題）"),
     data.deadline ? "希望納期: " + data.deadline : null,
-    data.brand ? "対象ブランド/部署: " + data.brand : null,
-    data.requesterDept ? "依頼者部署: " + data.requesterDept : null,
+    data.brand ? "対象事業/部署: " + data.brand : null,
+    data.requesterDept ? "所属部署: " + data.requesterDept : null,
     productTypes.length ? "制作物の種別: " + productTypes.join("、") : null,
     data.requesterName ? "依頼者: " + data.requesterName : null,
     imgCount ? "添付画像: " + imgCount + "枚（Notionページに掲載）" : null,
@@ -536,12 +535,12 @@ function buildSlackBlocks(data, notionUrl, firstRequest) {
 
   // ② 概要フィールド（2列で並ぶ。空の項目は出さない・最大10件）
   const fields = [
-    { type: "mrkdwn", text: "*依頼カテゴリ*\n" + category },
+    { type: "mrkdwn", text: "*依頼種別*\n" + category },
     data.requesterName
       ? { type: "mrkdwn", text: "*依頼者*\n" + data.requesterName + (data.requesterDept ? "（" + data.requesterDept + "）" : "") }
       : null,
     data.deadline ? { type: "mrkdwn", text: "*希望納期*\n" + data.deadline } : null,
-    data.brand ? { type: "mrkdwn", text: "*対象ブランド・部署*\n" + data.brand } : null,
+    data.brand ? { type: "mrkdwn", text: "*対象事業・部署*\n" + data.brand } : null,
     productTypes.length ? { type: "mrkdwn", text: "*制作物の種別*\n" + productTypes.join("、").slice(0, 1900) } : null,
     imgCount ? { type: "mrkdwn", text: "*添付画像*\n" + imgCount + "枚（Notionページに掲載）" } : null,
   ].filter(Boolean).slice(0, 10);
@@ -617,7 +616,7 @@ export default {
         return json({ error: "データの形式が不正です" }, 400, request, env);
       }
       if (!data || !data.title || !data.category) {
-        return json({ error: "案件名・依頼カテゴリは必須です" }, 400, request, env);
+        return json({ error: "依頼タイトル・依頼種別は必須です" }, 400, request, env);
       }
 
       // 【フェーズ3】再編集は廃止。開きっぱなしの旧編集画面（?edit）からの送信は明示的に断る

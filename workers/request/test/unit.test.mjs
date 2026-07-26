@@ -39,9 +39,14 @@ function section(title) { console.log("\n" + title); }
 // ---- 1. sectionsFor（種別→セクション） ----
 section("1. sectionsFor");
 t("新規＝与件整理＋制作内容", JSON.stringify(sectionsFor("新規")) === JSON.stringify(SEC_YOKEN.concat(SEC_SEISAKU)));
-t("改訂＝改訂専用", sectionsFor("改訂") === SEC_KAITEI);
+t("改訂・流用＝改訂専用", sectionsFor("改訂・流用") === SEC_KAITEI);
 t("相談＝相談のみ", sectionsFor("相談") === SEC_SOUDAN);
 t("不明な種別は新規と同じ構成", sectionsFor("").length === SEC_YOKEN.length + SEC_SEISAKU.length);
+// 2026-07-26 テキストFIX：依頼概要(overview)を撤去し、広報確認を制作物の概要の前へ移した
+t("与件整理から overview を撤去", !SEC_YOKEN.some(([k]) => k === "overview"));
+t("与件整理の先頭は依頼背景", SEC_YOKEN[0][0] === "purpose" && SEC_YOKEN[0][1] === "依頼背景");
+t("制作内容の先頭は広報チームへの共有状況", SEC_SEISAKU[0][0] === "prStatus");
+t("旧カテゴリ名「改訂」では改訂セクションにならない", sectionsFor("改訂") !== SEC_KAITEI);
 
 // ---- 2. asImageList（画像の厳密検証・XSS対策の継続確認） ----
 section("2. asImageList");
@@ -87,18 +92,23 @@ t("案内ページ：受付chへ誘導する", guide.indexOf("#83_creative_ク�
 // ---- 6. Notionプロパティ ----
 section("6. buildNotionProperties");
 const propsFull = buildNotionProperties({
-  title: "夏フェア バナー", category: "新規", brand: "IWAI-婚礼",
-  productTypes: ["バナー・SNS画像"], requesterDept: "MKT・広報",
+  title: "夏フェア バナー", category: "新規", brand: "IWAI-婚礼｜婚礼に関する制作物",
+  productTypes: ["バナー・告知画像"], requesterDept: "MKT・広報",
   requesterName: "太郎", requesterEmail: "taro@crazy.co.jp",
   deadline: "2026-08-10", dataStorage: "https://drive.google.com/x",
 });
 t("案件名（title）", propsFull["案件名"].title[0].text.content === "夏フェア バナー");
-t("依頼カテゴリ（select）", propsFull["依頼カテゴリ"].select.name === "新規");
-t("制作物の種別（multi_select）", propsFull["制作物の種別"].multi_select[0].name === "バナー・SNS画像");
+t("依頼種別（select）", propsFull["依頼種別"].select.name === "新規");
+t("制作物の種別（multi_select）", propsFull["制作物の種別"].multi_select[0].name === "バナー・告知画像");
+// 2026-07-26 Notion DB改称に追従（プロパティ名がずれるとNotion登録が丸ごと失敗するため固定する）
+t("対象事業・部署（旧「対象ブランド・部署」）", propsFull["対象事業・部署"].select.name === "IWAI-婚礼｜婚礼に関する制作物");
+t("所属部署（旧「依頼者部署」）", propsFull["所属部署"].select.name === "MKT・広報");
+t("担当者名（旧「依頼者名」）", propsFull["担当者名"].rich_text[0].text.content === "太郎");
+t("旧プロパティ名は送らない", !("依頼カテゴリ" in propsFull) && !("対象ブランド・部署" in propsFull) && !("依頼者部署" in propsFull) && !("依頼者名" in propsFull));
 t("依頼者メール（email）", propsFull["依頼者メール"].email === "taro@crazy.co.jp");
 t("希望納期（date）", propsFull["希望納期"].date.start === "2026-08-10");
 const propsMin = buildNotionProperties({ title: "相談だけ", category: "相談" });
-t("任意プロパティは無ければ送らない", !("希望納期" in propsMin) && !("対象ブランド・部署" in propsMin));
+t("任意プロパティは無ければ送らない", !("希望納期" in propsMin) && !("対象事業・部署" in propsMin));
 t("タイトル無しは（無題）", buildNotionProperties({ category: "相談" })["案件名"].title[0].text.content === "（無題）");
 
 // ---- 7. Notion本文ブロック（共有URL calloutの廃止＋画像埋め込み） ----
@@ -140,12 +150,12 @@ t("カテゴリ絵文字を含む（新規=🎨）", txtKnown.indexOf(CATEGORY_E
 section("8b. buildSlackBlocks（Block Kit整形）");
 const blocksKnown = buildSlackBlocks(slackData, "https://www.notion.so/abc", false);
 t("先頭はheaderブロック", blocksKnown[0].type === "header");
-t("headerに案件名を含む", blocksKnown[0].text.text.indexOf("夏フェア") !== -1);
+t("headerに依頼タイトルを含む", blocksKnown[0].text.text.indexOf("夏フェア") !== -1);
 t("headerにカテゴリ絵文字（新規=🎨）", blocksKnown[0].text.text.indexOf("🎨") === 0);
 t("headerはplain_text（Block Kit仕様）", blocksKnown[0].text.type === "plain_text");
 const fieldSec = blocksKnown.find(b => b.type === "section" && Array.isArray(b.fields));
 t("概要フィールドのsectionがある", !!fieldSec);
-t("依頼カテゴリのフィールドを含む", fieldSec.fields.some(f => f.text.indexOf("依頼カテゴリ") !== -1));
+t("依頼カテゴリのフィールドを含む", fieldSec.fields.some(f => f.text.indexOf("依頼種別") !== -1));
 t("依頼者名＋部署を1フィールドに統合", fieldSec.fields.some(f => f.text.indexOf("太郎（MKT・広報）") !== -1));
 t("添付画像のフィールドを含む", fieldSec.fields.some(f => f.text.indexOf("添付画像") !== -1));
 t("空の項目はフィールドに出さない（納期なし）", !fieldSec.fields.some(f => f.text.indexOf("希望納期") !== -1));

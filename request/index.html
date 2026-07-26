@@ -94,6 +94,22 @@
     .hand-ch{white-space:normal;display:inline-block;}
     .hand-btns a,.hand-btns button{flex:1;justify-content:center;}
   }
+  /* 完了画面：絵文字がささやかに「ぽんっ」と現れる（動きを抑える設定の環境では静止） */
+  .done .ic{animation:popIn .5s cubic-bezier(.34,1.4,.64,1) both;}
+  @keyframes popIn{
+    0%{opacity:0;transform:scale(.5);}
+    60%{opacity:1;transform:scale(1.08);}
+    100%{opacity:1;transform:scale(1);}
+  }
+  @media(prefers-reduced-motion:reduce){ .done .ic{animation:none;} }
+  .notion-mark{flex:none;}
+  /* 参考画像：ブラウザ既定の「選択されていません」を出さないため、入力を隠してラベルをボタンにする */
+  .file-native{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;}
+  .file-pick{display:inline-block;}
+  /* 改訂・流用では制作物の種別の補助テキストを出さない */
+  .checks.no-sub .sub{display:none;}
+  /* サイズ表モーダルの箇条書き */
+  .sz-list{margin:6px 0 0;padding-left:1.1em;font-size:12px;color:var(--sub);line-height:1.75;}
   /* 納期目安を確認ボタン */
   .nd-btn{display:inline-flex;align-items:center;gap:5px;margin-top:8px;background:#eef3ff;
     color:var(--blue);border:1px solid #d3e0fb;border-radius:8px;padding:8px 13px;
@@ -142,31 +158,32 @@
 <body>
 <div class="wrap">
   <h1>REQUEST</h1>
-  <p class="lead" id="leadText">クリエイティブ室（クリ室）への制作依頼フォームです。<br>ログイン → 種別 → 内容 の3ステップ、5〜10分で送信できます。</p>
+  <p class="lead" id="leadText">クリエイティブ室への制作依頼・相談作成フォームです。<br>Gメールアカウント（@crazy.co.jp）のログインが必須です。</p>
 
   <!-- 完了画面（送信後に表示） -->
   <div class="card done hidden" id="doneCard">
-    <div class="ic">📄</div>
-    <h2 id="doneTitle">依頼ページを作成しました</h2>
-    <p class="done-lead" id="doneMsg">あと1ステップ。下記の手順でSlackに共有すると受付完了です。</p>
+    <div class="ic" id="doneIc">⭐️</div>
+    <h2 id="doneTitle">依頼ページを作成しました！</h2>
+    <p class="done-lead" id="doneMsg">あと1ステップで、依頼を起票できます！</p>
 
     <!-- ▼ Ver.1限定：Slackへの手動共有ブロック（Ver.3でBot自動投稿に切り替えたらこのブロックごと削除） -->
     <div class="hand">
       <div class="hand-no">1</div>
       <div class="hand-bd">
         <b>依頼ページのURLをコピー</b>
-        内容の確認・追記・修正は、このページ上で直接おこなえます。
+        内容の確認・追記・修正は、Notion上で行えます
         <div class="hand-btns">
           <button type="button" class="primary" id="copyUrlBtn">🔗 URLをコピー</button>
-          <a class="ghost" id="doneNotion" href="#" target="_blank" rel="noopener">🗂 ページを開く</a>
+          <a class="ghost" id="doneNotion" href="#" target="_blank" rel="noopener"><svg class="notion-mark" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.98-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.213.98l14.523-.84c.84-.046.933-.56.933-1.167V6.354c0-.606-.233-.933-.746-.887l-15.177.887c-.56.047-.746.327-.746.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.746 0-.933-.234-1.494-.933l-4.577-7.186v6.952l1.448.327s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.645 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.746-.933z"/></svg>Notionページを開く</a>
         </div>
       </div>
     </div>
     <div class="hand">
       <div class="hand-no">2</div>
       <div class="hand-bd">
-        <b><span class="hand-ch">#83_creative_クリ室依頼受付</span> に貼り付け</b>
-        <span class="hand-ch">@宮川雄気 / Miyakawa Yuki</span> をつけて投稿してください。ここから進行がはじまります。
+        <b><span class="hand-ch">#83_creative_クリ室依頼受付</span> または <span class="hand-ch">専用チャンネル</span> に貼り付け</b>
+        @宮川雄気 / Miyakawa Yuki 宛に投稿してください。<br>
+        CRAZY ANNIVERSARY、PARKSIDE CAFEに関する制作物は @笹原光 / Hikari Sasahara 宛に投稿してください。
       </div>
     </div>
     <!-- ▲ Ver.1限定ブロックここまで -->
@@ -203,109 +220,120 @@
         <label class="fl">所属部署<span class="req">必須</span></label>
         <select id="requesterDept">
           <option value="">選択してください</option>
-          <option>BP</option>
-          <option>P</option>
-          <option>D</option>
+          <option>ANV</option>
+          <option>CAREER</option>
           <option>CCA</option>
-          <option>CA</option>
-          <option>ハピネス室</option>
-          <option>マリンチーム（Pやサービスなど全て含む）</option>
+          <option>CGM-BP</option>
+          <option>CGM-D</option>
+          <option>CGM-Kitchen</option>
+          <option>CGM-P</option>
+          <option>CR室</option>
+          <option>CW（婚礼企画・営業企画）</option>
+          <option>CWA</option>
+          <option>HR（ハピネス室・組織開発）</option>
+          <option>IWAI-BP</option>
+          <option>IWAI-D</option>
+          <option>IWAI-Kitchen</option>
+          <option>IWAI-P</option>
           <option>MKT・広報</option>
-          <option>採用</option>
-          <option>CC</option>
-          <option>その他</option>
+          <option>MT-BP</option>
+          <option>MT-D</option>
+          <option>MT-Kitchen</option>
+          <option>MT-P</option>
+          <option>その他（AI推進・BD・食企画・経営企画）</option>
         </select>
-        <p class="hint">兼務の方は、この依頼の主管となる部署を選んでください。</p>
+        <p class="hint">兼務の方は、この依頼の主となる部署を選んでください。</p>
       </div>
     </div>
 
     <!-- STEP2 種別 -->
     <div class="card">
-      <p class="step-label">STEP 2 ─ 依頼の種別</p>
+      <p class="step-label">STEP 2 ─ 依頼種別</p>
       <div class="types">
         <button type="button" class="type-btn" data-type="新規" aria-pressed="false">
-          <span class="t">新規</span><span class="d">ゼロからつくる<br>企画・デザインを新しく起こす</span>
+          <span class="t">新規</span><span class="d">プランニングを<br>はじめる</span>
         </button>
-        <button type="button" class="type-btn" data-type="改訂" aria-pressed="false">
-          <span class="t">改訂</span><span class="d">すでにある制作物の直し<br>文言修正・画像差し替えなど</span>
+        <button type="button" class="type-btn" data-type="改訂・流用" aria-pressed="false">
+          <span class="t">改訂・流用</span><span class="d">既存ツールの<br>文言修正・画像差し替えなど</span>
         </button>
         <button type="button" class="type-btn" data-type="相談" aria-pressed="false">
-          <span class="t">相談</span><span class="d">まず話しながら考えたい<br>制作依頼以外の相談もこちら</span>
+          <span class="t">相談</span><span class="d">まずは話しながら考えたい<br>制作以外の相談もこちら</span>
         </button>
       </div>
     </div>
 
-    <!-- STEP3 内容 -->
+    <!-- STEP3 依頼内容 -->
     <form id="form">
       <div class="card hidden" id="detailCard">
-        <p class="step-label">STEP 3 ─ 内容</p>
+        <p class="step-label">STEP 3 ─ 依頼内容</p>
 
-        <!-- 共通：案件名 -->
+        <!-- 共通：依頼タイトル -->
         <div class="field">
-          <label class="fl">案件名<span class="req">必須</span></label>
+          <label class="fl">依頼タイトル<span class="req">必須</span></label>
           <input type="text" name="title" placeholder="例：6月◯◯フェア 集客バナー">
-          <p class="hint">Notionの一覧に表示されます。「いつ・どのブランドの・何を」が分かる名前だと、後から探しやすくなります。</p>
+          <p class="hint">今回の依頼/相談を分かりやすく一言で記入してください。</p>
         </div>
 
-        <!-- 対象ブランド・部署：新規・相談 -->
-        <div class="field" data-types="新規">
-          <label class="fl">対象ブランド・部署<span class="req">必須</span></label>
+        <!-- 対象事業・部署：全種別（選択肢と並び順はNotion DB「対象事業・部署」に一致） -->
+        <div class="field" data-types="新規,改訂・流用,相談">
+          <label class="fl">対象事業・部署<span class="req">必須</span></label>
           <select name="brand">
             <option value="">選択してください</option>
-            <option value="ANV">ANV｜アニバに関する制作物</option>
-            <option value="CAREER">CAREER｜CRAZY CAREERに関する制作物</option>
-            <option value="CCA">CCA｜CCA事業に関する制作物</option>
-            <option value="CGM-PSC">CGM-PSC｜PARKSIDE CAFEに関する制作物</option>
-            <option value="CGM-レストラン">CGM-レストラン｜レストランに関する制作物</option>
-            <option value="CGM-館内">CGM-館内｜館内全般に関する制作物</option>
-            <option value="CGM-婚礼">CGM-婚礼｜婚礼に関する制作物</option>
-            <option value="CRAZY">CRAZY｜全社周年・組織戦略・マガジン等に関する制作物</option>
-            <option value="CW">CW｜CWに関する制作物</option>
-            <option value="HR">HR｜採用・人事・労務等に関する制作物</option>
-            <option value="IWAI-館内">IWAI-館内｜館内全般に関する制作物</option>
-            <option value="IWAI-婚礼">IWAI-婚礼｜婚礼に関する制作物</option>
-            <option value="MT-the Terrace">MT-the Terrace｜the Terraceに関する制作物</option>
-            <option value="MT-館内">MT-館内｜館内全般に関する制作物</option>
-            <option value="MT-婚礼">MT-婚礼｜婚礼に関する制作物</option>
+            <option>ANV｜アニバに関する制作物</option>
+            <option>CAREER｜CRAZY CAREERに関する制作物</option>
+            <option>CCA｜CCA事業に関する制作物</option>
+            <option>CGM-PSC｜PARKSIDE CAFEに関する制作物</option>
+            <option>CGM-レストラン｜レストランに関する制作物</option>
+            <option>CGM-館内｜館内備品等に関する制作物</option>
+            <option>CGM-婚礼｜婚礼に関する制作物</option>
+            <option>CRAZY｜全社周年・自社WEBサイト等に関する制作物</option>
+            <option>CR室｜クリ室の自主企画・外部案件の管理用</option>
+            <option>CW｜CWブランド全体の婚礼・営業に関する制作物</option>
+            <option>CWA｜CWAに関する制作物</option>
+            <option>HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物</option>
+            <option>IWAI-館内｜館内備品等に関する制作物</option>
+            <option>IWAI-婚礼｜婚礼に関する制作物</option>
+            <option>MT-the-Terrace｜the Terraceに関する制作物</option>
+            <option>MT-館内｜館内備品等に関する制作物</option>
+            <option>MT-婚礼｜婚礼に関する制作物</option>
+            <option>その他｜AI推進・BD・食企画・経営企画等に関する制作物</option>
           </select>
-          <p class="hint">制作データの保管先フォルダの振り分けに使います。迷ったら一番近いものを選んでください（後から変更できます）。</p>
+          <p class="hint">納品物を使用する場所や部署を選んでください。</p>
         </div>
 
-        <!-- 改訂元のデータ：改訂（URL欄を＋で追加可） -->
-        <div class="field" data-types="改訂">
-          <label class="fl">改訂元のデータ<span class="opt">任意・できるだけ添えてください</span></label>
+        <!-- 制作物の種別：新規・改訂・流用（選択肢と並び順はNotion DB「制作物の種別」に一致） -->
+        <!-- 改訂・流用のときは補助テキストを隠す（#prodTypes に .no-sub を付与） -->
+        <div id="prodTypeField" class="field" data-types="新規,改訂・流用">
+          <label class="fl">制作物の種別<span class="req">必須</span></label>
+          <div class="checks" id="prodTypes">
+            <label class="chk"><input type="checkbox" value="KV・アイキャッチ"><span class="chk-text">KV・アイキャッチ<span class="sub">イベントやキャンペーンの世界観を象徴する一枚絵</span></span></label>
+            <label class="chk"><input type="checkbox" value="スライド・ePDF"><span class="chk-text">スライド・ePDF<span class="sub">営業資料・プレゼンスライド・オンラインPDFなど</span></span></label>
+            <label class="chk"><input type="checkbox" value="バナー・告知画像"><span class="chk-text">バナー・告知画像<span class="sub">NEWS・マガジン・フィード投稿画像など</span></span></label>
+            <label class="chk"><input type="checkbox" value="LP・WEBサイト"><span class="chk-text">LP・WEBサイト<span class="sub">ワイヤーフレーム・アートディレクション・サイト内パーツなど</span></span></label>
+            <label class="chk"><input type="checkbox" value="チラシ・パネル・ポスター"><span class="chk-text">チラシ・パネル・ポスター<span class="sub">ペラ一枚の印刷物</span></span></label>
+            <label class="chk"><input type="checkbox" value="リーフレット・パンフレット"><span class="chk-text">リーフレット・パンフレット<span class="sub">二つ折り・蛇腹・ホチキス留めなどの冊子</span></span></label>
+            <label class="chk"><input type="checkbox" value="看板・サイン"><span class="chk-text">看板・サイン<span class="sub">案内看板・表札・サイネージなど</span></span></label>
+            <label class="chk"><input type="checkbox" value="ペーパーアイテム"><span class="chk-text">ペーパーアイテム<span class="sub">メニュー表・手紙・ショップカードなど</span></span></label>
+            <label class="chk"><input type="checkbox" value="招待状・紙袋・ノベルティ"><span class="chk-text">招待状・紙袋・ノベルティ<span class="sub">グッズ系もこちらに含まれます</span></span></label>
+            <label class="chk"><input type="checkbox" value="その他"><span class="chk-text">その他<span class="sub">足拭きマットなど迷ったらこちら</span></span></label>
+          </div>
+          <p class="hint">複数選択可</p>
+        </div>
+
+        <!-- 改訂・流用元のデータ -->
+        <div class="field" data-types="改訂・流用">
+          <label class="fl">改訂・流用元のデータ</label>
           <div id="srcUrls">
-            <input type="text" class="src-url" placeholder="GoogleドライブのフォルダURLを貼り付け" style="margin-bottom:8px">
+            <input type="text" class="src-url" placeholder="GoogleドライブのフォルダURLなど" style="margin-bottom:8px">
           </div>
           <button type="button" class="addurl" id="addSrcUrl">＋ URLを追加</button>
-          <p class="hint">保管場所が分からない場合は、下の「参考画像を添付」に現物の写真やスクリーンショットを添えてください。</p>
-        </div>
-
-        <!-- 制作物の種別：新規 -->
-        <div id="prodTypeField" class="field" data-types="新規">
-          <label class="fl">制作物の種別<span class="req">必須</span><span class="opt">複数選択可</span></label>
-          <div class="checks" id="prodTypes">
-            <label class="chk"><input type="checkbox" value="企画から一緒に"><span class="chk-text">企画から一緒に<span class="sub">コンセプト設計・ステートメント等のコピーライティングを含む</span></span></label>
-            <label class="chk"><input type="checkbox" value="KV・トンマナ"><span class="chk-text">KV・トンマナ<span class="sub">イベント・キャンペーンの世界観づくり（KV＝キービジュアル）</span></span></label>
-            <label class="chk"><input type="checkbox" value="スライド"><span class="chk-text">スライド<span class="sub">営業・登壇・案内資料など</span></span></label>
-            <label class="chk"><input type="checkbox" value="バナー・SNS画像"><span class="chk-text">バナー・SNS画像<span class="sub">NEWS・マガジン・フィード投稿など</span></span></label>
-            <label class="chk"><input type="checkbox" value="LP・WEBサイト"><span class="chk-text">LP・WEBサイト<span class="sub">ディレクション・サイト内パーツ制作など（LP＝1枚完結の紹介ページ）</span></span></label>
-            <label class="chk"><input type="checkbox" value="チラシ・リーフレット"><span class="chk-text">チラシ・リーフレット<span class="sub">2ページまでの1枚もの・4ページまでの冊子</span></span></label>
-            <label class="chk"><input type="checkbox" value="パネル・ポスター"><span class="chk-text">パネル・ポスター<span class="sub">A3以上の印刷物</span></span></label>
-            <label class="chk"><input type="checkbox" value="看板・サイン"><span class="chk-text">看板・サイン<span class="sub">案内看板・表札・サイネージなど</span></span></label>
-            <label class="chk"><input type="checkbox" value="パンフレット"><span class="chk-text">パンフレット<span class="sub">6ページ以上の冊子</span></span></label>
-            <label class="chk"><input type="checkbox" value="ペーパーアイテム"><span class="chk-text">ペーパーアイテム<span class="sub">メニュー・席札・手紙・カードなど</span></span></label>
-            <label class="chk"><input type="checkbox" value="招待状・紙袋"><span class="chk-text">招待状・紙袋<span class="sub">海外製造の場合、2〜3ヶ月かかります</span></span></label>
-            <label class="chk"><input type="checkbox" value="その他"><span class="chk-text">その他<span class="sub">ノベルティ・名入れ・マットなど（迷ったらこちら）</span></span></label>
-          </div>
+          <p class="hint">元データの所在が不明の場合、現物の写真やスクリーンショットを下の「参考画像を添付」に添えてください。</p>
         </div>
 
         <!-- 与件整理：新規 -->
         <div data-types="新規">
-          <p class="sectionhead">与件整理（企画の背景）</p>
-          <p class="hint" style="margin:-6px 0 16px">すべて任意です。分かる範囲で構いません。ここが埋まっているほど初回提案の精度が上がり、やり取りの往復が減ります。</p>
           <div class="field">
-            <label class="fl">目的<span class="opt">任意</span></label>
+            <label class="fl">依頼背景<span class="opt">任意</span></label>
             <input type="text" name="purpose" placeholder="何のための企画・制作物ですか？（例：見学予約を増やす）">
           </div>
           <div class="field">
@@ -314,15 +342,11 @@
           </div>
           <div class="field">
             <label class="fl">ターゲット<span class="opt">任意</span></label>
-            <textarea name="target" placeholder="誰に届けますか？ その人が口には出さない本音まで書けると精度が上がります"></textarea>
+            <textarea name="target" placeholder="誰に届ける企画・制作物ですか？その人の年齢や性格などのペルソナ像・初対面か既存顧客か・抱えている悩みや本人が気づいていない本音など、細かく教えてください"></textarea>
           </div>
           <div class="field">
-            <label class="fl">依頼概要<span class="opt">任意</span></label>
-            <textarea name="overview" placeholder="イベントや制作物の内容について教えてください"></textarea>
-          </div>
-          <div class="field">
-            <label class="fl">実施日・使用開始日<span class="opt">任意</span></label>
-            <input type="text" name="useDate" placeholder="例：7/20開催、8月初旬から使用開始">
+            <label class="fl">使用開始日<span class="opt">任意</span></label>
+            <input type="text" name="useDate" placeholder="例：7月20日開催のイベントで使用、8月初旬に告知開始">
           </div>
           <div class="field">
             <label class="fl">使用場所・使用シーン<span class="opt">任意</span></label>
@@ -333,99 +357,100 @@
             <textarea name="outcome" placeholder="数字の目標でも、雰囲気の目標でも（例：申込30件／SNSで話題になる）"></textarea>
           </div>
           <div class="field">
-            <label class="fl">体験後や読後感の感情<span class="opt">任意</span></label>
+            <label class="fl">読後感や体験後の感情<span class="opt">任意</span></label>
             <textarea name="afterFeeling" placeholder="ターゲットの心に残る感情や余韻は？"></textarea>
           </div>
           <div class="field">
             <label class="fl">予算感<span class="opt">任意</span></label>
             <input type="text" name="budget" placeholder="例：印刷費6千円／立て看板の購入費1万円（未定なら「未定」で構いません）">
           </div>
-          <div class="field">
-            <label class="fl">スケジュール感<span class="opt">任意</span></label>
-            <p class="hint" style="margin:0 0 8px">社内確認・印刷入稿・公開日など、決まっている日程があれば記入してください。</p>
-            <div id="msRows">
-              <div class="ms-row">
-                <input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">
-                <input type="text" class="ms-text" placeholder="例：役員確認（田中さん）">
-                <button type="button" class="ms-del" aria-label="この行を削除">×</button>
-              </div>
-            </div>
-            <button type="button" class="addurl" id="addMs">＋ 日程を追加</button>
-          </div>
         </div>
 
-        <!-- 希望納期：新規・改訂 -->
-        <div class="field" data-types="新規,改訂">
+        <!-- 希望納期：新規・改訂・流用（スケジュール感の上に配置） -->
+        <div class="field" data-types="新規,改訂・流用">
           <label class="fl">希望納期<span class="opt">任意</span></label>
           <input type="date" name="deadline" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">
-          <p class="hint">公開日から逆算した日付を入れてください。目安は下のボタンから確認できます。</p>
-          <button type="button" class="nd-btn" id="ndOpen">📅 納期目安を確認する</button>
+          <br><button type="button" class="nd-btn" id="ndOpen">📅 納期目安表をみる</button>
         </div>
 
-        <!-- 制作内容：新規 -->
-        <div data-types="新規">
-          <p class="sectionhead">制作内容</p>
-          <div class="field">
-            <label class="fl">制作物の詳細・掲載する原稿<span class="opt">任意</span></label>
-            <textarea name="manuscript" placeholder="アウトプットの形状や種類・掲載文言・写真など使用素材の共有URL"></textarea>
-            <p class="hint">NEWSバナー・ストーリーズ・ハガキ両面・蛇腹冊子など、サイズや形状が分かるように書いてください。<br>掲載する文言は、そのまま貼り付けられる確定テキストでいただけると転記ミスが防げます。</p>
+        <!-- スケジュール感：新規 -->
+        <div class="field" data-types="新規">
+          <label class="fl">スケジュール感<span class="opt">任意</span></label>
+          <div id="msRows">
+            <div class="ms-row">
+              <input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">
+              <input type="text" class="ms-text" placeholder="原稿格納・デザイン確認・上長提案・公開など">
+              <button type="button" class="ms-del" aria-label="この行を削除">×</button>
+            </div>
           </div>
-          <div class="field">
-            <label class="fl">プロトタイプ・たたき台<span class="opt">任意</span></label>
-            <textarea name="prototype" placeholder="Canva・Figma・KeynoteなどのURLを共有、もしくは画像を添付してください"></textarea>
-            <p class="hint">手描きのラフや、ホワイトボードの写真でも構いません。</p>
-          </div>
-          <div class="field">
-            <label class="fl">参考・インスピレーション<span class="opt">任意</span></label>
-            <textarea name="reference" placeholder="好きな雰囲気・他社事例・「これは避けたい」例など"></textarea>
-          </div>
+          <button type="button" class="addurl" id="addMs">＋ 日程を追加</button>
         </div>
 
-        <!-- 原稿（コピペできるように）：改訂 -->
-        <div class="field" data-types="改訂">
-          <label class="fl">変更内容の詳細・差し替える原稿<span class="opt">任意</span></label>
-          <textarea name="reviseManuscript" placeholder="変更したい箇所の文言・写真など使用素材の指示を記入"></textarea>
+        <!-- 広報チームへの共有状況：新規（制作物の概要の上） -->
+        <div class="field" data-types="新規">
+          <label class="fl">広報チームへの共有状況<span class="opt">任意</span></label>
+          <select id="prStatus">
+            <option value="">選択してください</option>
+            <option>必要なし</option>
+            <option>これから</option>
+            <option>共有済み</option>
+          </select>
+        </div>
+
+        <!-- 制作物の概要：新規 -->
+        <div class="field" data-types="新規">
+          <label class="fl">制作物の概要<span class="opt">任意</span></label>
+          <textarea name="manuscript" placeholder="アウトプットのサイズ・ページ数・印刷部数・掲載テキストや写真など"></textarea>
+        </div>
+
+        <!-- 制作物の概要：改訂・流用 -->
+        <div class="field" data-types="改訂・流用">
+          <label class="fl">制作物の概要<span class="opt">任意</span></label>
+          <textarea name="reviseManuscript" placeholder="アウトプットのサイズ・ページ数・印刷部数・掲載テキストや写真など"></textarea>
           <p class="hint">差し替える文言は、そのまま貼り付けられる確定テキストでいただけると転記ミスが防げます。</p>
         </div>
 
-        <!-- 参考画像を添付：新規・改訂 -->
-        <div class="field" data-types="新規,改訂">
-          <label class="fl">参考画像を添付<span class="opt">任意・最大10枚</span></label>
-          <input type="file" id="images" accept="image/*" multiple>
-          <p class="hint">参考画像やラフなど。送信時に自動で軽量化され、Notionの依頼ページに掲載されます。</p>
+        <!-- 構成ラフ・プロトタイプ：新規 -->
+        <div class="field" data-types="新規">
+          <label class="fl">構成ラフ・プロトタイプ<span class="opt">任意</span></label>
+          <textarea name="prototype" placeholder="Canva・Figma・KeynoteなどのURLを共有"></textarea>
+        </div>
+
+        <!-- 参考・インスピレーション：新規 -->
+        <div class="field" data-types="新規">
+          <label class="fl">参考・インスピレーション<span class="opt">任意</span></label>
+          <textarea name="reference" placeholder="目指したい雰囲気・参考にしたい既存事例・逆に避けたいイメージなど"></textarea>
+        </div>
+
+        <!-- 参考画像を添付：新規・改訂・流用 -->
+        <div class="field" data-types="新規,改訂・流用">
+          <label class="fl">参考画像を添付</label>
+          <input type="file" id="images" accept="image/*" multiple class="file-native">
+          <label for="images" class="addurl file-pick">＋ 画像を選ぶ</label>
           <div id="imgPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
         </div>
 
-        <!-- 依頼意図・広報：新規 -->
-        <div data-types="新規">
-          <div class="field">
-            <label class="fl">依頼意図（想い・情熱）<span class="opt">任意</span></label>
-            <textarea name="intentSeisaku" placeholder="今回の制作物がどうなったら理想に近づくか、なぜ依頼をしたのかを教えてください。"></textarea>
-          </div>
-          <div class="field">
-            <label class="fl">広報チームへの共有状況<span class="opt">任意</span></label>
-            <select id="prStatus">
-              <option value="">選択してください</option>
-              <option>相談・共有済み</option>
-              <option>これから</option>
-              <option>必要なし</option>
-            </select>
-          </div>
+        <!-- サイズ表：新規 -->
+        <div class="field" data-types="新規">
+          <button type="button" class="nd-btn" id="szOpen">✏️ サイズ表をみる</button>
+        </div>
+
+        <!-- 制作物に対する想い・意気込み：新規 -->
+        <div class="field" data-types="新規">
+          <label class="fl">制作物に対する想い・意気込み<span class="opt">任意</span></label>
+          <textarea name="intentSeisaku" placeholder="企画立案した個人的な背景や、制作に対する意気込み、自分だけでは越えられない壁や悩みなど。定量目標や定性評価とは別にある想いや情熱を教えてください。"></textarea>
         </div>
 
         <!-- 相談 -->
-        <div data-types="相談">
-          <p class="sectionhead">相談</p>
-          <div class="field">
-            <label class="fl">相談内容<span class="req">必須</span></label>
-            <textarea name="consultDetail" placeholder="ざっくりでOK。やりたいこと、困っていることなど相談したいことを記入してください"></textarea>
-          </div>
+        <div class="field" data-types="相談">
+          <label class="fl">相談内容<span class="req">必須</span></label>
+          <textarea name="consultDetail" placeholder="ざっくりでOK。やりたいこと、困っていること、現状の企画内容など相談・共有したいことを記入してください。"></textarea>
         </div>
       </div>
 
       <button type="submit" class="submit" id="submitBtn" disabled>送信する</button>
       <div class="err hidden" id="errBox"></div>
-      <p class="flow">送信するとNotionに依頼ページが作成されます。<br>作成後、次の画面の案内にそって #83_creative_クリ室依頼受付 へ共有してください。</p>
+      <p class="flow">送信するとNotionページが作成されます。<br>作成したページのリンクを次の画面に沿ってクリエイティブ室へ共有してください。</p>
     </form>
   </div>
 </div>
@@ -435,62 +460,134 @@
   <div class="modal">
     <button type="button" class="modal-close" id="ndClose" aria-label="閉じる">×</button>
     <h2 class="modal-title" id="ndTitle">納期目安表</h2>
-    <p class="modal-lead">原稿がすべて揃った状態で、制作着手から納品までにかかる目安です。<br>短縮できる場合もあります。まずは希望スケジュールを添えてご相談ください。</p>
+    <p class="modal-lead">制作着手から納品までにかかる目安です。依頼内容によって短縮も可能なのでスケジュール感とともにご相談ください。<br>
+    ※原稿（テキストや画像素材など）が揃った状態からの目安です。依頼起票からではないのでご注意ください。</p>
     <div class="nd-list">
       <div class="nd-item">
-        <div class="nd-name">KV・トンマナ</div>
-        <div class="nd-period">2週間〜</div>
-        <div class="nd-note">小規模のイベントやキャンペーンの場合の目安です。展開物の作成は別途工数が必要になります。ロゴやトンマナの作成は企画内容によって変わります。</div>
+        <div class="nd-name">KV・アイキャッチ</div>
+        <div class="nd-period">1週間〜2週間</div>
+        <div class="nd-note">展開物の作成は別途工数が必要になります。</div>
       </div>
       <div class="nd-item">
-        <div class="nd-name">スライド</div>
-        <div class="nd-period">2週間</div>
+        <div class="nd-name">スライド・ePDF</div>
+        <div class="nd-period">1週間〜2週間</div>
         <div class="nd-note">ページ数や内容によって変わります。</div>
       </div>
       <div class="nd-item">
-        <div class="nd-name">バナー・SNS画像</div>
+        <div class="nd-name">バナー・告知画像</div>
         <div class="nd-period">1週間</div>
-        <div class="nd-note">ビジュアル作成のみを想定しています。</div>
+        <div class="nd-note">事前に作成枚数とサイズを教えてください。</div>
       </div>
       <div class="nd-item">
         <div class="nd-name">LP・WEBサイト</div>
-        <div class="nd-period">LP：3〜4週間／Webサイト：3ヶ月〜</div>
-        <div class="nd-note">LPの新規制作は開発期間を含みます。Webサイトはサイト規模によって変わります（3ヶ月を目安）。</div>
+        <div class="nd-period">LP 1ヶ月・Webサイト 3ヶ月〜</div>
+        <div class="nd-note">開発・公開作業のディレクションも含みます。内容によって短縮も可能です。</div>
       </div>
       <div class="nd-item">
-        <div class="nd-name">チラシ・リーフレット</div>
-        <div class="nd-period">1〜2週間（社外印刷 +1週間）</div>
-        <div class="nd-note">印刷コストを上げることで納期短縮が可能。加工や特殊印刷を行う場合、納期が伸びます。</div>
+        <div class="nd-name">チラシ・パネル・ポスター</div>
+        <div class="nd-period">1週間（ラフ作成＋1週間・社外印刷＋1週間）</div>
+        <div class="nd-note">加工・特殊印刷は納期が伸びます。印刷コストを上げることで納期短縮が可能。</div>
       </div>
       <div class="nd-item">
-        <div class="nd-name">パネル・ポスター</div>
-        <div class="nd-period">1〜2週間（社外印刷 +1週間）</div>
-        <div class="nd-note">枚数や使用用途によって変わります。</div>
+        <div class="nd-name">リーフレット・パンフレット</div>
+        <div class="nd-period">1週間〜2週間（ラフ作成＋1週間・社外印刷＋1週間）</div>
+        <div class="nd-note">加工・特殊印刷は納期が伸びます。印刷コストを上げることで納期短縮が可能。</div>
       </div>
       <div class="nd-item">
         <div class="nd-name">看板・サイン</div>
-        <div class="nd-period">1〜2週間（社外印刷 +1週間）</div>
-        <div class="nd-note">表札の場合、プレートや取り付け方法によって工期が必要です。</div>
-      </div>
-      <div class="nd-item">
-        <div class="nd-name">パンフレット</div>
-        <div class="nd-period">2週間（社外印刷 +1週間）</div>
-        <div class="nd-note">ページ数や内容によって変わります。</div>
+        <div class="nd-period">1週間</div>
+        <div class="nd-note">看板の購入／取り付けは別途工数が必要になります。</div>
       </div>
       <div class="nd-item">
         <div class="nd-name">ペーパーアイテム</div>
-        <div class="nd-period">1〜2週間（色校正 +1週間、社外印刷 +1週間）</div>
-        <div class="nd-note">席札・ポップ・手紙・カードなどの簡易制作は1週間。メニュー表など先々の運用設計まで必要な場合は要相談。</div>
+        <div class="nd-period">1週間〜（社外印刷＋1週間）</div>
+        <div class="nd-note">メニュー表など先々の運用設計まで必要な場合は要相談。</div>
       </div>
       <div class="nd-item">
-        <div class="nd-name">招待状・紙袋</div>
-        <div class="nd-period">2週間（色校正＆海外製造 +2ヶ月半〜3ヶ月）</div>
-        <div class="nd-note">国内製造の場合でも加工内容によって同等の期間が必要です。</div>
+        <div class="nd-name">招待状・紙袋・ノベルティ</div>
+        <div class="nd-period">2週間（色校正・海外製造＋2ヶ月半〜3ヶ月）</div>
+        <div class="nd-note">ステッカーは普通印刷より工数がかかります。大量部数や製版が必要なアイテムは3ヶ月以上前から動く必要があります。</div>
       </div>
       <div class="nd-item">
         <div class="nd-name">その他</div>
-        <div class="nd-period">要確認</div>
-        <div class="nd-note">発注先に事前に、データ入稿後の納期目安を確認してください。</div>
+        <div class="nd-period">都度対応</div>
+        <div class="nd-note">発注先に事前に、データ入稿後の納期目安を事前に確認してあると安心です。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- サイズ表モーダル（UIのみ・Notion非連携） -->
+<div class="modal-overlay hidden" id="szModal" role="dialog" aria-modal="true" aria-labelledby="szTitle">
+  <div class="modal">
+    <button type="button" class="modal-close" id="szClose" aria-label="閉じる">×</button>
+    <h2 class="modal-title" id="szTitle">サイズ表</h2>
+    <p class="modal-lead">制作目的別の一般的なサイズ表です。依頼内容によって変更する可能性もありますが、アウトプットのイメージを擦り合わせるために活用してください。<br>
+    ※横幅×縦幅で掲載しています。</p>
+    <div class="nd-list">
+      <div class="nd-item">
+        <div class="nd-name">KV・アイキャッチ</div>
+        <ul class="sz-list"><li>掲載メディア次第。以下項目を参照。</li></ul>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">スライド・ePDF</div>
+        <ul class="sz-list">
+          <li>モニターやスクリーン表示：1920×1080px</li>
+          <li>タブレット表示：1060×750px</li>
+          <li>紙資料：A4</li>
+        </ul>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">バナー・告知画像</div>
+        <ul class="sz-list">
+          <li>ストーリーズ：1080×1920px</li>
+          <li>自社NEWSバナー：1200×600px</li>
+          <li>フィード投稿：1080×1350px（スクエア型は縦横1080px）</li>
+          <li>PR TIMES見出し：1920×1280px</li>
+          <li>Peatix：920×450px</li>
+          <li>Googleフォーム見出し：1200×300px</li>
+          <li>自社HPポップアップ：1920×1080px</li>
+          <li>Notion ページヘッダー：1500×600px</li>
+          <li>Notion 共有プレビュー：1500×775px</li>
+        </ul>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">LP・WEBサイト</div>
+        <ul class="sz-list"><li>作成内容次第。デザイナー側で調整。</li></ul>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">チラシ・パネル・ポスター</div>
+        <ul class="sz-list">
+          <li>告知・案内チラシ：A5・A4</li>
+          <li>パネル・ポスター：A3・B3・A2・B2・A1・B1・A0・B0</li>
+          <li>ポップ：A5・ハガキサイズ</li>
+        </ul>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">リーフレット・パンフレット（片面サイズ）</div>
+        <ul class="sz-list">
+          <li>小冊子：B6, A5, B5, A4</li>
+          <li>蛇腹折・観音折：印刷会社によってサイズ規定ある。また片面3ページが基本のため4ページを超えると加工コスト増。</li>
+        </ul>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">看板・サイン</div>
+        <ul class="sz-list">
+          <li>店内案内：A4〜A3</li>
+          <li>店頭大型看板：A1〜A0</li>
+          <li>什器系：PIECE OF SIGN等を検索してリサーチ。</li>
+        </ul>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">ペーパーアイテム</div>
+        <ul class="sz-list">
+          <li>名刺・ショップカード：91×55mm</li>
+          <li>作成内容次第。デザイナー側で調整。</li>
+        </ul>
+      </div>
+      <div class="nd-item">
+        <div class="nd-name">招待状・紙袋・ノベルティ</div>
+        <ul class="sz-list"><li>作成内容次第。デザイナー側で調整。</li></ul>
       </div>
     </div>
   </div>
@@ -610,6 +707,9 @@
       var t = el.getAttribute("data-types").split(",");
       show(el, t.indexOf(current) !== -1);
     });
+    // 改訂・流用のときは制作物の種別の補助テキストを隠す（項目名だけ残す）
+    var pt = document.getElementById("prodTypes");
+    if (pt) pt.classList.toggle("no-sub", current === "改訂・流用");
     submitBtn.disabled = false;
     errBox.classList.add("hidden");
     if (scroll) detailCard.scrollIntoView({behavior:"smooth", block:"start"});
@@ -707,7 +807,7 @@
     addSrcUrlBtn.addEventListener("click", function(){
       var i = document.createElement("input");
       i.type = "text"; i.className = "src-url";
-      i.placeholder = "GoogleドライブのフォルダURLを貼り付け";
+      i.placeholder = "GoogleドライブのフォルダURLなど";
       i.style.marginBottom = "8px";
       document.getElementById("srcUrls").appendChild(i);
       i.focus();
@@ -726,6 +826,18 @@
     if (e.key === "Escape" && ndModal && !ndModal.classList.contains("hidden")) setNd(false);
   });
 
+  // ===== サイズ表モーダル（UIのみ） =====
+  var szModal = document.getElementById("szModal");
+  var szOpen = document.getElementById("szOpen");
+  var szClose = document.getElementById("szClose");
+  function setSz(on){ show(szModal, on); }
+  if (szOpen) szOpen.addEventListener("click", function(){ setSz(true); });
+  if (szClose) szClose.addEventListener("click", function(){ setSz(false); });
+  if (szModal) szModal.addEventListener("click", function(e){ if (e.target === szModal) setSz(false); });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && szModal && !szModal.classList.contains("hidden")) setSz(false);
+  });
+
   // ===== スケジュール感（マイルストーン行の追加・削除・収集） =====
   var msRows = document.getElementById("msRows");
   var addMsBtn = document.getElementById("addMs");
@@ -735,7 +847,7 @@
       row.className = "ms-row";
       row.innerHTML =
         '<input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">' +
-        '<input type="text" class="ms-text" placeholder="例：役員確認（田中さん）">' +
+        '<input type="text" class="ms-text" placeholder="原稿格納・デザイン確認・上長提案・公開など">' +
         '<button type="button" class="ms-del" aria-label="この行を削除">×</button>';
       msRows.appendChild(row);
     });
@@ -777,9 +889,9 @@
     if (authExpired()){ showErr("ログインの有効期限（約1時間）が切れました。お手数ですがもう一度ログインしてください。入力内容はそのまま残ります。"); requireLogin(); return; }
     if (!dept){ showErr("所属部署を選んでください。"); return; }
     if (!current){ showErr("依頼の種別を選んでください。"); return; }
-    if (!title){ showErr("案件名を入力してください。"); return; }
-    // 対象ブランド・部署は新規のみ必須
-    if (current === "新規" && !brand){ showErr("対象ブランド・部署を選んでください。"); return; }
+    if (!title){ showErr("依頼タイトルを入力してください。"); return; }
+    // 対象事業・部署は全種別で必須（Notionの振り分けとDrive自動フォルダ作成の起点になるため）
+    if (!brand){ showErr("対象事業・部署を選んでください。"); return; }
 
     var payload = {
       idempotencyKey: idemKey,
@@ -788,13 +900,15 @@
       requesterDept: dept,
       idToken: auth.idToken  // 名前・メールはWorkerがトークン検証後に取り出す（手入力廃止）
     };
-    if (current === "新規" && brand) payload.brand = brand;
+    if (brand) payload.brand = brand;
 
     if (current === "相談"){
       var consult = val("consultDetail");
       if (!consult){ showErr("相談内容を入力してください。"); return; }
       payload.consultDetail = consult;
-    } else if (current === "改訂"){
+    } else if (current === "改訂・流用"){
+      if (prodTypes.length === 0){ showErr("制作物の種別を1つ以上選んでください。"); return; }
+      payload.productTypes = prodTypes;
       var srcUrls = collectSrcUrls();
       if (srcUrls.length) payload.sourceUrls = srcUrls;
       payload.deadline = val("deadline");
@@ -809,7 +923,6 @@
       payload.purpose = val("purpose");
       payload.issue = val("issue");
       payload.target = val("target");
-      payload.overview = val("overview");
       payload.useDate = val("useDate");
       payload.usePlace = val("usePlace");
       payload.outcome = val("outcome");
