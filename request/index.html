@@ -67,15 +67,33 @@
   .err{background:#fdecea;border:1px solid #f5c6c2;color:#a33027;font-size:12.5px;
     border-radius:9px;padding:10px 13px;margin-top:14px;}
   /* 完了画面 */
-  .done{text-align:center;padding:30px 22px;}
-  .done .ic{font-size:40px;}
-  .done h2{font-size:19px;margin:10px 0 6px;}
-  .done p{color:var(--sub);font-size:13.5px;margin:0 0 18px;}
-  .done a.btn{display:block;text-decoration:none;border-radius:10px;padding:12px;font-size:14px;
-    font-weight:600;margin:8px 0;}
-  .done a.notion{background:#1a1a1a;color:#fff;border:1px solid #1a1a1a;}
-  .done .again{margin-top:18px;background:none;border:none;color:var(--sub);font-size:12.5px;
-    text-decoration:underline;cursor:pointer;font-family:inherit;}
+  .done{padding:30px 22px;}
+  .done .ic{font-size:40px;text-align:center;}
+  .done h2{font-size:19px;margin:10px 0 6px;text-align:center;}
+  .done p.done-lead{color:var(--sub);font-size:13.5px;margin:0 0 18px;text-align:center;}
+  .done .again{display:block;margin:18px auto 0;background:none;border:none;color:var(--sub);
+    font-size:12.5px;text-decoration:underline;cursor:pointer;font-family:inherit;}
+  /* 完了画面：Slack手動共有の手順ブロック（Ver.3のBot連携導入時はこのブロックごと削除する） */
+  .hand{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);
+    border-radius:11px;padding:14px 15px;margin-bottom:9px;background:#fff;text-align:left;}
+  .hand-no{width:21px;height:21px;border-radius:50%;background:var(--accent);color:#fff;
+    font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;
+    flex:none;margin-top:2px;}
+  .hand-bd{flex:1;min-width:0;font-size:12.5px;color:var(--sub);line-height:1.6;}
+  .hand-bd b{display:block;font-size:13.5px;color:var(--ink);margin-bottom:2px;}
+  .hand-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;}
+  .hand-btns a,.hand-btns button{display:inline-flex;align-items:center;gap:5px;
+    border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:600;cursor:pointer;
+    font-family:inherit;text-decoration:none;border:1px solid var(--accent);}
+  .hand-btns .primary{background:var(--accent);color:var(--accent-ink);}
+  .hand-btns .ghost{background:#fff;color:var(--ink);}
+  .hand-btns .primary.copied{background:var(--green);border-color:var(--green);}
+  .hand-ch{background:#f0f0ed;border-radius:5px;padding:1px 6px;font-size:12px;
+    font-weight:600;color:var(--ink);white-space:nowrap;}
+  @media(max-width:520px){
+    .hand-ch{white-space:normal;display:inline-block;}
+    .hand-btns a,.hand-btns button{flex:1;justify-content:center;}
+  }
   /* 納期目安を確認ボタン */
   .nd-btn{display:inline-flex;align-items:center;gap:5px;margin-top:8px;background:#eef3ff;
     color:var(--blue);border:1px solid #d3e0fb;border-radius:8px;padding:8px 13px;
@@ -124,26 +142,47 @@
 <body>
 <div class="wrap">
   <h1>REQUEST</h1>
-  <p class="lead" id="leadText">クリ室への制作依頼フォームです。まず依頼の種別を選んでください。</p>
+  <p class="lead" id="leadText">クリエイティブ室（クリ室）への制作依頼フォームです。<br>ログイン → 種別 → 内容 の3ステップ、5〜10分で送信できます。</p>
 
   <!-- 完了画面（送信後に表示） -->
   <div class="card done hidden" id="doneCard">
-    <div class="ic">✅</div>
-    <h2 id="doneTitle">依頼を受け付けました</h2>
-    <p id="doneMsg">Notionに依頼ページが作成されました。<br>進行は受付チャンネルのスレッドで行います。<br>内容の追記・修正はNotionページ上で直接どうぞ。</p>
-    <a class="btn notion" id="doneNotion" href="#" target="_blank">🗂 Notionページを開く</a>
-    <p class="hint" style="text-align:left">※初めて依頼した方は、ページを開くと「アクセスをリクエスト」と表示される場合があります。リクエストを送るとクリ室が承認しますので、少しだけお待ちください。</p>
+    <div class="ic">📄</div>
+    <h2 id="doneTitle">依頼ページを作成しました</h2>
+    <p class="done-lead" id="doneMsg">あと1ステップ。下記の手順でSlackに共有すると受付完了です。</p>
+
+    <!-- ▼ Ver.1限定：Slackへの手動共有ブロック（Ver.3でBot自動投稿に切り替えたらこのブロックごと削除） -->
+    <div class="hand">
+      <div class="hand-no">1</div>
+      <div class="hand-bd">
+        <b>依頼ページのURLをコピー</b>
+        内容の確認・追記・修正は、このページ上で直接おこなえます。
+        <div class="hand-btns">
+          <button type="button" class="primary" id="copyUrlBtn">🔗 URLをコピー</button>
+          <a class="ghost" id="doneNotion" href="#" target="_blank" rel="noopener">🗂 ページを開く</a>
+        </div>
+      </div>
+    </div>
+    <div class="hand">
+      <div class="hand-no">2</div>
+      <div class="hand-bd">
+        <b><span class="hand-ch">#83_creative_クリ室依頼受付</span> に貼り付け</b>
+        <span class="hand-ch">@宮川雄気 / Miyakawa Yuki</span> をつけて投稿してください。ここから進行がはじまります。
+      </div>
+    </div>
+    <!-- ▲ Ver.1限定ブロックここまで -->
+
+    <p class="hint">※初めて依頼した方は、ページを開くと「アクセスをリクエスト」と表示されることがあります。ボタンを押して送信いただければクリ室が承認します（URLのコピーは承認前でもできます）。</p>
     <button type="button" class="again" id="againBtn">続けて別の依頼を出す</button>
   </div>
 
   <div id="formArea">
     <!-- 依頼者（フェーズ1：Googleログインで名前・メールを自動取得） -->
     <div class="card">
-      <p class="step-label">依頼者</p>
+      <p class="step-label">STEP 1 ─ 依頼者</p>
 
       <!-- 未ログイン時 -->
       <div id="loginBox">
-        <p class="login-lead">会社のGoogleアカウント（@crazy.co.jp）でログインしてください。<br>お名前とメールアドレスは自動で取得されます。</p>
+        <p class="login-lead">会社のGoogleアカウント（@crazy.co.jp）でログインしてください。<br>お名前とメールアドレスは自動で入力されるため、手入力は不要です。</p>
         <div id="gsiButton"></div>
         <p class="hint" id="loginHint"></p>
       </div>
@@ -161,7 +200,7 @@
       </div>
 
       <div class="field" style="margin-top:16px">
-        <label class="fl">部署<span class="req">必須</span></label>
+        <label class="fl">所属部署<span class="req">必須</span></label>
         <select id="requesterDept">
           <option value="">選択してください</option>
           <option>BP</option>
@@ -176,34 +215,36 @@
           <option>CC</option>
           <option>その他</option>
         </select>
+        <p class="hint">兼務の方は、この依頼の主管となる部署を選んでください。</p>
       </div>
     </div>
 
-    <!-- STEP1 種別 -->
+    <!-- STEP2 種別 -->
     <div class="card">
-      <p class="step-label">STEP 1 ─ 依頼の種別</p>
+      <p class="step-label">STEP 2 ─ 依頼の種別</p>
       <div class="types">
         <button type="button" class="type-btn" data-type="新規" aria-pressed="false">
-          <span class="t">新規</span><span class="d">クリエイティブプロセスを<br>始める</span>
+          <span class="t">新規</span><span class="d">ゼロからつくる<br>企画・デザインを新しく起こす</span>
         </button>
         <button type="button" class="type-btn" data-type="改訂" aria-pressed="false">
-          <span class="t">改訂</span><span class="d">既存の制作物の一部修正<br>画像差し替えのみの場合</span>
+          <span class="t">改訂</span><span class="d">すでにある制作物の直し<br>文言修正・画像差し替えなど</span>
         </button>
         <button type="button" class="type-btn" data-type="相談" aria-pressed="false">
-          <span class="t">相談</span><span class="d">一旦話しながら考えたい方<br>制作依頼以外の方はこちら</span>
+          <span class="t">相談</span><span class="d">まず話しながら考えたい<br>制作依頼以外の相談もこちら</span>
         </button>
       </div>
     </div>
 
-    <!-- STEP2 内容 -->
+    <!-- STEP3 内容 -->
     <form id="form">
       <div class="card hidden" id="detailCard">
-        <p class="step-label">STEP 2 ─ 内容</p>
+        <p class="step-label">STEP 3 ─ 内容</p>
 
         <!-- 共通：案件名 -->
         <div class="field">
           <label class="fl">案件名<span class="req">必須</span></label>
           <input type="text" name="title" placeholder="例：6月◯◯フェア 集客バナー">
+          <p class="hint">Notionの一覧に表示されます。「いつ・どのブランドの・何を」が分かる名前だと、後から探しやすくなります。</p>
         </div>
 
         <!-- 対象ブランド・部署：新規・相談 -->
@@ -227,52 +268,53 @@
             <option value="MT-館内">MT-館内｜館内全般に関する制作物</option>
             <option value="MT-婚礼">MT-婚礼｜婚礼に関する制作物</option>
           </select>
-          <p class="hint">保管先フォルダの振り分けに使います。</p>
+          <p class="hint">制作データの保管先フォルダの振り分けに使います。迷ったら一番近いものを選んでください（後から変更できます）。</p>
         </div>
 
         <!-- 改訂元のデータ：改訂（URL欄を＋で追加可） -->
         <div class="field" data-types="改訂">
-          <label class="fl">改訂元のデータ<span class="opt">任意</span></label>
+          <label class="fl">改訂元のデータ<span class="opt">任意・できるだけ添えてください</span></label>
           <div id="srcUrls">
-            <input type="text" class="src-url" placeholder="ドライブフォルダのURLを記入" style="margin-bottom:8px">
+            <input type="text" class="src-url" placeholder="GoogleドライブのフォルダURLを貼り付け" style="margin-bottom:8px">
           </div>
           <button type="button" class="addurl" id="addSrcUrl">＋ URLを追加</button>
-          <p class="hint">データの所在が不明な場合は画像を添付してください。</p>
+          <p class="hint">保管場所が分からない場合は、下の「参考画像を添付」に現物の写真やスクリーンショットを添えてください。</p>
         </div>
 
         <!-- 制作物の種別：新規 -->
         <div id="prodTypeField" class="field" data-types="新規">
           <label class="fl">制作物の種別<span class="req">必須</span><span class="opt">複数選択可</span></label>
           <div class="checks" id="prodTypes">
-            <label class="chk"><input type="checkbox" value="企画から一緒に"><span class="chk-text">企画から一緒に<span class="sub">コンセプト・ステートメントなどのコピーを含む</span></span></label>
-            <label class="chk"><input type="checkbox" value="KV・トンマナ"><span class="chk-text">KV・トンマナ<span class="sub">イベント・キャンペーンなど</span></span></label>
+            <label class="chk"><input type="checkbox" value="企画から一緒に"><span class="chk-text">企画から一緒に<span class="sub">コンセプト設計・ステートメント等のコピーライティングを含む</span></span></label>
+            <label class="chk"><input type="checkbox" value="KV・トンマナ"><span class="chk-text">KV・トンマナ<span class="sub">イベント・キャンペーンの世界観づくり（KV＝キービジュアル）</span></span></label>
             <label class="chk"><input type="checkbox" value="スライド"><span class="chk-text">スライド<span class="sub">営業・登壇・案内資料など</span></span></label>
             <label class="chk"><input type="checkbox" value="バナー・SNS画像"><span class="chk-text">バナー・SNS画像<span class="sub">NEWS・マガジン・フィード投稿など</span></span></label>
-            <label class="chk"><input type="checkbox" value="LP・WEBサイト"><span class="chk-text">LP・WEBサイト<span class="sub">ディレクション、サイト内パーツ制作など</span></span></label>
-            <label class="chk"><input type="checkbox" value="チラシ・リーフレット"><span class="chk-text">チラシ・リーフレット<span class="sub">2ページまでのペラ・4ページまでの冊子</span></span></label>
+            <label class="chk"><input type="checkbox" value="LP・WEBサイト"><span class="chk-text">LP・WEBサイト<span class="sub">ディレクション・サイト内パーツ制作など（LP＝1枚完結の紹介ページ）</span></span></label>
+            <label class="chk"><input type="checkbox" value="チラシ・リーフレット"><span class="chk-text">チラシ・リーフレット<span class="sub">2ページまでの1枚もの・4ページまでの冊子</span></span></label>
             <label class="chk"><input type="checkbox" value="パネル・ポスター"><span class="chk-text">パネル・ポスター<span class="sub">A3以上の印刷物</span></span></label>
             <label class="chk"><input type="checkbox" value="看板・サイン"><span class="chk-text">看板・サイン<span class="sub">案内看板・表札・サイネージなど</span></span></label>
             <label class="chk"><input type="checkbox" value="パンフレット"><span class="chk-text">パンフレット<span class="sub">6ページ以上の冊子</span></span></label>
             <label class="chk"><input type="checkbox" value="ペーパーアイテム"><span class="chk-text">ペーパーアイテム<span class="sub">メニュー・席札・手紙・カードなど</span></span></label>
-            <label class="chk"><input type="checkbox" value="招待状・紙袋"><span class="chk-text">招待状・紙袋<span class="sub">製造に数ヶ月かかります</span></span></label>
-            <label class="chk"><input type="checkbox" value="その他"><span class="chk-text">その他<span class="sub">名入れ対応・足拭きマットなど</span></span></label>
+            <label class="chk"><input type="checkbox" value="招待状・紙袋"><span class="chk-text">招待状・紙袋<span class="sub">海外製造の場合、2〜3ヶ月かかります</span></span></label>
+            <label class="chk"><input type="checkbox" value="その他"><span class="chk-text">その他<span class="sub">ノベルティ・名入れ・マットなど（迷ったらこちら）</span></span></label>
           </div>
         </div>
 
         <!-- 与件整理：新規 -->
         <div data-types="新規">
-          <p class="sectionhead">与件整理</p>
+          <p class="sectionhead">与件整理（企画の背景）</p>
+          <p class="hint" style="margin:-6px 0 16px">すべて任意です。分かる範囲で構いません。ここが埋まっているほど初回提案の精度が上がり、やり取りの往復が減ります。</p>
           <div class="field">
             <label class="fl">目的<span class="opt">任意</span></label>
-            <input type="text" name="purpose" placeholder="何のための企画・アイテムですか？">
+            <input type="text" name="purpose" placeholder="何のための企画・制作物ですか？（例：見学予約を増やす）">
           </div>
           <div class="field">
             <label class="fl">現状の課題<span class="opt">任意</span></label>
-            <textarea name="issue" placeholder="現在抱えている課題感や依頼背景はありますか？"></textarea>
+            <textarea name="issue" placeholder="いま困っていること・依頼に至った背景（例：既存チラシが古く、今の客層に届いていない）"></textarea>
           </div>
           <div class="field">
             <label class="fl">ターゲット<span class="opt">任意</span></label>
-            <textarea name="target" placeholder="ペルソナ像やどんなインサイト（本音）を抱えているか教えてください"></textarea>
+            <textarea name="target" placeholder="誰に届けますか？ その人が口には出さない本音まで書けると精度が上がります"></textarea>
           </div>
           <div class="field">
             <label class="fl">依頼概要<span class="opt">任意</span></label>
@@ -284,11 +326,11 @@
           </div>
           <div class="field">
             <label class="fl">使用場所・使用シーン<span class="opt">任意</span></label>
-            <input type="text" name="usePlace" placeholder="例：IWAI・FDの途中で使用、MTで開催するイベント受付で配布">
+            <input type="text" name="usePlace" placeholder="例：IWAIの館内見学中に使用／MTのイベント受付で配布">
           </div>
           <div class="field">
             <label class="fl">得たい成果<span class="opt">任意</span></label>
-            <textarea name="outcome" placeholder="定量的・定性的な成果はありますか？"></textarea>
+            <textarea name="outcome" placeholder="数字の目標でも、雰囲気の目標でも（例：申込30件／SNSで話題になる）"></textarea>
           </div>
           <div class="field">
             <label class="fl">体験後や読後感の感情<span class="opt">任意</span></label>
@@ -296,19 +338,19 @@
           </div>
           <div class="field">
             <label class="fl">予算感<span class="opt">任意</span></label>
-            <input type="text" name="budget" placeholder="例：印刷費6千円、立て看板購入費1万円など">
+            <input type="text" name="budget" placeholder="例：印刷費6千円／立て看板の購入費1万円（未定なら「未定」で構いません）">
           </div>
           <div class="field">
             <label class="fl">スケジュール感<span class="opt">任意</span></label>
-            <p class="hint" style="margin:0 0 8px">社内確認・印刷入稿・公開日など、決まっている日程やマイルストーンがあれば記入してください。</p>
+            <p class="hint" style="margin:0 0 8px">社内確認・印刷入稿・公開日など、決まっている日程があれば記入してください。</p>
             <div id="msRows">
               <div class="ms-row">
                 <input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">
-                <input type="text" class="ms-text" placeholder="内容 / 担当者">
+                <input type="text" class="ms-text" placeholder="例：役員確認（田中さん）">
                 <button type="button" class="ms-del" aria-label="この行を削除">×</button>
               </div>
             </div>
-            <button type="button" class="addurl" id="addMs">＋ マイルストーンを追加</button>
+            <button type="button" class="addurl" id="addMs">＋ 日程を追加</button>
           </div>
         </div>
 
@@ -316,31 +358,34 @@
         <div class="field" data-types="新規,改訂">
           <label class="fl">希望納期<span class="opt">任意</span></label>
           <input type="date" name="deadline" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">
-          <br><button type="button" class="nd-btn" id="ndOpen">📅 納期目安を確認する</button>
+          <p class="hint">公開日から逆算した日付を入れてください。目安は下のボタンから確認できます。</p>
+          <button type="button" class="nd-btn" id="ndOpen">📅 納期目安を確認する</button>
         </div>
 
         <!-- 制作内容：新規 -->
         <div data-types="新規">
           <p class="sectionhead">制作内容</p>
           <div class="field">
-            <label class="fl">制作物の詳細と原稿（コピペできるように）<span class="opt">任意</span></label>
+            <label class="fl">制作物の詳細・掲載する原稿<span class="opt">任意</span></label>
             <textarea name="manuscript" placeholder="アウトプットの形状や種類・掲載文言・写真など使用素材の共有URL"></textarea>
-            <p class="hint">NEWSバナー・ストーリーズ・ハガキ両面・蛇腹冊子など、サイズ感や形状が分かるように記載してください。</p>
+            <p class="hint">NEWSバナー・ストーリーズ・ハガキ両面・蛇腹冊子など、サイズや形状が分かるように書いてください。<br>掲載する文言は、そのまま貼り付けられる確定テキストでいただけると転記ミスが防げます。</p>
           </div>
           <div class="field">
-            <label class="fl">プロトタイプ<span class="opt">任意</span></label>
+            <label class="fl">プロトタイプ・たたき台<span class="opt">任意</span></label>
             <textarea name="prototype" placeholder="Canva・Figma・KeynoteなどのURLを共有、もしくは画像を添付してください"></textarea>
+            <p class="hint">手描きのラフや、ホワイトボードの写真でも構いません。</p>
           </div>
           <div class="field">
             <label class="fl">参考・インスピレーション<span class="opt">任意</span></label>
-            <textarea name="reference" placeholder="雰囲気・既存事例・NG例などの共有"></textarea>
+            <textarea name="reference" placeholder="好きな雰囲気・他社事例・「これは避けたい」例など"></textarea>
           </div>
         </div>
 
         <!-- 原稿（コピペできるように）：改訂 -->
         <div class="field" data-types="改訂">
-          <label class="fl">制作物の詳細と原稿（コピペできるように）<span class="opt">任意</span></label>
+          <label class="fl">変更内容の詳細・差し替える原稿<span class="opt">任意</span></label>
           <textarea name="reviseManuscript" placeholder="変更したい箇所の文言・写真など使用素材の指示を記入"></textarea>
+          <p class="hint">差し替える文言は、そのまま貼り付けられる確定テキストでいただけると転記ミスが防げます。</p>
         </div>
 
         <!-- 参考画像を添付：新規・改訂 -->
@@ -358,7 +403,7 @@
             <textarea name="intentSeisaku" placeholder="今回の制作物がどうなったら理想に近づくか、なぜ依頼をしたのかを教えてください。"></textarea>
           </div>
           <div class="field">
-            <label class="fl">企画について広報チームの確認状況<span class="opt">任意</span></label>
+            <label class="fl">広報チームへの共有状況<span class="opt">任意</span></label>
             <select id="prStatus">
               <option value="">選択してください</option>
               <option>相談・共有済み</option>
@@ -380,7 +425,7 @@
 
       <button type="submit" class="submit" id="submitBtn" disabled>送信する</button>
       <div class="err hidden" id="errBox"></div>
-      <p class="flow">送信すると受付チャンネル #83_creative_クリ室依頼受付 に要約が投稿され、そのスレッドで進行します。</p>
+      <p class="flow">送信するとNotionに依頼ページが作成されます。<br>作成後、次の画面の案内にそって #83_creative_クリ室依頼受付 へ共有してください。</p>
     </form>
   </div>
 </div>
@@ -390,7 +435,7 @@
   <div class="modal">
     <button type="button" class="modal-close" id="ndClose" aria-label="閉じる">×</button>
     <h2 class="modal-title" id="ndTitle">納期目安表</h2>
-    <p class="modal-lead">必要な原稿が揃っている状態での制作着手から納品までの目安です。<br>納期短縮も可能なので、まずはスケジュールを組んだ上でご相談ください。</p>
+    <p class="modal-lead">原稿がすべて揃った状態で、制作着手から納品までにかかる目安です。<br>短縮できる場合もあります。まずは希望スケジュールを添えてご相談ください。</p>
     <div class="nd-list">
       <div class="nd-item">
         <div class="nd-name">KV・トンマナ</div>
@@ -646,7 +691,7 @@
       errBox.classList.add("hidden");
       var files = Array.prototype.slice.call(imgInput.files);
       var room = MAX_IMAGES - imageData.length;
-      if (room <= 0){ showErr("画像は最大" + MAX_IMAGES + "枚までです。"); imgInput.value=""; return; }
+      if (room <= 0){ showErr("画像は最大" + MAX_IMAGES + "枚までです。11枚目以降は追加されませんでした。"); imgInput.value=""; return; }
       files = files.slice(0, room);
       Promise.all(files.map(compressImage)).then(function(results){
         results.forEach(function(d){ if (d) imageData.push(d); });
@@ -662,7 +707,7 @@
     addSrcUrlBtn.addEventListener("click", function(){
       var i = document.createElement("input");
       i.type = "text"; i.className = "src-url";
-      i.placeholder = "ドライブフォルダのURLを記入";
+      i.placeholder = "GoogleドライブのフォルダURLを貼り付け";
       i.style.marginBottom = "8px";
       document.getElementById("srcUrls").appendChild(i);
       i.focus();
@@ -690,7 +735,7 @@
       row.className = "ms-row";
       row.innerHTML =
         '<input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">' +
-        '<input type="text" class="ms-text" placeholder="内容 / 担当者">' +
+        '<input type="text" class="ms-text" placeholder="例：役員確認（田中さん）">' +
         '<button type="button" class="ms-del" aria-label="この行を削除">×</button>';
       msRows.appendChild(row);
     });
@@ -730,9 +775,9 @@
     // 共通必須
     if (!auth.idToken){ showErr("Googleログインが必要です。上の「依頼者」欄からログインしてください。"); requireLogin(); return; }
     if (authExpired()){ showErr("ログインの有効期限（約1時間）が切れました。お手数ですがもう一度ログインしてください。入力内容はそのまま残ります。"); requireLogin(); return; }
-    if (!dept){ showErr("部署を選んでください。"); return; }
+    if (!dept){ showErr("所属部署を選んでください。"); return; }
     if (!current){ showErr("依頼の種別を選んでください。"); return; }
-    if (!title){ showErr("案件名は必須です。"); return; }
+    if (!title){ showErr("案件名を入力してください。"); return; }
     // 対象ブランド・部署は新規のみ必須
     if (current === "新規" && !brand){ showErr("対象ブランド・部署を選んでください。"); return; }
 
@@ -747,7 +792,7 @@
 
     if (current === "相談"){
       var consult = val("consultDetail");
-      if (!consult){ showErr("相談内容は必須です。"); return; }
+      if (!consult){ showErr("相談内容を入力してください。"); return; }
       payload.consultDetail = consult;
     } else if (current === "改訂"){
       var srcUrls = collectSrcUrls();
@@ -794,7 +839,7 @@
     .then(function(res){
       if (!res.ok || !res.j || !res.j.ok){
         if (res.j && res.j.code === "AUTH"){ requireLogin(); } // 認証エラーは再ログインを促す
-        var m = (res.j && res.j.error) ? res.j.error : "送信に失敗しました。時間をおいて再度お試しください。";
+        var m = (res.j && res.j.error) ? res.j.error : "送信に失敗しました。時間をおいて再度お試しください。解消しない場合は #83_creative_クリ室依頼受付 でお知らせください。";
         throw new Error(m);
       }
       // 完了画面（フェーズ3：Notionページが唯一の正本）
@@ -815,6 +860,41 @@
   document.getElementById("againBtn").addEventListener("click", function(){
     location.reload();
   });
+
+  // ===== 完了画面：NotionページURLのコピー（Ver.1のSlack手動共有用） =====
+  // Ver.3でSlack Bot自動投稿に切り替えたら、この節と完了画面の手順ブロックを一緒に削除する。
+  var copyUrlBtn = document.getElementById("copyUrlBtn");
+  if (copyUrlBtn){
+    copyUrlBtn.addEventListener("click", function(){
+      var url = document.getElementById("doneNotion").getAttribute("href") || "";
+      if (!url || url === "#") return;
+      var done = function(){
+        copyUrlBtn.textContent = "✓ コピーしました";
+        copyUrlBtn.classList.add("copied");
+        setTimeout(function(){
+          copyUrlBtn.textContent = "🔗 URLをコピー";
+          copyUrlBtn.classList.remove("copied");
+        }, 2200);
+      };
+      // navigator.clipboard はhttps必須。使えない環境（古いSafari等）は選択方式にフォールバック
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(done, function(){ fallbackCopy(url, done); });
+      } else {
+        fallbackCopy(url, done);
+      }
+    });
+  }
+  function fallbackCopy(text, onDone){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); onDone(); }
+    catch(e){ showErr("コピーできませんでした。「ページを開く」からURLをコピーしてください。"); }
+    document.body.removeChild(ta);
+  }
 </script>
 </body>
 </html>
