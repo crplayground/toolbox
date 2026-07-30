@@ -49,8 +49,7 @@
 // ---- 種別ごとの「長文与件」項目（フォームのname → 見出しラベル） ----
 // Notion本文の見出し構成に使う。順序＝表示順。
 const SEC_YOKEN = [
-  ["purpose", "依頼背景"],
-  ["issue", "現状の課題"],
+  ["purpose", "依頼背景・抱えている課題感"],
   ["target", "ターゲット"],
   ["useDate", "使用開始日"],
   ["usePlace", "使用場所・使用シーン"],
@@ -59,10 +58,9 @@ const SEC_YOKEN = [
   ["budget", "予算感"],
 ];
 const SEC_SEISAKU = [
-  ["prStatus", "広報チームへの共有状況"],
+  ["prStatus", "広報チームの確認状況"],
   ["manuscript", "制作物の概要"],
   ["prototype", "構成ラフ・プロトタイプ"],
-  ["reference", "参考・インスピレーション"],
   ["intent", "制作物に対する想い・意気込み"],
 ];
 const SEC_SOUDAN = [

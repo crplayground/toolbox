@@ -44,8 +44,10 @@ t("相談＝相談のみ", sectionsFor("相談") === SEC_SOUDAN);
 t("不明な種別は新規と同じ構成", sectionsFor("").length === SEC_YOKEN.length + SEC_SEISAKU.length);
 // 2026-07-26 テキストFIX：依頼概要(overview)を撤去し、広報確認を制作物の概要の前へ移した
 t("与件整理から overview を撤去", !SEC_YOKEN.some(([k]) => k === "overview"));
-t("与件整理の先頭は依頼背景", SEC_YOKEN[0][0] === "purpose" && SEC_YOKEN[0][1] === "依頼背景");
-t("制作内容の先頭は広報チームへの共有状況", SEC_SEISAKU[0][0] === "prStatus");
+t("与件整理の先頭は依頼背景・抱えている課題感", SEC_YOKEN[0][0] === "purpose" && SEC_YOKEN[0][1] === "依頼背景・抱えている課題感");
+t("与件整理から issue（現状の課題）を撤去", !SEC_YOKEN.some(([k]) => k === "issue"));
+t("制作内容の先頭は広報チームの確認状況", SEC_SEISAKU[0][0] === "prStatus" && SEC_SEISAKU[0][1] === "広報チームの確認状況");
+t("制作内容から reference（参考・インスピレーション）を撤去", !SEC_SEISAKU.some(([k]) => k === "reference"));
 t("旧カテゴリ名「改訂」では改訂セクションにならない", sectionsFor("改訂") !== SEC_KAITEI);
 
 // ---- 2. asImageList（画像の厳密検証・XSS対策の継続確認） ----
