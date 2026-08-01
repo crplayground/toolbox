@@ -180,7 +180,6 @@
   }
 
   /* A. 入力系（Figma: 2px #d9e9f6 を外側に隙間なく重ねる） */
-  .ctl:focus-visible,
   .input-add:focus-visible,
   .input-add-login:focus-visible,
   .file-native:focus-visible + .input-add,
@@ -190,6 +189,12 @@
     outline:2px solid transparent;
     outline-offset:0;
     box-shadow:0 0 0 2px var(--color-input-focus);
+  }
+  /* 入力欄は1pxのグレー枠（inset）とリング（外側）を重ねて指定する */
+  .ctl:focus-visible{
+    outline:2px solid transparent;
+    outline-offset:0;
+    box-shadow:inset 0 0 0 1px var(--color-input-border), 0 0 0 2px var(--color-input-focus);
   }
 
   /* B. ボタン系（Figma: 1px #0872b6 を2px外側に） */
@@ -274,18 +279,24 @@
   /* ==========================================================================
      入力コントロール（input/text・textarea・select・calendar）
      ========================================================================== */
+  /* 高さの計算はFigmaどおり 16(padding) + 32(line-height) + 16(padding) = 64。
+     枠線は border ではなく inset の box-shadow で描く。border にすると上下で2px分の高さを食い、
+     行ボックス32px > コンテンツ領域30px になって、select の文字が input より1px下にずれるため。 */
   .ctl{
-    width:100%;border:1px solid transparent;background-color:var(--color-input-default);
-    border-radius:var(--radius-textarea);padding:var(--spacing-padding-textarea);
+    width:100%;border:none;background-color:var(--color-input-default);
+    border-radius:var(--radius-textarea);
+    /* 上下は光学調整で1pxずらす（合計は 16+16 のまま＝高さ64は変わらない）。
+       Noto Sans JP はアセンダ側が厚く、素直に16/16で置くと文字が1px下に見えるため。 */
+    padding:calc(var(--spacing-padding-textarea) - 1px) var(--spacing-padding-textarea) calc(var(--spacing-padding-textarea) + 1px);
     font-weight:var(--typo-weight-body);font-size:var(--typo-size-body);line-height:2;
     color:var(--color-text-default);
-    transition:background-color var(--motion-ui-transition) ease-out,border-color var(--motion-ui-transition) ease-out;
+    transition:background-color var(--motion-ui-transition) ease-out,box-shadow var(--motion-ui-transition) ease-out;
   }
   input.ctl,select.ctl{height:64px;}
   .ctl::placeholder{color:var(--color-text-sub);opacity:1}
   @media(hover:hover){ .ctl:hover{background-color:var(--color-input-hover);} }
-  /* focus＝地色に戻して1pxの枠。リングは .focus-input 側で重ねる */
-  .ctl:focus{background-color:var(--color-input-default);border-color:var(--color-input-border);}
+  /* focus＝地色に戻して1pxの枠（高さを変えないよう inset の影で描く） */
+  .ctl:focus{background-color:var(--color-input-default);box-shadow:inset 0 0 0 1px var(--color-input-border);}
 
   textarea.ctl{display:block;resize:vertical;min-height:128px;line-height:2;}
   /* textareaの右下つまみは icon/extend で見せる（DESIGN.md §5） */
@@ -321,6 +332,7 @@
     position:absolute;left:var(--spacing-padding-textarea);top:50%;transform:translateY(-50%);
     pointer-events:none;color:var(--color-text-sub);
     font-size:var(--typo-size-body);line-height:2;font-variant-numeric:tabular-nums;
+    margin-top:-1px;   /* 実値の文字（.ctl の光学調整）と行を揃える */
   }
   .field-date.filled .date-ph{display:none;}
   .field-date:not(.filled) input[type=date]{color:transparent;}
@@ -1199,14 +1211,34 @@
   form.addEventListener("input", updateSubmitState);
   form.addEventListener("change", updateSubmitState);
 
-  // ===== Googleログイン（認可コードフロー） =========================
-  // 自作ボタン → google.accounts.oauth2.initCodeClient（ポップアップ）で認可コードを受け取る
-  //   → Worker の /auth/exchange でトークン交換 → IDトークンを受け取る
-  //   → 送信時はそのIDトークンを渡し、Worker側で署名検証する
+  // ===== Googleログイン ===========================================
+  // 2段構えにしている。
+  //   ① One Tap（自動）… ページを開いた時点で google.accounts.id を auto_select で起動する。
+  //      ブラウザでGoogleにサインイン済みの人は、ボタンを押さずにログイン状態になる。
+  //      受け取れるのはIDトークンそのもの。
+  //   ② 自作ボタン（手動・フォールバック）… One Tapが出せない環境（サードパーティCookie無効・
+  //      別アカウントに切り替えたい・キャンセルした等）のための手段。認可コードフローで、
+  //      Worker の /auth/exchange がトークン交換とIDトークンの署名検証を行う。
+  //      ※認可コードフローはポップアップを開くため、ブロッカーの仕様上、自動起動はできない。
+  // どちらの経路でも、最終的に手に入るIDトークンを送信時に渡し、**Worker側で必ず署名検証する**。
+  // 画面に出す氏名・メールはトークンから取り出した表示用の値で、Notionに書くのはWorkerが検証した値。
   // クライアントシークレットはWorker Secretsにのみ置き、ブラウザには一切出さない。
   var auth = { idToken: null, name: "", email: "", exp: 0 };
   var codeClient = null;
   var loginBtn = $("googleLoginBtn");
+
+  // IDトークン（JWT）のペイロードを取り出す。表示用の先読みで、検証の代わりにはしない。
+  function b64urlDecode(str){
+    str = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (str.length % 4) str += "=";
+    return decodeURIComponent(Array.prototype.map.call(atob(str), function(c){
+      return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(""));
+  }
+  function parseJwtPayload(token){
+    try { return JSON.parse(b64urlDecode(String(token).split(".")[1])); }
+    catch(e){ return null; }
+  }
 
   function setLoginHint(msg){ $("loginHint").textContent = msg || ""; }
 
@@ -1233,9 +1265,48 @@
     auth = { idToken: null, name: "", email: "", exp: 0 };
     show($("userBox"), false);
     show($("loginBox"), true);
+    // 自動ログインを切る。これをしないと「別のアカウント」を押しても同じ人で入り直してしまう
+    try { if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); } catch(e){}
     updateSubmitState();
   }
 
+  // ── ① One Tap（自動ログイン） ──
+  function initOneTap(){
+    if (!window.google || !google.accounts || !google.accounts.id){ setTimeout(initOneTap, 200); return; }
+    try {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: onOneTapCredential,
+        auto_select: true,          // 前回と同じアカウントなら確認なしでサインインする
+        itp_support: true,
+        use_fedcm_for_prompt: true, // Chromeの新方式。指定しないと将来One Tapが出なくなる
+        context: "signin"
+      });
+      google.accounts.id.prompt();  // 出せない環境では黙って出ないだけ。自作ボタンが残る
+    } catch(e){
+      // One Tapが使えなくても自作ボタンで進めるので、ここでは何も出さない
+    }
+  }
+  initOneTap();
+
+  function onOneTapCredential(res){
+    if (!res || !res.credential) return;
+    var p = parseJwtPayload(res.credential);
+    if (!p){
+      setLoginHint("ログイン情報を読み取れませんでした。下のボタンからログインしてください。");
+      return;
+    }
+    var email = String(p.email || "");
+    // 画面側の先回りチェック。最終判定はWorker側の署名検証
+    if (p.hd !== HOSTED_DOMAIN || !/@crazy\.co\.jp$/i.test(email)){
+      setLoginHint("@crazy.co.jp のアカウントでログインしてください（" + email + " は使用できません）。");
+      try { google.accounts.id.disableAutoSelect(); } catch(e){}
+      return;
+    }
+    applySignedIn({ idToken: res.credential, name: p.name || email, email: email, exp: p.exp });
+  }
+
+  // ── ② 自作ボタン（認可コードフロー・フォールバック） ──
   function initAuth(){
     if (!window.google || !google.accounts || !google.accounts.oauth2){ setTimeout(initAuth, 200); return; }
     codeClient = google.accounts.oauth2.initCodeClient({
