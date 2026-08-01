@@ -44,11 +44,17 @@ t("相談＝相談のみ", sectionsFor("相談") === SEC_SOUDAN);
 t("不明な種別は新規と同じ構成", sectionsFor("").length === SEC_YOKEN.length + SEC_SEISAKU.length);
 // 2026-07-26 テキストFIX：依頼概要(overview)を撤去し、広報確認を制作物の概要の前へ移した
 t("与件整理から overview を撤去", !SEC_YOKEN.some(([k]) => k === "overview"));
-t("与件整理の先頭は依頼背景・抱えている課題感", SEC_YOKEN[0][0] === "purpose" && SEC_YOKEN[0][1] === "依頼背景・抱えている課題感");
+t("与件整理の先頭は依頼背景・課題感", SEC_YOKEN[0][0] === "purpose" && SEC_YOKEN[0][1] === "依頼背景・課題感");
 t("与件整理から issue（現状の課題）を撤去", !SEC_YOKEN.some(([k]) => k === "issue"));
-t("制作内容の先頭は広報チームの確認状況", SEC_SEISAKU[0][0] === "prStatus" && SEC_SEISAKU[0][1] === "広報チームの確認状況");
+t("制作内容の先頭は広報チームの企画確認状況", SEC_SEISAKU[0][0] === "prStatus" && SEC_SEISAKU[0][1] === "広報チームの企画確認状況");
 t("制作内容から reference（参考・インスピレーション）を撤去", !SEC_SEISAKU.some(([k]) => k === "reference"));
 t("旧カテゴリ名「改訂」では改訂セクションにならない", sectionsFor("改訂") !== SEC_KAITEI);
+// 2026-08-01 見出しの改称（フォームの設問名に合わせる）
+t("prototype の見出しは「プロトタイプ」", SEC_SEISAKU.some(([k, l]) => k === "prototype" && l === "プロトタイプ"));
+t("intent の見出しは「プロジェクトに対する想い」", SEC_SEISAKU.some(([k, l]) => k === "intent" && l === "プロジェクトに対する想い"));
+t("旧見出しは残っていない", JSON.stringify(SEC_YOKEN.concat(SEC_SEISAKU)).indexOf("抱えている課題感") === -1
+  && JSON.stringify(SEC_SEISAKU).indexOf("構成ラフ") === -1
+  && JSON.stringify(SEC_SEISAKU).indexOf("意気込み") === -1);
 
 // ---- 2. asImageList（画像の厳密検証・XSS対策の継続確認） ----
 section("2. asImageList");
@@ -97,7 +103,7 @@ const propsFull = buildNotionProperties({
   title: "夏フェア バナー", category: "新規", brand: "IWAI-婚礼｜婚礼に関する制作物",
   productTypes: ["バナー・告知画像"], requesterDept: "MKT・広報",
   requesterName: "太郎", requesterEmail: "taro@crazy.co.jp",
-  deadline: "2026-08-10", dataStorage: "https://drive.google.com/x",
+  dataStorage: "https://drive.google.com/x",
 });
 t("案件名（title）", propsFull["案件名"].title[0].text.content === "夏フェア バナー");
 t("依頼種別（select）", propsFull["依頼種別"].select.name === "新規");
@@ -105,13 +111,19 @@ t("制作物の種別（multi_select）", propsFull["制作物の種別"].multi_
 // 2026-07-26 Notion DB改称に追従（プロパティ名がずれるとNotion登録が丸ごと失敗するため固定する）
 t("対象事業・部署（旧「対象ブランド・部署」）", propsFull["対象事業・部署"].select.name === "IWAI-婚礼｜婚礼に関する制作物");
 t("所属部署（旧「依頼者部署」）", propsFull["所属部署"].select.name === "MKT・広報");
-t("担当者名（旧「依頼者名」）", propsFull["担当者名"].rich_text[0].text.content === "太郎");
+t("依頼者（rich_text）に氏名が入る", propsFull["依頼者"].rich_text[0].text.content === "太郎");
+t("データ格納先（url）", propsFull["データ格納先"].url === "https://drive.google.com/x");
 t("旧プロパティ名は送らない", !("依頼カテゴリ" in propsFull) && !("対象ブランド・部署" in propsFull) && !("依頼者部署" in propsFull) && !("依頼者名" in propsFull));
-t("依頼者メール（email）", propsFull["依頼者メール"].email === "taro@crazy.co.jp");
-t("希望納期（date）", propsFull["希望納期"].date.start === "2026-08-10");
+// 2026-08-01 Notion DB整理：存在しないプロパティを送るとNotion APIが400を返し登録が丸ごと失敗する
+t("DBに無い「担当者名」を送らない", !("担当者名" in propsFull));
+t("DBに無い「依頼者メール」を送らない（メールは本文に書く）", !("依頼者メール" in propsFull));
+t("廃止した「希望納期」を送らない", !("希望納期" in propsFull));
+t("person型の「担当者」はWorkerから触らない", !("担当者" in propsFull));
 const propsMin = buildNotionProperties({ title: "相談だけ", category: "相談" });
-t("任意プロパティは無ければ送らない", !("希望納期" in propsMin) && !("対象事業・部署" in propsMin));
+t("任意プロパティは無ければ送らない", !("依頼者" in propsMin) && !("対象事業・部署" in propsMin) && !("データ格納先" in propsMin));
 t("タイトル無しは（無題）", buildNotionProperties({ category: "相談" })["案件名"].title[0].text.content === "（無題）");
+t("送るプロパティはDBに実在する9つの範囲に収まる", Object.keys(propsFull).every(k =>
+  ["案件名","依頼種別","依頼者","所属部署","対象事業・部署","制作物の種別","データ格納先"].indexOf(k) !== -1));
 
 // ---- 7. Notion本文ブロック（共有URL calloutの廃止＋画像埋め込み） ----
 section("7. buildNotionBlocks / buildNotionSectionBlocks");
@@ -121,7 +133,25 @@ const dataNew = {
 };
 const secBlocks = buildNotionSectionBlocks(dataNew);
 t("見出し＋本文のペアが生成される", secBlocks.some(b => b.type === "heading_2") && secBlocks.some(b => b.type === "paragraph"));
-t("スケジュール感がbulleted_list_itemで入る", secBlocks.some(b => b.type === "bulleted_list_item"));
+t("スケジュールがbulleted_list_itemで入る", secBlocks.some(b => b.type === "bulleted_list_item"));
+t("スケジュールの見出しは「スケジュール」", JSON.stringify(secBlocks).indexOf("スケジュール感") === -1
+  && secBlocks.some(b => b.type === "heading_2" && b.heading_2.rich_text[0].text.content === "スケジュール"));
+
+// 2026-08-01 依頼者のメールアドレスはプロパティに入れず、本文の先頭に書く
+const secWho = buildNotionSectionBlocks({
+  category: "相談", consultDetail: "ざっくり相談", requesterName: "太郎", requesterEmail: "taro@crazy.co.jp",
+});
+t("本文の先頭が依頼者情報", secWho[0].type === "paragraph"
+  && secWho[0].paragraph.rich_text[0].text.content === "依頼者：太郎（taro@crazy.co.jp）");
+t("依頼者情報が無ければ段落も作らない",
+  buildNotionSectionBlocks({ category: "相談", consultDetail: "x" })[0].type === "heading_2");
+
+// 改訂・流用でもスケジュールを本文に出す（フォームに設問を追加したため）
+const secKaitei = buildNotionSectionBlocks({
+  category: "改訂・流用", reviseManuscript: "文言差し替え",
+  schedule: [{ date: "2026-08-05", text: "校了" }],
+});
+t("改訂・流用にもスケジュールが入る", secKaitei.some(b => b.type === "bulleted_list_item"));
 const blocksNoImg = buildNotionBlocks(dataNew, { ids: [], failed: 0 });
 t("共有ページcalloutが無い（廃止確認）", JSON.stringify(blocksNoImg).indexOf("共有ページ") === -1);
 t("画像なしなら画像見出しも無い", JSON.stringify(blocksNoImg).indexOf("参考画像") === -1);
@@ -190,6 +220,13 @@ const src = readFileSync(join(__dir, "../src/worker.js"), "utf8");
 t('KVへの html:<id> 読み書きが無い', src.indexOf('"html:"') === -1);
 t('form:<id> は読み出し専用（putしない）', src.indexOf('put("form:') === -1 && src.indexOf('"form:"') !== -1);
 t("guest:<email> 照合が実装されている", src.indexOf('"guest:"') !== -1);
+// 2026-08-01 Googleログイン：認可コードフロー
+t("/auth/exchange エンドポイントがある", src.indexOf('"/auth/exchange"') !== -1);
+t("トークン交換の宛先が Google の token エンドポイント", src.indexOf("https://oauth2.googleapis.com/token") !== -1);
+t("ポップアップ方式のため redirect_uri は postmessage", src.indexOf('redirect_uri: "postmessage"') !== -1);
+t("シークレットは env から読む（ソースに直書きしない）", src.indexOf("env.GOOGLE_CLIENT_SECRET") !== -1);
+t("交換したIDトークンも署名検証している", /exchangeCodeForIdToken[\s\S]{0,400}verifyGoogleIdToken/.test(src));
+t("Google のエラー本文をそのまま返さない", src.indexOf("out.error_description") === -1);
 t("File Upload APIを使用", src.indexOf("/v1/file_uploads") !== -1);
 t("editId送信には410で案内", src.indexOf("EDIT_REMOVED") !== -1);
 t("Slack投稿にblocksを送信（Block Kit・フェーズ4先行分）", src.indexOf("blocks: buildSlackBlocks") !== -1);

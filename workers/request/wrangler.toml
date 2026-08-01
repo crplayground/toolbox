@@ -24,8 +24,13 @@ NOTION_VERSION = "2022-06-28"
 # 空のままだと /submit が「サーバー設定が未完了です」を返す（＝ログイン必須が常に有効）。
 GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleusercontent.com"
 
-# --- 機密（NOTION_TOKEN / NOTION_DB_ID / SLACK_WEBHOOK_URL）は toml に書かない ---
+# --- 機密（NOTION_TOKEN / NOTION_DB_ID / GOOGLE_CLIENT_SECRET / SLACK_WEBHOOK_URL）は toml に書かない ---
 # 必ず `npx wrangler secret put <名前>` で登録する（SETUP.md 手順3）。
+#
+# 【GOOGLE_CLIENT_SECRET】ログイン方式を「認可コードフロー」に変えたため必須になった。
+#   フォームの自作ログインボタン → 認可コード → Worker が /auth/exchange でIDトークンに交換する。
+#   未登録の間は /auth/exchange が「サーバー設定が未完了です」を返し、ログインできない。
+#   登録: cd workers/request && npx wrangler secret put GOOGLE_CLIENT_SECRET
 #
 # 【フェーズ3】SLACK_WEBHOOK_URL はT0（前提タスク）で登録する。
 #   未登録の間はSlack投稿がスキップされ、初依頼者の「既知マーク」も付かない

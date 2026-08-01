@@ -34,7 +34,9 @@
 // 環境変数（Secrets / Vars）：
 //   NOTION_TOKEN      （必須）Notion インテグレーションのトークン
 //   NOTION_DB_ID      （必須）登録先DBの database_id
-//   GOOGLE_CLIENT_ID  （必須）GISのOAuthクライアントID。IDトークンの aud 検証に使用
+//   GOOGLE_CLIENT_ID  （必須）GoogleのOAuthクライアントID。IDトークンの aud 検証に使用
+//   GOOGLE_CLIENT_SECRET（必須）同クライアントのシークレット。認可コード→IDトークンの交換に使用
+//                      ※Secretsにのみ置く。フォームHTMLやリポジトリには絶対に書かない
 //   SLACK_WEBHOOK_URL （任意）受付chのIncoming Webhook。未設定ならSlack投稿はスキップ
 //                      ※未設定の間は初依頼者の「既知マーク」も付けない（通知が飛ばないため）
 //   ALLOWED_ORIGIN    （任意）許可するフォームのオリジン。カンマ区切り可。未設定なら全許可
@@ -49,7 +51,7 @@
 // ---- 種別ごとの「長文与件」項目（フォームのname → 見出しラベル） ----
 // Notion本文の見出し構成に使う。順序＝表示順。
 const SEC_YOKEN = [
-  ["purpose", "依頼背景・抱えている課題感"],
+  ["purpose", "依頼背景・課題感"],
   ["target", "ターゲット"],
   ["useDate", "使用開始日"],
   ["usePlace", "使用場所・使用シーン"],
@@ -57,11 +59,12 @@ const SEC_YOKEN = [
   ["afterFeeling", "読後感や体験後の感情"],
   ["budget", "予算感"],
 ];
+// 「広報チームの企画確認状況」はフォーム上でスケジュールより前にあるため、ここでも先頭に置く。
 const SEC_SEISAKU = [
-  ["prStatus", "広報チームの確認状況"],
+  ["prStatus", "広報チームの企画確認状況"],
   ["manuscript", "制作物の概要"],
-  ["prototype", "構成ラフ・プロトタイプ"],
-  ["intent", "制作物に対する想い・意気込み"],
+  ["prototype", "プロトタイプ"],
+  ["intent", "プロジェクトに対する想い"],
 ];
 const SEC_SOUDAN = [
   ["consultDetail", "相談内容"],
@@ -159,6 +162,7 @@ function asProductTypeList(v) {
 // 検証に通ったときだけ { name, email } を返す。失敗は AuthError を投げる。
 
 const GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const ALLOWED_HD = "crazy.co.jp";
 let jwksCache = { keys: null, fetchedAt: 0 }; // Workerインスタンス単位のキャッシュ
 
@@ -240,7 +244,37 @@ async function verifyGoogleIdToken(idToken, env) {
   if (payload.hd !== ALLOWED_HD || !/@crazy\.co\.jp$/i.test(email)) {
     throw new AuthError("@crazy.co.jp のアカウントでログインしてください");
   }
-  return { name: String(payload.name || "") || email, email };
+  return { name: String(payload.name || "") || email, email, exp: payload.exp };
+}
+
+// ---- Googleログイン：認可コード → IDトークン --------------------
+// フォームは自前のボタンから認可コードを受け取り、それをここへ送る。
+// クライアントシークレットはWorker Secrets（GOOGLE_CLIENT_SECRET）にのみ置き、
+// ブラウザには一切渡さない。ポップアップ方式なので redirect_uri は "postmessage" を使う。
+async function exchangeCodeForIdToken(code, env) {
+  const clientId = (env.GOOGLE_CLIENT_ID || "").trim();
+  const clientSecret = (env.GOOGLE_CLIENT_SECRET || "").trim();
+  if (!clientId || !clientSecret) {
+    throw new Error("サーバー設定が未完了です（GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET）");
+  }
+  const body = new URLSearchParams({
+    code,
+    client_id: clientId,
+    client_secret: clientSecret,
+    grant_type: "authorization_code",
+    redirect_uri: "postmessage",
+  });
+  const res = await fetch(GOOGLE_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || !out.id_token) {
+    // Googleのエラー内容はそのまま返さない（設定情報が漏れるため）
+    throw new AuthError("ログインに失敗しました。もう一度お試しください");
+  }
+  return out.id_token;
 }
 
 // ---- 既知依頼者リスト（フェーズ3・ゲスト運用） -------------------
@@ -308,6 +342,10 @@ function buildGuideHtml() {
 // ---- Notion 登録 ------------------------------------------------
 // 最小プロパティ＋ページ本文（長文与件・スケジュール感・参考画像）。
 // ※プロパティ名は DB「案件管理」の確定名に合わせている。名称変更時はここを直す。
+// DBに存在しないプロパティ名を送るとNotion APIが400を返し、リクエスト全体が失敗する。
+// ここに書いてよいのは「案件管理」に実在するプロパティだけ。
+// ・「担当者」（person型）はクリエイティブ室側の割り当て欄なので、Workerからは書かない。
+// ・依頼者のメールアドレスはプロパティに入れず、ページ本文の先頭に記載する。
 function buildNotionProperties(data) {
   const props = {
     "案件名": { title: [{ text: { content: (data.title || "（無題）").slice(0, 2000) } }] },
@@ -319,9 +357,7 @@ function buildNotionProperties(data) {
   if (data.brand) props["対象事業・部署"] = { select: { name: data.brand } };
   if (productTypes.length) props["制作物の種別"] = { multi_select: productTypes.map((n) => ({ name: n })) };
   if (data.requesterDept) props["所属部署"] = { select: { name: data.requesterDept } };
-  if (data.requesterName) props["担当者名"] = { rich_text: [{ text: { content: data.requesterName } }] };
-  if (data.requesterEmail) props["依頼者メール"] = { email: data.requesterEmail };
-  if (data.deadline) props["希望納期"] = { date: { start: data.deadline } };
+  if (data.requesterName) props["依頼者"] = { rich_text: [{ text: { content: data.requesterName } }] };
   if (data.dataStorage) props["データ格納先"] = { url: data.dataStorage };
 
   return props;
@@ -330,6 +366,19 @@ function buildNotionProperties(data) {
 // 長文与件のセクション本文ブロック（見出し＋本文＋スケジュール感）を組み立てる。
 function buildNotionSectionBlocks(data) {
   const blocks = [];
+
+  // 依頼者情報（本文の先頭）。メールアドレスはプロパティに入れずここに残す。
+  if (data.requesterName || data.requesterEmail) {
+    const who = data.requesterEmail
+      ? (data.requesterName || "") + "（" + data.requesterEmail + "）"
+      : String(data.requesterName || "");
+    blocks.push({
+      object: "block",
+      type: "paragraph",
+      paragraph: { rich_text: [{ type: "text", text: { content: "依頼者：" + who } }] },
+    });
+  }
+
   const sections = sectionsFor(data.category);
   for (const [name, label] of sections) {
     const raw = data[name];
@@ -348,13 +397,13 @@ function buildNotionSectionBlocks(data) {
       paragraph: { rich_text: [{ type: "text", text: { content: v.slice(0, 2000) } }] },
     });
   }
-  // スケジュール感（マイルストーン）：本文へ箇条書きで（プロパティには入れない）
+  // スケジュール：本文へ箇条書きで（プロパティには入れない）。新規・改訂・流用の両方で使う。
   const schedule = asScheduleList(data.schedule);
   if (schedule.length) {
     blocks.push({
       object: "block",
       type: "heading_2",
-      heading_2: { rich_text: [{ type: "text", text: { content: "スケジュール感" } }] },
+      heading_2: { rich_text: [{ type: "text", text: { content: "スケジュール" } }] },
     });
     for (const m of schedule) {
       const line = (m.date ? m.date + "　" : "") + m.text;
@@ -497,7 +546,6 @@ function buildSlackText(data, notionUrl, firstRequest) {
   const lines = [
     emoji + " *制作依頼を受け付けました*［" + category + "］",
     "依頼タイトル: " + (data.title || "（無題）"),
-    data.deadline ? "希望納期: " + data.deadline : null,
     data.brand ? "対象事業/部署: " + data.brand : null,
     data.requesterDept ? "所属部署: " + data.requesterDept : null,
     productTypes.length ? "制作物の種別: " + productTypes.join("、") : null,
@@ -537,7 +585,6 @@ function buildSlackBlocks(data, notionUrl, firstRequest) {
     data.requesterName
       ? { type: "mrkdwn", text: "*依頼者*\n" + data.requesterName + (data.requesterDept ? "（" + data.requesterDept + "）" : "") }
       : null,
-    data.deadline ? { type: "mrkdwn", text: "*希望納期*\n" + data.deadline } : null,
     data.brand ? { type: "mrkdwn", text: "*対象事業・部署*\n" + data.brand } : null,
     productTypes.length ? { type: "mrkdwn", text: "*制作物の種別*\n" + productTypes.join("、").slice(0, 1900) } : null,
     imgCount ? { type: "mrkdwn", text: "*添付画像*\n" + imgCount + "枚（Notionページに掲載）" } : null,
@@ -596,6 +643,40 @@ export default {
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders(request, env) });
+    }
+
+    // ⓪ ログイン：POST /auth/exchange
+    //    フォームの自作ボタンで受け取った認可コードを、IDトークンに交換して返す。
+    //    署名検証まで済ませてから返すので、フォーム側は結果を表示するだけでよい。
+    if (request.method === "POST" && path === "/auth/exchange") {
+      if (!isAllowedOrigin(request, env)) {
+        return json({ error: "許可されていない送信元です" }, 403, request, env);
+      }
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: "データの形式が不正です" }, 400, request, env);
+      }
+      const code = body && typeof body.code === "string" ? body.code : "";
+      if (!code) return json({ error: "認可コードがありません" }, 400, request, env);
+
+      try {
+        const idToken = await exchangeCodeForIdToken(code, env);
+        const actor = await verifyGoogleIdToken(idToken, env);
+        return json({
+          ok: true,
+          idToken,
+          name: actor.name,
+          email: actor.email,
+          exp: actor.exp,
+        }, 200, request, env);
+      } catch (e) {
+        if (e instanceof AuthError) {
+          return json({ error: String(e.message || e), code: "AUTH" }, 403, request, env);
+        }
+        return json({ error: String(e.message || e) }, 500, request, env);
+      }
     }
 
     // ① フォーム送信：POST /submit

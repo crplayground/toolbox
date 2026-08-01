@@ -9,531 +9,785 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 <style>
   /* ==========================================================================
-     REQUEST — V1-3（Figma『Request』準拠）
-     デザインの正 = Figma paEvn9ugpEQoYRPBWF3fc6 / node 27-3284
-     以下のCSS変数はFigmaのバリアブル名をそのまま写したもの。値を変えるときは
-     必ずFigma側を先に直してから反映すること。
+     REQUEST
+     デザインの正 = Figma『Request』 paEvn9ugpEQoYRPBWF3fc6 / セクション 27:3284
+     仕様書 = request/design/DESIGN.md（見た目）・request/SPEC.md（機能）
+
+     CSS変数名は Figma のバリアブル名をそのまま写している。
+       color/text/accent            → --color-text-accent
+       spacing/semantic/padding-box → --spacing-padding-box
+     値を変えるときは必ず Figma 側を先に直すこと。
      ========================================================================== */
   :root{
-    /* ── color ── */
-    --color-text-accent:#0079c0;
+    /* ── color ───────────────────────────────────────────── */
+    --color-text-accent:#0872b6;
     --color-text-default:#333333;
     --color-text-sub:#595959;
     --color-text-white:#ffffff;
+
     --color-warning-text:#ce1d09;
     --color-warning-bg:#ffe6e5;
+
     --color-bg-default:#f5f5f5;
     --color-bg-box:#ffffff;
     --color-bg-hover:#d9e9f6;
-    --color-bg-select:#0079c0;
-    --color-bg-scrim:#333333;
+    --color-bg-select:#0872b6;
+    --color-bg-scrim:rgba(51,51,51,.7);
+
     --color-border-default:#9f9f9f;
-    --color-cta-disable:#878787;
-    --color-icon-default:#0079c0;
-    --color-icon-disable:#878787;
-    --color-orange-90:#f08a42;
-    --color-orange-70:#fca35c;
-    --color-orange-50:#ffb988;
-    /* gradation/sunbeam-h（送信ボタン） */
-    --gradation-sunbeam-h:linear-gradient(90deg,#f08a42 0%,#fca35c 60%,#ffb988 100%);
 
-    /* ── typography ── */
-    --font-j:'Noto Sans JP','Hiragino Kaku Gothic ProN',-apple-system,BlinkMacSystemFont,sans-serif;
-    --font-e:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
-    --size-head-1:40px;
-    --size-head-2:32px;
-    --size-head-3:24px;
-    --size-head-4:18px;
-    --size-body:16px;
-    --size-label-l:16px;
-    --size-label-m:12px;
-    --size-caption:12px;
+    --color-input-default:#f5f5f5;
+    --color-input-border:#9f9f9f;
+    --color-input-hover:#d9e9f6;
+    --color-input-focus:#d9e9f6;
 
-    /* ── spacing ── */
-    --pad-page-x:160px;
-    --pad-page-y:64px;
-    --gap-head-offset:80px;
-    --gap-head-group:16px;
-    --gap-subhead-group:8px;
-    --gap-subhead-offset:16px;
-    --gap-content:32px;
-    --gap-box:32px;
-    --gap-section:64px;
-    --gap-icon-group:8px;
-    --pad-box:32px;
-    --pad-section:64px;
-    --pad-textarea:16px;
-    --pad-button-x:32px;
-    --pad-button-y:24px;
-    --pad-badge-x:8px;
-    --pad-badge-y:4px;
+    --color-icon-blue:#0872b6;
+    --color-icon-white:#ffffff;
 
-    /* ── radius ── */
+    --color-btn-primary-text:#ffffff;
+    --color-btn-primary-disable:#878787;
+    --color-btn-primary-focus:#0872b6;
+    --color-btn-secondary-default:#0872b6;
+    --color-btn-secondary-hover:#127cc0;
+    --color-btn-secondary-focus:#0872b6;
+    --color-btn-secondary-text:#ffffff;
+    --color-btn-tertiary-text:#333333;
+    --color-btn-tertiary-white:#ffffff;
+    --color-btn-tertiary-border:#9f9f9f;
+    --color-btn-tertiary-hover:#d9e9f6;
+    --color-btn-tertiary-focus:#0872b6;
+    --color-btn-tertiary-disable:#878787;
+    --color-btn-selection-ctrl-default:#0872b6;
+    --color-btn-selection-ctrl-white:#ffffff;
+    --color-btn-selection-ctrl-border:#9f9f9f;
+    --color-btn-selection-ctrl-focus:#d9e9f6;
+
+    /* ── gradation（Figmaのローカル色スタイル） ─────────────── */
+    --gradation-sunbeam-default:linear-gradient(90deg,#EB8237 0%,#EE8D3F 60%,#F4A771 100%);
+    --gradation-sunbeam-h-hover:linear-gradient(90deg,#EF863C 0%,#F6984D 60%,#FFB480 100%);
+
+    /* ── typography ──────────────────────────────────────── */
+    --typo-font-font-j:'Noto Sans JP','Hiragino Kaku Gothic ProN',-apple-system,BlinkMacSystemFont,sans-serif;
+    --typo-font-font-e:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    --typo-size-head-1:40px;
+    --typo-size-head-2:32px;
+    --typo-size-head-3:24px;
+    --typo-size-head-4:18px;
+    --typo-size-body:16px;
+    --typo-size-label-l:16px;
+    --typo-size-label-m:12px;
+    --typo-size-caption:12px;
+    --typo-weight-head-e:600;
+    --typo-weight-head-j:700;
+    --typo-weight-label-j:700;
+    --typo-weight-body:400;
+    --typo-weight-caption:400;
+
+    /* ── spacing ─────────────────────────────────────────── */
+    --space-primitive-space-8:8px;
+    --space-primitive-space-16:16px;
+    --spacing-padding-page-x:160px;
+    --spacing-padding-page-y:64px;
+    --spacing-gap-head-offset:80px;
+    --spacing-gap-head-group:16px;
+    --spacing-gap-section:64px;
+    --spacing-gap-box:32px;
+    --spacing-gap-content:32px;
+    --spacing-gap-subhead-offset:16px;
+    --spacing-gap-subhead-group:8px;
+    --spacing-gap-input-group:16px;
+    --spacing-gap-icon-group:8px;
+    --spacing-gap-underbar:4px;
+    --spacing-padding-box:32px;
+    --spacing-padding-card-x:32px;
+    --spacing-padding-card-y:24px;
+    --spacing-padding-button-x:32px;
+    --spacing-padding-button-y:24px;
+    --spacing-padding-button-x-s:24px;
+    --spacing-padding-button-y-s:16px;
+    --spacing-padding-badge-x:8px;
+    --spacing-padding-badge-y:4px;
+    --spacing-padding-textarea:16px;
+
+    /* ── radius ──────────────────────────────────────────── */
     --radius-section:24px;
     --radius-button:16px;
+    --radius-button-focus:18px;
+    --radius-button-s:8px;
+    --radius-button-s-focus:10px;
     --radius-textarea:8px;
     --radius-checkbox:4px;
     --radius-full:999px;
 
-    /* ── shadow ── */
-    --shadow:0 8px 16px 4px rgba(51,51,51,.2);
+    /* ── shadow（Figmaのエフェクトスタイル） ────────────────── */
+    --shadow-card:0 4px 8px 3px rgba(51,51,51,.15);
+    --shadow-modal:0 8px 16px 4px rgba(51,51,51,.2);
 
-    /* 画面幅で縮退させるための実効値（下部のメディアクエリで上書き） */
-    --field-h:64px;
+    /* ── motion（Figma未定義・コード側で決定。DESIGN.md §6） ── */
+    --motion-loading-spin:1s;
+    --motion-ui-transition:150ms;
+
+    /* ── icon（Figmaの書き出しをマスク画像として保持）────────
+       色は background-color: currentColor で決まる。 */
+    --icon-calendar: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect x=%227%22 y=%221%22 width=%222%22 height=%222%22/%3E%3Cpath d=%22M18%2C5c.6%2C0%2C1%2C.4%2C1%2C1v12c0%2C.6-.4%2C1-1%2C1H6c-.6%2C0-1-.4-1-1V6c0-.6.4-1%2C1-1h12M18%2C3H6c-1.7%2C0-3%2C1.3-3%2C3v12c0%2C1.7%2C1.3%2C3%2C3%2C3h12c1.7%2C0%2C3-1.3%2C3-3V6c0-1.7-1.3-3-3-3h0Z%22/%3E%3Crect x=%223%22 y=%228%22 width=%2218%22 height=%222%22/%3E%3Crect x=%2215%22 y=%221%22 width=%222%22 height=%222%22/%3E%3C/svg%3E");
+    --icon-check: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M9.5%2C18.2c-.3%2C0-.5%2C0-.7-.3l-5.5-5.5c-.4-.4-.4-1%2C0-1.4s1-.4%2C1.4%2C0l4.8%2C4.8%2C9.8-9.8c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-10.5%2C10.5c-.2.2-.5.3-.7.3Z%22/%3E%3C/svg%3E");
+    --icon-close: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M5.2%2C19.8c-.3%2C0-.5%2C0-.7-.3-.4-.4-.4-1%2C0-1.4l13.5-13.5c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-13.5%2C13.5c-.2.2-.5.3-.7.3Z%22/%3E%3Cpath d=%22M18.8%2C19.8c-.3%2C0-.5%2C0-.7-.3L4.5%2C6c-.4-.4-.4-1%2C0-1.4s1-.4%2C1.4%2C0l13.5%2C13.5c.4.4.4%2C1%2C0%2C1.4s-.5.3-.7.3Z%22/%3E%3C/svg%3E");
+    --icon-extend: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M5.2%2C19.8c-.3%2C0-.5%2C0-.7-.3-.4-.4-.4-1%2C0-1.4l13.5-13.5c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-13.5%2C13.5c-.2.2-.5.3-.7.3Z%22/%3E%3Cpath d=%22M13.8%2C21.5c-.3%2C0-.5%2C0-.7-.3-.4-.4-.4-1%2C0-1.4l6.8-6.8c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-6.8%2C6.8c-.2.2-.5.3-.7.3Z%22/%3E%3C/svg%3E");
+    --icon-trg-down: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12%2C20L1.6%2C5h20.8l-10.4%2C15Z%22/%3E%3C/svg%3E");
+
+    /* Googleの「G」マーク（多色のためマスクにせず画像として使う）。
+       原寸2820pxをG-Driveにマスターとして残し、ここは96pxへ縮小したもの。 */
+    --logo-google-g: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAeGVYSWZNTQAqAAAACAAEARoABQAAAAEAAAA+ARsABQAAAAEAAABGASgAAwAAAAEAAgAAh2kABAAAAAEAAABOAAAAAAAAAEgAAAABAAAASAAAAAEAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAYKADAAQAAAABAAAAYAAAAACavGt5AAAACXBIWXMAAAsTAAALEwEAmpwYAAACnGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNi4wLjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgICAgICAgICAgeG1sbnM6ZXhpZj0iaHR0cDovL25zLmFkb2JlLmNvbS9leGlmLzEuMC8iPgogICAgICAgICA8dGlmZjpYUmVzb2x1dGlvbj43MjwvdGlmZjpYUmVzb2x1dGlvbj4KICAgICAgICAgPHRpZmY6WVJlc29sdXRpb24+NzI8L3RpZmY6WVJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOlJlc29sdXRpb25Vbml0PjI8L3RpZmY6UmVzb2x1dGlvblVuaXQ+CiAgICAgICAgIDxleGlmOlBpeGVsWURpbWVuc2lvbj4xMDAwPC9leGlmOlBpeGVsWURpbWVuc2lvbj4KICAgICAgICAgPGV4aWY6UGl4ZWxYRGltZW5zaW9uPjEwMDA8L2V4aWY6UGl4ZWxYRGltZW5zaW9uPgogICAgICAgICA8ZXhpZjpDb2xvclNwYWNlPjE8L2V4aWY6Q29sb3JTcGFjZT4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+Cn7uFBEAABruSURBVHgB7V0JtF1Ved77nHPvfe8lkTDFEIagVdJKZXAAaoASBhVsAgKRSJdRqGKX1q4uROpYn0tLBYuspVCHpShoqxIZSoDInBpAURBEUZBW2gQSmZO893Knc87u9/1773vPHXnDvS/BvA377fHs4fv+/9/77HPuiVIzbgaBGQRmENhuCOjt1vM4OzbLlw+qbS/spWKzUGm1nzJqb6WCealWcwNjhtBMzuCP0boSaDWGyGal9VMqVRtVEKxXUbRejYxs0mvXlsbZ5bRW2+EIMMccMzfO6YOjIFhslDkcgL8GgC7QWg8BUAdOdtiAXzPt8zJhihYMSNH6SZD2G630T9He3UrHD+k1a7ZOK9IdOvOj7VA8PdnmuON2TwJzbKjVMvR4tEh6EEKsAa7zkPDMYLJxZLctA9wkRZM0hGyPIdozRv8vCF2L9HWqEq3Vt63agsLt4ppmMr1jMG856jClw5WQypMB1D4CVppakAhW1rUF2VVoW8brWz2ARzZIcYSAj8dB1NUwXVfqm1b9KtvldMSbZtn/Lmkw1F8tPlGl4d8B+BMARKQS5BL3ZtCz6bYgu/G2LWsFv26qnFbgOu3JSE1RBXp1HKsv5dZcdXf/kbA9TCsB5uQjjof0fVQlwXHKAAQCbzAE58dPAAefGfq4CXDAy7W4Xq5jO46IMFQmNbE2+hqlzQX6hh/80sLUv7+ZWfSvE7P8DYuUiYZVqs8A8FrF6AvbGPGeAHaPeCMJmeE1gMzKncqY7z3rZUDPAG7Bby2TdQNKaYwZ08ZcpqrxhfrmVc+zpX64zCx63zx2NJFaMPohmJtPAvjdVJWmBl1mvSegrRY0Da+BhExZSz7L2vgaAQC+Fke9bJzXIW1NUwShSH8DNs7Tq/99Te8RsqPsR7vKrDz4AKWjLysVvllV0EVW6oUAgOCJyJDQqAEcGoF0ToCqJXzEAeiTbYB3oLZqg9OABgLQTiatZbFWCZj4oiqUP61XrSr6nnoRZmbXi+ZsG+Z9B52m0uhSTHi+qkDqE3QjPgO6B59hhoDxm6HM0FuIYVmT99tRIcMB7+tkAM+CL22gGU0zhvVBpemdKonfq2/8j9/3Ci2OpGcOUGvzgdd+SkXBD1Ro5qsUghMgVzy68XEtNesY9WwE7RryRLAsG3fpjuC76rgGdw7KJFDhIFxiwtztZunKI3l1LxxH1BNn3rP/gNpl9qXY5fyNNTlomtLtJb+mBcwH70x7LWCcuyLwwrDRDKHMuxZJdwUt+byGnvLl4l4DpG4239dFmCWD17W0iyy5G9cjSRqvjFZ/9zo3gkkHWGWm7sz5i+YAuCsw5rerMqUeE+SNJ52Aij8SMo2J8e6WGDCPk2QcxwZISCYVpE6Cz0fRhBzbcq4NkFKSBTwb7wC+XMPx4/9QRz05W5oyAQJ+3nwfgzpJFQk+RifHBxgusRMviLbGfd0aVrWIzLXlD9ttALOlhsvIttMuzrxsvm/H5TUU1RNuQd4Sx8kZuRu/c7O/airhlAgwwzA7QXIlbONJahvADynKdLitFbGWRBMhngxMTABFHYIq8yRb1uFmSLjz6amHvg/pyBHJOPNdKJ00x23P/QCfLU+aADMMhAvqMpiaU0TyIw48A3xWC0IHLINavifC5ZE7rgU1x8rZdK2gSyQLHqv56zuFvo6/DmEbDesX+Ox90gSoXRZ+AubmbAEfx5h2skBROxJMhgw56EGZrAseeIRSBdd6Umj8vaOtrblWMrKltWqIZFqw2TVA/RUIJco/Ps6q2bhLM1cWb9VTs8PWvfNLpU+PKzSX7XOqykH6Y25d6LKD58SY5UKWCSou7YFlyHwfsh6dlNu4/8uQQGjsxbkL4YkmjgqYW8afCjKq9kodUlprnjWkXQoGW+FwfRxpvzNiHSlnHTobyo5H676Bz54mrAHmW3u+Gvv7r+BALVRidjgpiLKfoNcAL/XZkJP30s57AtLv0ww5b68FJAKLtNY8IMMNhTGP6SS9P1X6lyj6HXI3Qdu2qDRXESJz6UCchHOj1OyF/Fej4UONCl6HFl8F4sAYSWP78LajNqEvQw1LTl/BZ28TIsB87fU5FW34Cm6o5qltAJ0ECGgMZWYIHSEiaSSGac6cAUFHnuz5EWc21weCLUS40O9hU/UQ7oB+CE5uwh31wxN9rGiWLh3CEchBaHsp+jgNmrGI4xTr6MfLCWTjGBIlH9vgLUkPdzucfjvnUGtX1Jpnvr/HuSoXXKx4GhLjUi6aMQD2IfOYFs9yxhFWm/NcfnNdA5WQNvStuBY3dbNuxqNDmpkpO3PM8tlqjlpmTPAPIOKNJN9qBMZSc+4Qrs9mp9YdIkBnfM5cswcO19J7cfc6V1UJrgNYwEfcg54FtQZ8G8Cz9RIAn8JX1C9UNfyMvv7u68c3qonXMieeWFC5Xd8NLfwnbJ/3NjwuEQfweQNpNJ8Vn6Gv//aPXEFfg/ETcMMuqyD9p6ttGE8WfB4n1CS/iYhmArJpiaM+gY+xmFbDz6uw9AX9nYfG+jpj17g56cyFJgq/CNBPlQdD1gxtTYxZEa2+si9Hz+3mNS4CzI9mHY/TwJsBVCBg1854cLmQ4YAXbYAUUUMo4R5wD7bP8/m09WX9OPz79BUP3N5ugP3MM2o4UEv/52M4OvkczNFoasw7phN8zu1FCTBXAaXdZt+pcvooxdMPLpgE2pNA6aetzxLh7b4HmukKJd2RQoI01v+i/gn8X+tvPPR4P4F+sbbNspUwSeo5vfrKG16sbq/LgUR3Z+4YehvAv0Fxp03QuXNh6AkQ4DME1LQAed40kYiKBx+hBf9W5K3Qlzzct8d93We2Y5RCLDs7qKVWT0T/pvLqlXwmVNMX0lY748/Eme+9L2eazufnEYnVOhWVT9Wff+wFW7jz/u1+H3BX7jCVN38pixSPG3hkzMWK+zdqAP4X7x+0cBdBqUcgJon5vLGiZzyP/JJ6RA1UVuh/3LB554W9PvPuBOSCs1TBRLLvF5ABLkngOkDwERVwmSbogTsRjVFAU0RCJB9p9lQ1W7HbWak/vGEjUjMOCHQkwNyrdscpwili+wm2OABJo0XgSQi1gGf6JEU0gnHc6TJPCHD1SASy1Lbg4/qcjT9HbMY5BDoSoEz+BDVgXq78fWjtdp1XAnACStMi2oAEJZ1ECCFM0yNN0zWIsm3pLWro+a8iNuMyCHQmQJtTa2ckwNCKvQskLX8sCQSaRFAL/DohBCDN86IUt28Ffb5eKkt5pvuZaFsCzENqV1XSR+K42Up6DSeAWXMoE+fzKO3w1IQaGSjjrmfMXKmXjvb9NT83oJdU0JYAVYpep6IUP4oAeB5fTou7n1raRzwRrODqsx61gulUj6p8+kWWzrhWBNoTEKqjZMvIl2e9Ezw96MgcDxkFXFRS1+sjy4/5ZmbCRgTaE2DMEXaLmQFcrssQImlf3i4feSla0fpbjV3OpLIItBBgHlazIbV/au98HbAMPNb1CDJdea1FV4m7I25XY/2YMqW+vmt/4LDJRwV1IG5But7V14a4PSI5wBeryp88qB5etUr7828ZSQsBqpjHL1WSvfgkseZq4DOnGXTmoQLr0Cx5x7veRN2m3yS3cT6352E4qOYB/LWA/2Vth9bzHifRILDEBnHk969Xf65WqfXZFrhnaXQmeQUeuOdfdDIEvOYBvD9uYCj3BygP02k5YmaPjZPY8VK4F52DX9/s1zyyVgK02X9Kykwo2GrVbMPz3GnZeqLLjOo1T3EHSFNCYCDxGsO+zaNpQwB/LNdcbYJpWmOtn1Aj6skJXvnHWx2Y4v99mifYSoDBGw9TlSe2asx6vUQe4TT3udOmsUTOb558KwFKze0JAXpG+hvAphnSareGPCRaCQgUf/4/NUcTZvRO/aSrHYB4H2lOc34rAUbugZvrTTwdyPsTE7/uj/UKmnUt58INM2y9D+BLYXTjWIg7LRUNJ9cN3e3cCeDVgndLBhaKKgHsBO4EIJy6KZtAZy/Vqq0mCI9OpjwZsId3bHafcjt/ZA1Arvlj3QbXqgFKbZ6aCUE3uPXG3wUNPe3sCQACxzerGlyrBhj9dHf7z5ac54MX5/EJGGz93SvgOG6CKVto7lQDDb3NJEaaIWghINDpBgG1I8gCrpy7cZ2AsItnvJbGA/nU6H3UnMLezR3utGkrqy1b8xYCkkT/Hy0VDzbFZ4D1IPuQ4HvJB+AEXdIJCqK8GqwE5pCdFvA2EwcHTzVntxAQ6vDxpMqf/ViJ9lLNl+Q82Aw92PVyW5/5CYnAQ/k41cc1d9iPNLrjfzXL2PN4LwYNoPDjoZazsZZFGHL7hCrlNgG/hTFFHI4gZ102LaSgkHne87IEH+gop+Z4c48a7OczAZ1DtyV5e4lvr/be2cnikcrUnOG6GDY+C2CLLQToA9Vo9T79iIrMQl5E1wC4ZEDCEYoJcuW1OAoYT2HGgki9amNaOBJU3MrL+uGiR9TTan+1GG/DtGhzL/qDdh0I5fo+Jjz59mlNUjWWJGpD85haCJAKWv0U3b2FIAv4NCku7sMa4MxHpoDu6pA3Ps/P4QeLJW3OQrJvBNz/dfmF5CPooy/ukAvMG4OcCtIp6Jfc2Bq1abdEbWoeZFtW8TuMdXHF2nnadN49tHgAzNeG6Dk278tIi0fe5rLG60V62S/vKixq7vilkgZAJ015rHg+gp/VPrp2WI/jPgC9laPSL8qx3sQnYwReJJphBnRPiACPfH4WiMCXsALSF0Ecf0iZ5tWssUCdO+VJbIcGDr3A7IkpLfGmeDxDkE/bwF5k/5NNQWDavhPbVgPmHqReSLRZBxsuoNeAJwnwHnyCLsAjr+yAL5EEeP6QknRvxrulpUi966Z7coci+ZJymMYpMD97ys9a24w8C7KP22q4MmO0DQFMg3vaNNF5YcE118pb5rjKawHDrMRzr0rgJUQf3vQQeJKwDX4MrwNUQj04psMLr+LPnV4i7lVfMgWsnR8g+B7cesgXnuwqaPNs2mCfSZ9mvMHLyUmaPKP16IPtpt5WA1gxSiu3jpT0U/LTXaT5vT36rMTzxWkxO8hn3ANfRLroNILxLShMcvqEzXsPfgDVXhJu9miyAm+HHALwHKgJgO3gA4COd2N8uSdCQrycjPyfPfDxOc+0m3hHAl52uHoOH7a6DipowcfVlPSabyDDSrxdA0gE1gGS4IjgejAK1cFv9P75wh8PHtZuIDtSHm1/EibDMXQ/CarON8eZjgE8PN668uA3h/woAPI6/vivIwEEBJxePlpRMR8QWOCtBojtRzk/higaAaBF+gV4C77Vhnp8DOdDpUDPqYbBdz5x++DebH9HdcXc5i/EA8H+VXz3Ow4AAHwinmRY4DuFQognBp9liOOR0TSt/KjTXGHmOjvs7/Uj9xZuyRfU8dtoRlA162UbirwqgJeFGURwjSBZYq4kTpK4VtBc4X6iEKjRSnh3HKTLLnnT1pbDKVTbru4Vl6z/YBANXWrwFpWAgzHbcw4OCzHM0Z55MKSrl0q+lNuSIDeoTLW0+tHzdl1mc1r/dtUACL4BoJeUgDqBteDWpd7afYCLTrPmx8dlZ4QJUBsIfgVr/mgJv/XOR4tH06FV77xzwR6tQ9p+Oft8+benxYXk4kowouKwCF9SMT4NV2UYlm06hDbQQyNSmKc0qxm4J7R51jQlTOvKFd1m1JUAXvhcsXzLWKx+rPGup5gegE3TQ3BlB5RNA2Qhg+UEnsS4eBng05dw+jFaDFWcyx+bREOr33bba1+JKtvdzf/afcvjgfQKAF9INEwPgBcCgjIAh2co64EDP7RrgwWcQGfBryqTw+4nGf3d1tR0ND+c9IsSsGSJigHmZ4tY6HFzLOalBnwD+J4YC74Ajw5ofij5QgB+cFkGAWVsL8Zwc1CJ8kdU8+Hti9cefsL2ZGCPb647N82b76ZBcVYK8CnhqQM+9eBLHvIl9OCTDC7AjeBzUTbY/Rgdf/2pj8zv+u2LrmtAFpRb7imsyg/q08dwh+VvxOx9Aew/iPAmqiqAO3OFeBXgCwHYzxL8kskhzCPMY6taUOVwALulfKVkBi6K0/jCh5esHc3228/4bt+7eV/gd5HWgytk0eJv3LBt0dx7y8fAGLeesipxWQdYj7af8st1gTBaL+8mY+uIj0w9GZcrh2w8b9Gz3ebAq8blblxXOMDkg3vxNZG5FdyDcInywHsi/MIra4UDnwSUHfhlgF+C9JcBfgkkFA0IQFghEYUhVarkHiyb6DMbllz9nxgUaO2PW7B69VBxdPQsrQof08HQ3vKtU3y1xQIfCdCWAOYB5BoZDnSCL3l18FliSUEsjxdCSqWPbPjQAf/6YjMYNwFs6Id3D54bDaqLx7Cq1ndAkHYMiCRwbRBNcOBT8isAv0KzI+YHBDjwGZYJvITUiALWhQG0hfUhDW7Hp8kuzT8T3/zEO3r3sezZ13xhXi6dfRrePftbAH+Q/ZoLAEsJOs5dxHsNcIRQyjNaQJCtNhByljHMgB9isYyTR4vx1sOe//sj+O2hrm5CBNx3n8r9tjK4Jiyo44QENN0MPr/jx22pl3wPfkUknxpgzQ8lX7zXAmhHFXX4Q5c0l5Pfeyep/jV2wtdAxW8cHCz+6ok3TZyMWTcOz8e7+YcF1WiZNoUTVTBrAVZXDBzgpTkLvIQ0OySCofVW+hHHmGzcg49rHeieDDFFIESTgLR6+qZzDr66K/KucEIE8Jpv/Vfh1XE+uCvVel4JYm/Nj5X8LPhW8mH3neRnCaDUV0iAaEMBWmLBj6EpCSaRgkQ+Ak0jfJqPvpTgVFz/N+5LHkD2Azo1jyVabzIq3BLqlOs9Dg2DAk4D5hgV7QnJ3A/bkD/TKn+QSaPXqGBgD63xggaOx7G9AcB5kXrUqZMg4LMMgFMjRLqzRBB0tx448yOakSUij31/uXz10+e8bjnexB2XCZ0wAZzsl+4aPDWI9FX4THTIranVApohu+OhGalAagg+NcCCT4m3JojpiieBawCAIPgxpR+Tg/mxBLhQ/gUlfu6AZGDE+GdG0CluTvAWH2IxfxNuUp7d4gFlBKnm+QnGYCjp4gmsB9uGTGtIvjU7AByg1+JOA9hG84Ls14M6+FYbpM9UbYry+oiNK9+wnjiNx1G/JuzWXB7/9piVmMCgWoLnBgJ8M/gVgF8FqOIxWWuKrKTT1NCTiCrqJSL5AB8SRsmnOtsngF4+kOZjNxzRGj6o5vEuncaHEDRAJ/D8DQofPcmtuuwSIMmox52Na5OhbdHlIfA5LLBltm0b56UYkSSYD8+0C5EheVq+ChBg91k9+w9nH/FTmz++v5MigE0vXlhdF++b31cPBoeSBNp8Sr4NPfiUdAs+Jd4CjzLJq4Mvkk/wnWrXSfAwNIdtJmdxQwHrWqm0cabhZfG0cf6tl9mYzxKwZS/JKnYkUkbRYL53ngikdaEATStf9Mx7j8K/GDIxx5FOyg0PY52Mxz64raiuUwMA3oFPyae0U/IbtABpMTMot+aGkh+KzbcyJXJF2RJXDy1cGZi6j1eq82rveW4PjzN6/PpT4oaheKxgvGmCZ+jjzWlbxmNpel/XptUglK86du0z1Vmf6j6w9qWTJoDNDS9RpUQXVhZLwRo1SOn33hJAyZY8AR3bS6S9x6IpJodmR2y+k1BPBtCojdiTUcvoGvG1EYoku5AkCBEE35FRI8KB2QAugWZdS5DBHVudJEuEHsC6Udl2d9UEZ6v3v4E78Am7KRHA3i468tmRrTo4o1QKrjUDtO0E32sEzU1d4uNa3Np7b/Mt6FZm/Qw8jD7NsF1etrweZ82sJ+BIC/CM+ydaXhM80D5d1wZLQmu5LuCfuoqL96tgdPnms5ZM+utfUyaAk74cJJTjwTOLxfByU7A7Grv4evBhamCivOlJEU9BUrP0AxnAZj3bZXzSrq0pIil1TeATqzrAFvy6eXJp7G2VSH+GBJgdk5R+osNk2bPvOq3lVZOJjHkKM2zTDRA7dd2iT1aD3KexBQ0r2HNbjeBizLWBCzFIcZpAArjvl1cdM+DXNcIOzxNB+Dq6zCJrF1zu4SFfsrAz7j23m41xfwRRz/fbT1cPY5Q6EBrNvX4luQnnVu8eOfPMruc8HceaKeiJBtTag/Bec/Sjn61UgjNiE/4hFW2A5GPCta2ms/0E1dt+DzDb8YbDt9kVdF+pbehakp2Lb5Wh1wAv/Qx93Eo9taJBEzB6w28h4YjZVIuX7VIcO60X4HPYvdWADBBH3nbYAWku+nI1V3hzBR9treBGx+/5/bazm/SzKa8JfpiEr6PLagCnVZN+pwWUekhyXcqzmkAJd2lIeb2OlXyNMyq8G/QCnk6dv2XF2d/oOIZJFHBUfXHrr3zyuXl/Me8HyS6FzXGYe2OSKwzi1XfIn7f9dt9vQaUcZL0Fvz6w8ciJv55Xufp2U2/T2TjLm9P1q9iAdbjz1nlsM+PkDl2uvnPzO8/p+TelxzMzP5xJh4vueOuiROc+E+voHWmY0zHOL2QHBKm1Uk5iLOjeHE1I+jmymgYwgWmJ7fdrANOUbKcBIuVZbaAc0u67PHzZl1IPtd2Erz/+y+ZnB76q3v/+SW0zOZpubloI8APY77a3n5BGuY+mOjg2xclBWsV2ECrgSaiD7vN4pR1iV/PDam0JaCbCg96BCAAf5Aqw82aLTsNvB0Zf/PwpH97A5vvlppUAmcTwcDD/6EdOxGkq/0Hn41U+ioQIrH+eAIZ0dfPk45Ld/k8LAWyDQMM3aITTBK8FDHGErHGWB+Cfxonf93De9JWRkz/1aPuOeps7/QRkxv/yO1YcjjVhJczPMpx07mPwdXwTY8cBMuimTkAzCQ58fjsG/2YwTzBNmS8fBvfjJPR7uTR/1XNLP/mk7X16/m5XAvwU59y2cvecNsdCiE/GYnA0ft60r8oDJEBjX2zFKShtVTfXrAEi9ZgeSBVNEMBxRA2N0BVTNCb8NfJvwdP3G7b+bOg+NTyM29/pdzsEAdlpz73zPfhaS3IwzNBiHBUfDuBfA/u+AC+5DukIYPoRCx98NdY6/4zWlqMSCBFNinHvZzRumILHsfN5EIT8xFTDn4+8ddfHlB7m2r9dnZ/Odh1Et84XrD5naGyovJcOzX5JYhYGGmSk+uX4LukuMB6zIM/YwIu5wi5F4ytdwVYCjn+GahOE/Yk0CDcE5erGrW/95g73Fl63ec+UzSAwg8AMAtOAwP8DG0OieuWNpYQAAAAASUVORK5CYII=");
   }
+
+  /* ==========================================================================
+     ベース
+     ========================================================================== */
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
   body{
     margin:0;background:var(--color-bg-default);color:var(--color-text-default);
-    font-family:var(--font-j);font-weight:400;font-size:var(--size-body);line-height:2;
+    font-family:var(--typo-font-font-j);font-weight:var(--typo-weight-body);
+    font-size:var(--typo-size-body);line-height:2;
     -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
   }
-  ::selection{background:var(--color-bg-select);color:#fff}
+  ::selection{background:var(--color-bg-select);color:var(--color-text-white)}
   ::-webkit-scrollbar{width:8px;height:8px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:#c9c9c9;border-radius:4px}
   ::-webkit-scrollbar-thumb:hover{background:#b0b0b0}
   button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
-  button:focus-visible,a:focus-visible,label:focus-visible,input:focus-visible,
-  select:focus-visible,textarea:focus-visible{outline:2px solid var(--color-text-accent);outline-offset:2px}
-  .hidden{display:none !important}
+  /* ══════════════════════════════════════════════════════════════════
+     フォーカスリング（ここに集約する。個々のコンポーネント側では書かない）
 
-  /* ── ページ骨格 ─────────────────────────────────────────── */
-  .wrap{max-width:1280px;margin:0 auto;padding:var(--pad-page-y) var(--pad-page-x);}
-  .column{display:flex;flex-direction:column;gap:var(--gap-head-offset);align-items:stretch;}
+     Figmaのfocusバリアントを実測した結果、2系統ある。
+       A. 入力系 … 要素の枠・地色はそのまま。その【外側に隙間なく2px】の淡青
+                   （#d9e9f6 = --color-input-focus）が重なる。ぼかしなし。
+                   ＝ box-shadow: 0 0 0 2px（blur 0 / spread 2px）
+                   ※入力欄はfocus時にグレー1px枠が加わる（default は枠なし）
+       B. ボタン系 … 要素から【2px離して1px】の青（#0872b6）の線が回る。
+                   ＝ outline: 1px solid + outline-offset: 2px
 
-  /* ── header-area ── */
-  .header-area{display:flex;flex-direction:column;gap:var(--gap-head-group);color:var(--color-text-accent);}
-  .header-area h1{
-    margin:0;font-family:var(--font-e);font-weight:600;font-size:var(--size-head-1);
-    line-height:1.2;letter-spacing:0;
+     Figmaにfocusバリアントが無い要素（スケジュール行の×・完了画面のボタン・
+     本文中のリンクなど）は、下の既定スタイル（アクセント2px／offset 2px）を使う。
+     outline を none で消すことはしない。キーボード操作で現在地が分からなくなるため。
+     ══════════════════════════════════════════════════════════════════ */
+
+  /* 既定：ブラウザのフォーカスリングを全面的に置き換える */
+  :focus-visible{
+    outline:2px solid var(--color-text-accent);
+    outline-offset:2px;
   }
-  .header-area .lead{margin:0;font-weight:700;font-size:var(--size-head-3);line-height:1.2;}
 
-  /* ── section / box ── */
-  .section{display:flex;flex-direction:column;gap:var(--gap-section);}
-  .input-section{display:flex;flex-direction:column;gap:var(--gap-box);}
+  /* A. 入力系（Figma: 2px #d9e9f6 を外側に隙間なく重ねる） */
+  .ctl:focus-visible,
+  .input-add:focus-visible,
+  .input-add-login:focus-visible,
+  .file-native:focus-visible + .input-add,
+  .type-card:focus-visible,
+  .check-card:has(input:focus-visible){
+    /* 見た目のリングは box-shadow。透明のoutlineは強制配色モードでの保険 */
+    outline:2px solid transparent;
+    outline-offset:0;
+    box-shadow:0 0 0 2px var(--color-input-focus);
+  }
+
+  /* B. ボタン系（Figma: 1px #0872b6 を2px外側に） */
+  .btn-primary:focus-visible{outline:1px solid var(--color-btn-primary-focus);outline-offset:2px;}
+  .btn-tertiary:focus-visible{outline:1px solid var(--color-btn-tertiary-focus);outline-offset:2px;}
+  .btn-linktext:focus-visible,
+  .modal-close:focus-visible,
+  .img-thumb button:focus-visible{outline:1px solid var(--color-btn-secondary-focus);outline-offset:2px;}
+  .hidden{display:none !important}
+  .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+  /* アイコン（マスク方式：色は currentColor） */
+  .i{
+    display:inline-block;flex:none;width:24px;height:24px;background-color:currentColor;
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+    -webkit-mask-position:center;mask-position:center;
+    -webkit-mask-size:contain;mask-size:contain;
+  }
+  .i-close{-webkit-mask-image:var(--icon-close);mask-image:var(--icon-close)}
+
+  /* ==========================================================================
+     レイアウト骨格
+     ========================================================================== */
+  .wrap{max-width:1280px;margin:0 auto;padding:var(--spacing-padding-page-y) var(--spacing-padding-page-x);}
+  .column{display:flex;flex-direction:column;gap:var(--spacing-gap-head-offset);align-items:stretch;}
+
+  .header-area{display:flex;flex-direction:column;gap:var(--spacing-gap-head-group);color:var(--color-text-accent);}
+  .header-area h1{
+    margin:0;font-family:var(--typo-font-font-e);font-weight:var(--typo-weight-head-e);
+    font-size:var(--typo-size-head-1);line-height:1.2;letter-spacing:0;
+  }
+  .header-area .lead{
+    margin:0;font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-3);line-height:1.2;
+  }
+
+  .section{display:flex;flex-direction:column;gap:var(--spacing-gap-section);}
+  .input-section{display:flex;flex-direction:column;gap:var(--spacing-gap-box);}
   .box{
-    background:var(--color-bg-box);border-radius:var(--radius-section);padding:var(--pad-box);
-    display:flex;flex-direction:column;gap:var(--gap-content);scroll-margin-top:24px;
+    background:var(--color-bg-box);border-radius:var(--radius-section);padding:var(--spacing-padding-box);
+    display:flex;flex-direction:column;gap:var(--spacing-gap-content);scroll-margin-top:24px;
   }
   .section-header{
-    display:flex;align-items:center;gap:var(--gap-subhead-group);
-    color:var(--color-text-accent);font-size:var(--size-head-4);line-height:1.2;
+    display:flex;align-items:center;gap:var(--spacing-gap-subhead-group);
+    color:var(--color-text-accent);font-size:var(--typo-size-head-4);line-height:1.2;
   }
-  .section-header .en{font-family:var(--font-e);font-weight:600;}
-  .section-header .ja{font-weight:700;}
+  .section-header .en{font-family:var(--typo-font-font-e);font-weight:var(--typo-weight-head-e);}
+  .section-header .ja{font-weight:var(--typo-weight-head-j);}
 
-  /* ── input（設問1つ分） ── */
-  .input{display:flex;flex-direction:column;gap:var(--gap-subhead-offset);}
-  .subhead-group{display:flex;flex-direction:column;gap:var(--gap-subhead-group);}
-  .subhead-row{display:flex;align-items:center;gap:var(--gap-subhead-group);flex-wrap:wrap;}
-  .fl{font-weight:700;font-size:var(--size-head-4);line-height:1.2;color:var(--color-text-default);}
-  .req{
+  /* 設問1つ分 */
+  .input{display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-offset);}
+  .subhead-group{display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-group);}
+  .subhead-row{display:flex;align-items:center;gap:var(--spacing-gap-subhead-group);flex-wrap:wrap;}
+  .fl{
+    font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-4);line-height:1.2;
+    color:var(--color-text-default);
+  }
+  .caption{
+    font-weight:var(--typo-weight-caption);font-size:var(--typo-size-caption);line-height:1.6;
+    color:var(--color-text-sub);
+  }
+
+  /* badge/required */
+  .badge-required{
     display:inline-flex;align-items:center;justify-content:center;
     background:var(--color-warning-bg);color:var(--color-warning-text);
-    font-weight:700;font-size:var(--size-label-m);line-height:1;
-    padding:var(--pad-badge-y) var(--pad-badge-x);border-radius:var(--radius-full);
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-m);line-height:1;
+    padding:var(--spacing-padding-badge-y) var(--spacing-padding-badge-x);border-radius:var(--radius-full);
   }
-  .caption{font-weight:400;font-size:var(--size-caption);line-height:1.6;color:var(--color-text-sub);}
-  /* 見出しの右に置くインラインリンク（納期目安表をみる／サイズ目安表をみる／＋日程を追加する） */
-  .sublink{
+
+  /* btn/linktext */
+  .btn-linktext{
     background:none;border:none;padding:0;cursor:pointer;
-    font-family:var(--font-j);font-weight:700;font-size:var(--size-label-l);line-height:1;
-    color:var(--color-text-accent);text-decoration:underline;text-underline-offset:2px;
+    font-family:var(--typo-font-font-j);font-weight:var(--typo-weight-label-j);
+    font-size:var(--typo-size-label-m);line-height:1;
+    color:var(--color-text-accent);
+    text-decoration:underline;text-decoration-thickness:2px;
+    text-underline-offset:var(--spacing-gap-underbar);
+    transition:color var(--motion-ui-transition) ease-out;
   }
-  .sublink:hover{text-decoration-thickness:2px;}
+  @media(hover:hover){ .btn-linktext:hover{color:var(--color-btn-secondary-hover);} }
 
-  /* ── 入力コントロール ─────────────────────────────────── */
-  input[type=text],input[type=url],input[type=email],input[type=date],select,textarea{
-    width:100%;border:none;background-color:var(--color-bg-default);
-    border-radius:var(--radius-textarea);padding:var(--pad-textarea);
-    font-weight:400;font-size:var(--size-body);line-height:2;color:var(--color-text-default);
-    transition:box-shadow .15s,background-color .15s;
+  /* ==========================================================================
+     入力コントロール（input/text・textarea・select・calendar）
+     ========================================================================== */
+  .ctl{
+    width:100%;border:1px solid transparent;background-color:var(--color-input-default);
+    border-radius:var(--radius-textarea);padding:var(--spacing-padding-textarea);
+    font-weight:var(--typo-weight-body);font-size:var(--typo-size-body);line-height:2;
+    color:var(--color-text-default);
+    transition:background-color var(--motion-ui-transition) ease-out,border-color var(--motion-ui-transition) ease-out;
   }
-  input::placeholder,textarea::placeholder{color:var(--color-text-sub);opacity:1}
-  input:hover,select:hover,textarea:hover{background-color:var(--color-bg-hover);}
-  input:focus,select:focus,textarea:focus{
-    outline:none;background-color:var(--color-bg-box);
-    box-shadow:inset 0 0 0 1px var(--color-border-default),0 0 0 3px rgba(0,121,192,.18);
+  input.ctl,select.ctl{height:64px;}
+  .ctl::placeholder{color:var(--color-text-sub);opacity:1}
+  @media(hover:hover){ .ctl:hover{background-color:var(--color-input-hover);} }
+  /* focus＝地色に戻して1pxの枠。リングは .focus-input 側で重ねる */
+  .ctl:focus{background-color:var(--color-input-default);border-color:var(--color-input-border);}
+
+  textarea.ctl{display:block;resize:vertical;min-height:128px;line-height:2;}
+  /* textareaの右下つまみは icon/extend で見せる（DESIGN.md §5） */
+  .field-textarea{position:relative;}
+  .field-textarea::after{
+    content:"";position:absolute;right:5px;bottom:5px;width:16px;height:16px;pointer-events:none;
+    background-color:var(--color-border-default);
+    -webkit-mask:var(--icon-extend) center/contain no-repeat;mask:var(--icon-extend) center/contain no-repeat;
   }
-  textarea{display:block;resize:vertical;min-height:128px;}
-  select{
-    appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:56px;
-    background-image:url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M12 22L1.6077 7L22.3923 7L12 22Z' fill='%230079C0'/%3E %3C/svg%3E");
-    background-repeat:no-repeat;background-position:right var(--pad-textarea) center;
+  textarea.ctl::-webkit-resizer{opacity:0}
+
+  /* select：▼は擬似要素で置く（色を currentColor で制御するため）。Figmaのアイコン枠は16px */
+  .field-select{position:relative;color:var(--color-icon-blue);}
+  .field-select::after{
+    content:"";position:absolute;right:var(--spacing-padding-textarea);top:50%;
+    width:16px;height:16px;margin-top:-8px;pointer-events:none;background-color:currentColor;
+    -webkit-mask:var(--icon-trg-down) center/contain no-repeat;mask:var(--icon-trg-down) center/contain no-repeat;
   }
-  /* 未選択（プレースホルダ状態）はサブ色で表示する */
-  select.is-empty{color:var(--color-text-sub);}
-  input[type=date]{
-    cursor:pointer;padding-right:56px;
-    background-image:url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M5 22C4.45 22 3.97917 21.8042 3.5875 21.4125C3.19583 21.0208 3 20.55 3 20V6C3 5.45 3.19583 4.97917 3.5875 4.5875C3.97917 4.19583 4.45 4 5 4H6V2H8V4H16V2H18V4H19C19.55 4 20.0208 4.19583 20.4125 4.5875C20.8042 4.97917 21 5.45 21 6V20C21 20.55 20.8042 21.0208 20.4125 21.4125C20.0208 21.8042 19.55 22 19 22H5ZM5 20H19V10H5V20ZM5 8H19V6H5V8Z' fill='%230079C0'/%3E %3C/svg%3E");
-    background-repeat:no-repeat;background-position:right var(--pad-textarea) center;
+  select.ctl{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:48px;color:var(--color-text-default);}
+  select.ctl.is-empty{color:var(--color-text-sub);}
+
+  /* 日付：ネイティブのアイコンを隠して icon/calendar を出す。Figmaのアイコン枠は20px */
+  .field-date{position:relative;width:100%;color:var(--color-icon-blue);}
+  .field-date::after{
+    content:"";position:absolute;right:var(--spacing-padding-textarea);top:50%;
+    width:20px;height:20px;margin-top:-10px;pointer-events:none;background-color:currentColor;
+    -webkit-mask:var(--icon-calendar) center/contain no-repeat;mask:var(--icon-calendar) center/contain no-repeat;
   }
-  input[type=date]::-webkit-calendar-picker-indicator{opacity:0;cursor:pointer;width:24px}
-  /* 日付欄は未入力のあいだ「今日の日付」をプレースホルダとして重ねて出す。
-     ネイティブの表示（yyyy/mm/dd）は文字色を透明にして隠し、フォーカス中だけ戻す。
-     ※選択後の表示形式はブラウザのロケール依存でCSSからは変えられない（日本語Chromeは yyyy/mm/dd）。 */
-  .date-wrap{position:relative;width:100%;}
-  .date-wrap .date-ph{
-    position:absolute;left:var(--pad-textarea);top:50%;transform:translateY(-50%);
+  input[type=date].ctl{cursor:pointer;padding-right:48px;}
+  input[type=date].ctl::-webkit-calendar-picker-indicator{opacity:0;cursor:pointer;width:24px}
+  /* 未入力のあいだ「今日の日付」をプレースホルダとして重ねる。実値は空のまま（SPEC.md §4） */
+  .field-date .date-ph{
+    position:absolute;left:var(--spacing-padding-textarea);top:50%;transform:translateY(-50%);
     pointer-events:none;color:var(--color-text-sub);
-    font-size:var(--size-body);line-height:2;font-variant-numeric:tabular-nums;
+    font-size:var(--typo-size-body);line-height:2;font-variant-numeric:tabular-nums;
   }
-  .date-wrap.filled .date-ph{display:none;}
-  .date-wrap:not(.filled) input[type=date]{color:transparent;}
-  .date-wrap:not(.filled) input[type=date]:focus{color:var(--color-text-default);}
-  .date-wrap:not(.filled) input[type=date]:focus ~ .date-ph{display:none;}
+  .field-date.filled .date-ph{display:none;}
+  .field-date:not(.filled) input[type=date]{color:transparent;}
+  .field-date:not(.filled) input[type=date]:focus{color:var(--color-text-default);}
+  .field-date:not(.filled) input[type=date]:focus ~ .date-ph{display:none;}
 
-  /* ── Googleログインボタン ── */
-  .google-login{
-    display:flex;align-items:center;justify-content:center;gap:var(--gap-icon-group);
-    width:100%;background:var(--color-bg-box);border:1px solid var(--color-border-default);
-    border-radius:var(--radius-full);padding:var(--pad-textarea) var(--pad-button-x);
-    font-family:var(--font-e);font-weight:400;font-size:14px;line-height:1.7;
-    color:var(--color-text-default);cursor:pointer;transition:background .15s;
+  /* ==========================================================================
+     ボタン
+     ========================================================================== */
+  /* btn/primary */
+  .btn-primary{
+    position:relative;width:100%;min-height:64px;border:none;border-radius:var(--radius-button);
+    padding:var(--spacing-padding-button-y) var(--spacing-padding-button-x);
+    display:flex;align-items:center;justify-content:center;gap:var(--spacing-gap-icon-group);
+    background-image:var(--gradation-sunbeam-default);background-color:transparent;
+    color:var(--color-btn-primary-text);
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;
+    cursor:pointer;transition:background-image var(--motion-ui-transition) ease-out;
   }
-  .google-login:hover{background:var(--color-bg-hover);}
-  #gsiButton{display:flex;justify-content:center;}
+  @media(hover:hover){ .btn-primary:not(:disabled):hover{background-image:var(--gradation-sunbeam-h-hover);} }
+  .btn-primary:disabled{background-image:none;background-color:var(--color-btn-primary-disable);cursor:not-allowed;}
+  .btn-primary .spinner{display:none;}
+  .btn-primary[aria-busy="true"]{background-image:var(--gradation-sunbeam-default);background-color:transparent;}
+  .btn-primary[aria-busy="true"] .spinner{
+    display:block;width:24px;height:24px;border-radius:var(--radius-full);
+    border:2px solid currentColor;border-top-color:transparent;
+    animation:spin var(--motion-loading-spin) linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
 
-  /* ── ログイン済みチップ ── */
-  .user-chip{
-    display:flex;align-items:center;gap:var(--gap-content);
-    background:var(--color-bg-default);border-radius:var(--radius-textarea);padding:var(--pad-textarea);
+  /* btn/tertiary */
+  .btn-tertiary{
+    flex:none;background:var(--color-btn-tertiary-white);
+    border:1px solid var(--color-btn-tertiary-border);border-radius:var(--radius-button-s);
+    padding:var(--spacing-padding-button-y-s) var(--spacing-padding-button-x-s);
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;
+    color:var(--color-btn-tertiary-text);cursor:pointer;
+    transition:background-color var(--motion-ui-transition) ease-out;
   }
-  .user-chip img{flex:none;width:48px;height:48px;border-radius:var(--radius-full);background:#ddd;object-fit:cover}
-  .user-meta{flex:1;min-width:0;line-height:1.5}
-  .user-meta b{display:block;font-weight:700;font-size:var(--size-label-l);color:var(--color-text-default)}
-  .user-meta span{display:block;font-size:var(--size-caption);line-height:1.6;color:var(--color-text-sub);
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .user-switch{
-    flex:none;background:var(--color-bg-box);border:1px solid var(--color-border-default);
-    border-radius:var(--radius-textarea);padding:8px 16px;
-    font-weight:700;font-size:var(--size-caption);line-height:1.6;color:var(--color-text-sub);
-    cursor:pointer;transition:background .15s,color .15s;
-  }
-  .user-switch:hover{background:var(--color-bg-hover);color:var(--color-text-default)}
+  @media(hover:hover){ .btn-tertiary:hover{background:var(--color-btn-tertiary-hover);} }
 
-  /* ── STEP2 依頼種別カード ────────────────────────────── */
-  .options-cards{display:flex;gap:var(--gap-content);align-items:stretch;}
-  .type-btn{
-    flex:1 0 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:var(--gap-icon-group);background:var(--color-bg-default);border:none;
-    border-radius:var(--radius-button);padding:var(--pad-button-y) var(--pad-button-x);
-    cursor:pointer;text-align:center;transition:background .15s;
-  }
-  .type-btn:hover{background:var(--color-bg-hover);}
-  .type-btn .t{font-weight:700;font-size:var(--size-head-4);line-height:1.2;color:var(--color-text-default);}
-  .type-btn .d{font-weight:400;font-size:var(--size-caption);line-height:1.6;color:var(--color-text-default);}
-  .type-btn[aria-pressed="true"]{background:var(--color-bg-hover);box-shadow:inset 0 0 0 2px var(--color-bg-select);}
 
-  /* ── 制作物の種別（チェックボックス） ──────────────────── */
-  .checks{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch;}
-  .chk{
-    display:flex;align-items:flex-start;gap:var(--gap-icon-group);
-    background:var(--color-bg-default);border-radius:var(--radius-textarea);
-    padding:var(--pad-button-y) var(--pad-button-x);cursor:pointer;transition:background .15s;
+  /* input/add（追加アクション行）
+     既定は塗りなし・枠線だけ。ラベルは本文と同じウェイト400・サブ色で、
+     先頭の「＋」は独立したアイコンではなく文字の一部（Figmaの組み方に合わせる）。 */
+  .input-add{
+    display:flex;align-items:center;justify-content:center;
+    width:100%;height:64px;
+    background:transparent;border:1px solid var(--color-input-border);
+    border-radius:var(--radius-textarea);padding:var(--spacing-padding-textarea);
+    font-weight:var(--typo-weight-body);font-size:var(--typo-size-body);line-height:2;
+    color:var(--color-text-sub);cursor:pointer;text-align:center;
+    transition:background-color var(--motion-ui-transition) ease-out;
   }
-  .chk:hover{background:var(--color-bg-hover);}
-  .chk:has(input:checked){box-shadow:inset 0 0 0 2px var(--color-bg-select);}
-  .chk input[type=checkbox]{
-    appearance:none;-webkit-appearance:none;flex:none;
-    width:18px;height:18px;margin:3px 0 0;border:none;border-radius:var(--radius-checkbox);
-    background-color:transparent;background-repeat:no-repeat;background-position:center;
-    background-size:18px 18px;background-image:url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 18 18' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M4 0.5H14C15.933 0.5 17.5 2.067 17.5 4V14C17.5 15.933 15.933 17.5 14 17.5H4C2.067 17.5 0.5 15.933 0.5 14V4C0.5 2.067 2.067 0.5 4 0.5Z' fill='white' stroke='%239F9F9F'/%3E %3Cpath d='M15.5394 4.65431C15.6382 4.75325 15.6937 4.88736 15.6937 5.02719C15.6937 5.16701 15.6382 5.30112 15.5394 5.40006L7.69782 13.2423C7.61615 13.324 7.5192 13.3888 7.41249 13.433C7.30577 13.4772 7.1914 13.5 7.07589 13.5C6.96039 13.5 6.84601 13.4772 6.7393 13.433C6.63259 13.3888 6.53564 13.324 6.45397 13.2423L2.62253 9.4102C2.57069 9.36189 2.52911 9.30364 2.50027 9.23891C2.47143 9.17419 2.45592 9.10432 2.45467 9.03347C2.45342 8.96262 2.46645 8.89225 2.49299 8.82655C2.51953 8.76085 2.55903 8.70116 2.60913 8.65106C2.65924 8.60095 2.71892 8.56145 2.78462 8.53492C2.85033 8.50838 2.9207 8.49535 2.99155 8.4966C3.0624 8.49785 3.13227 8.51335 3.19699 8.54219C3.26172 8.57103 3.31997 8.61261 3.36827 8.66445L7.07589 12.3721L14.7937 4.65431C14.8926 4.5555 15.0267 4.5 15.1665 4.5C15.3064 4.5 15.4405 4.5555 15.5394 4.65431Z' fill='white'/%3E %3C/svg%3E");
+  @media(hover:hover){ .input-add:hover{background:var(--color-input-hover);} }
+
+  /* input/add-login（Googleログイン） */
+  .input-add-login{
+    display:flex;align-items:center;gap:var(--spacing-gap-icon-group);
+    width:100%;height:56px;background:transparent;
+    border:1px solid var(--color-input-border);border-radius:var(--radius-textarea);
+    padding:var(--spacing-padding-textarea);
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;
+    color:var(--color-text-sub);cursor:pointer;text-align:left;
+    transition:background-color var(--motion-ui-transition) ease-out;
+  }
+  .input-add-login .g{
+    flex:none;width:24px;height:24px;
+    background:var(--logo-google-g) center/contain no-repeat;
+  }
+  @media(hover:hover){ .input-add-login:hover{background:var(--color-input-hover);} }
+  .input-add-login:disabled{opacity:.6;cursor:progress}
+
+  /* ログイン済みの依頼者行 */
+  .login-row{
+    display:flex;align-items:center;gap:var(--spacing-gap-content);
+    background:var(--color-input-default);border-radius:var(--radius-textarea);
+    padding:var(--spacing-padding-textarea);min-height:76px;
+  }
+  .login-row .who{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .login-row .who b{
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1.4;
+    color:var(--color-text-default);
+  }
+  .login-row .who span{
+    font-weight:var(--typo-weight-caption);font-size:var(--typo-size-caption);line-height:1.6;
+    color:var(--color-text-sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+
+  /* ==========================================================================
+     card/anchorlink（STEP2 依頼種別）
+     選択＝青ベタ＋白文字。3択から1つ選ぶので強く見せる（DESIGN.md §5-2）
+     ========================================================================== */
+  .options-cards{display:flex;gap:var(--spacing-gap-content);align-items:stretch;}
+  .type-card{
+    flex:1 0 0;min-width:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:var(--spacing-gap-icon-group);
+    background:var(--color-bg-default);border:2px solid transparent;
+    border-radius:var(--radius-button);
+    padding:var(--spacing-padding-button-y) var(--spacing-padding-button-x);
+    cursor:pointer;text-align:center;
+    transition:background-color var(--motion-ui-transition) ease-out,box-shadow var(--motion-ui-transition) ease-out;
+  }
+  .type-card .t{
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;color:inherit;
+  }
+  .type-card .d{
+    font-weight:var(--typo-weight-caption);font-size:var(--typo-size-caption);line-height:1.6;color:inherit;
+  }
+  .type-card{color:var(--color-text-default);}
+  @media(hover:hover){
+    .type-card:not([aria-pressed="true"]):hover{background:var(--color-bg-hover);box-shadow:var(--shadow-card);}
+  }
+  /* box-shadow はフォーカスリングでも使うので、ここで none にして打ち消さない */
+  .type-card[aria-pressed="true"]{background:var(--color-bg-select);color:var(--color-text-white);}
+
+  /* ==========================================================================
+     card/check（制作物の種別）
+     選択＝白背景＋1pxグレー枠＋チェックON。複数選べるのでチェックで示す
+     ========================================================================== */
+  .checks{display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-gap-input-group);align-items:stretch;}
+  .check-card{
+    /* チェックボックスと文字は縦中央でそろえる（補助テキストの有無で寄りが変わらないように） */
+    display:flex;align-items:center;gap:var(--spacing-gap-subhead-offset);
+    background:var(--color-bg-default);border:1px solid transparent;
+    border-radius:var(--radius-textarea);
+    padding:var(--spacing-padding-card-y) var(--spacing-padding-card-x);
     cursor:pointer;
+    transition:background-color var(--motion-ui-transition) ease-out,border-color var(--motion-ui-transition) ease-out,box-shadow var(--motion-ui-transition) ease-out;
   }
-  .chk input[type=checkbox]:checked{background-image:url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 18 18' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M0 4C0 1.79086 1.79086 0 4 0H14C16.2091 0 18 1.79086 18 4V14C18 16.2091 16.2091 18 14 18H4C1.79086 18 0 16.2091 0 14V4Z' fill='%230079C0'/%3E %3Cpath d='M15.5394 4.65431C15.6382 4.75325 15.6937 4.88736 15.6937 5.02719C15.6937 5.16701 15.6382 5.30112 15.5394 5.40006L7.69782 13.2423C7.61615 13.324 7.5192 13.3888 7.41249 13.433C7.30577 13.4772 7.1914 13.5 7.07589 13.5C6.96039 13.5 6.84601 13.4772 6.7393 13.433C6.63259 13.3888 6.53564 13.324 6.45397 13.2423L2.62253 9.4102C2.57069 9.36189 2.52911 9.30364 2.50027 9.23891C2.47143 9.17419 2.45592 9.10432 2.45467 9.03347C2.45342 8.96262 2.46645 8.89225 2.49299 8.82655C2.51953 8.76085 2.55903 8.70116 2.60913 8.65106C2.65924 8.60095 2.71892 8.56145 2.78462 8.53492C2.85033 8.50838 2.9207 8.49535 2.99155 8.4966C3.0624 8.49785 3.13227 8.51335 3.19699 8.54219C3.26172 8.57103 3.31997 8.61261 3.36827 8.66445L7.07589 12.3721L14.7937 4.65431C14.8926 4.5555 15.0267 4.5 15.1665 4.5C15.3064 4.5 15.4405 4.5555 15.5394 4.65431Z' fill='white'/%3E %3C/svg%3E");}
-  .chk-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--gap-subhead-group);
+  @media(hover:hover){ .check-card:not(:has(input:checked)):hover{background:var(--color-bg-hover);box-shadow:var(--shadow-card);} }
+  /* 選択済み＝淡青の地＋1pxの枠（背景で選択を示し、チェックマークで裏づける） */
+  .check-card:has(input:checked){background:var(--color-bg-hover);border-color:var(--color-border-default);}
+  .check-card:has(input:focus-visible){border-color:var(--color-border-default);}
+  .check-card input{position:absolute;opacity:0;width:0;height:0;}
+  .check-box{
+    flex:none;position:relative;width:24px;height:24px;border-radius:var(--radius-checkbox);
+    background:var(--color-btn-selection-ctrl-white);
+    border:1px solid var(--color-btn-selection-ctrl-border);
+    transition:background-color var(--motion-ui-transition) ease-out;
+  }
+  .check-box::after{
+    content:"";position:absolute;inset:2px;background-color:var(--color-icon-white);opacity:0;
+    -webkit-mask:var(--icon-check) center/contain no-repeat;mask:var(--icon-check) center/contain no-repeat;
+  }
+  .check-card input:checked + .check-box{
+    background:var(--color-btn-selection-ctrl-default);border-color:var(--color-btn-selection-ctrl-default);
+  }
+  .check-card input:checked + .check-box::after{opacity:1;}
+  .check-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-group);
     color:var(--color-text-default);}
-  .chk-text .name{font-weight:700;font-size:var(--size-label-l);line-height:1;}
-  .chk-text .sub{font-weight:400;font-size:var(--size-caption);line-height:1.6;}
+  .check-text .name{font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;}
+  .check-text .sub{font-weight:var(--typo-weight-caption);font-size:var(--typo-size-caption);line-height:1.6;}
   /* 改訂・流用では補助テキストを出さない */
   .checks.no-sub .sub{display:none;}
 
-  /* ── スケジュール感 ─────────────────────────────────── */
-  .ms-row{display:flex;gap:16px;align-items:center;}
-  .ms-row + .ms-row{margin-top:var(--gap-subhead-offset);}
-  .ms-row .ms-date-wrap{flex:0 0 200px;width:200px;}
+  /* ==========================================================================
+     スケジュール（日付＋内容の複数行）
+     ========================================================================== */
+  .ms-rows{display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-offset);}
+  .ms-row{display:flex;gap:var(--spacing-gap-input-group);align-items:center;}
+  .ms-row .field-date{flex:0 0 194px;width:194px;}
   .ms-row .ms-text{flex:1 1 auto;width:auto;min-width:0;}
   .ms-del{
     flex:none;width:24px;height:24px;padding:0;border:none;background:none;cursor:pointer;
-    background-image:url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M6.4 19L5 17.6L10.6 12L5 6.4L6.4 5L12 10.6L17.6 5L19 6.4L13.4 12L19 17.6L17.6 19L12 13.4L6.4 19Z' fill='%23878787'/%3E %3C/svg%3E");
-    background-repeat:no-repeat;background-position:center;background-size:24px 24px;
-    opacity:.9;transition:opacity .15s;
+    color:var(--color-btn-primary-disable);
+    transition:color var(--motion-ui-transition) ease-out;
   }
-  .ms-del:hover{opacity:1;}
+  @media(hover:hover){ .ms-del:hover{color:var(--color-text-default);} }
+  .ms-add{width:194px;}
 
-  /* ── 参考資料・画像を添付 ──────────────────────────── */
+  /* ==========================================================================
+     参考資料・画像を添付
+     ========================================================================== */
   .file-native{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;}
-  .file-pick{
-    display:flex;align-items:center;justify-content:center;width:100%;
-    background:var(--color-bg-box);border:1px solid var(--color-border-default);
-    border-radius:var(--radius-textarea);padding:var(--pad-textarea);
-    font-weight:400;font-size:var(--size-body);line-height:2;color:var(--color-text-sub);
-    cursor:pointer;transition:background .15s;
-  }
-  .file-pick:hover{background:var(--color-bg-hover);}
-  .img-preview{display:flex;flex-wrap:wrap;gap:8px;}
+  .img-preview{display:flex;flex-wrap:wrap;gap:var(--spacing-gap-icon-group);margin-top:var(--spacing-gap-icon-group);}
+  .img-preview:empty{display:none;}
   .img-thumb{position:relative;width:96px;height:96px;border-radius:var(--radius-textarea);
     overflow:hidden;background:var(--color-bg-default);}
   .img-thumb img{width:100%;height:100%;object-fit:cover;display:block}
   .img-thumb button{
-    position:absolute;top:4px;right:4px;width:24px;height:24px;border:none;border-radius:var(--radius-full);
-    background-color:transparent;cursor:pointer;
-    background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Ccircle cx='20' cy='20' r='20' fill='%230079C0'/%3E %3Cpath d='M14.4 27L13 25.6L18.6 20L13 14.4L14.4 13L20 18.6L25.6 13L27 14.4L21.4 20L27 25.6L25.6 27L20 21.4L14.4 27Z' fill='white'/%3E %3C/svg%3E");
-    background-repeat:no-repeat;background-position:center;background-size:24px 24px;
+    position:absolute;top:4px;right:4px;width:24px;height:24px;padding:0;border:none;cursor:pointer;
+    border-radius:var(--radius-full);background:var(--color-btn-selection-ctrl-default);
+    display:flex;align-items:center;justify-content:center;color:var(--color-icon-white);
   }
+  .img-thumb button .i{width:16px;height:16px}
 
-  /* ── 送信 ───────────────────────────────────────── */
-  .submit-section{display:flex;flex-direction:column;gap:var(--gap-content);align-items:center;}
-  .submit{
-    width:100%;border:none;border-radius:var(--radius-button);
-    padding:var(--pad-button-y) var(--pad-button-x);
-    background:var(--gradation-sunbeam-h);color:var(--color-text-white);
-    font-weight:700;font-size:var(--size-head-3);line-height:1.2;
-    cursor:pointer;transition:filter .15s,transform .06s;
-  }
-  .submit:hover:not(:disabled){filter:brightness(1.06);}
-  .submit:active:not(:disabled){transform:translateY(1px);}
-  .submit:disabled{background:var(--color-cta-disable);cursor:not-allowed;}
-  .flow{margin:0;width:100%;text-align:center;font-weight:400;font-size:var(--size-body);
-    line-height:2;color:var(--color-text-default);}
-  .err{
+  /* ==========================================================================
+     送信セクション
+     ========================================================================== */
+  .submit-section{display:flex;flex-direction:column;gap:var(--spacing-gap-content);align-items:center;}
+  .flow{margin:0;width:100%;text-align:center;
+    font-weight:var(--typo-weight-body);font-size:var(--typo-size-body);line-height:2;color:var(--color-text-default);}
+  /* error-message（Figma 64:724） */
+  .error-message{
     width:100%;background:var(--color-warning-bg);color:var(--color-warning-text);
-    border-radius:var(--radius-textarea);padding:var(--pad-textarea);
-    font-weight:700;font-size:var(--size-body);line-height:1.8;
+    border-radius:var(--radius-textarea);
+    padding:var(--spacing-padding-card-y) var(--spacing-padding-card-x);
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1.6;
+    white-space:pre-line;
   }
 
-  /* ── footer ── */
+  /* footer */
   .footer{display:flex;align-items:center;justify-content:center;}
-  .footer button{
-    background:none;border:none;cursor:pointer;width:100%;text-align:center;
-    font-family:var(--font-j);font-weight:700;font-size:var(--size-label-l);line-height:1;
-    color:var(--color-text-accent);padding:8px;
-  }
-  .footer button.plain{color:var(--color-text-sub);text-decoration:underline;text-underline-offset:2px;}
+  .footer .btn-linktext{padding:8px;}
 
-  /* ── 完了画面 ──────────────────────────────────────── */
-  .done-hero{align-items:center;gap:var(--gap-subhead-offset);}
+  /* ==========================================================================
+     完了画面
+     ========================================================================== */
+  .done-hero{align-items:center;gap:var(--spacing-gap-subhead-offset);}
   .done-hero .ic{font-size:64px;line-height:1;text-align:center;
     animation:popIn .5s cubic-bezier(.34,1.4,.64,1) both;}
   @keyframes popIn{0%{opacity:0;transform:scale(.5)}60%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
-  .done-title{display:flex;flex-direction:column;gap:var(--gap-head-group);align-items:center;text-align:center;}
-  .done-title h2{margin:0;font-weight:700;font-size:var(--size-head-2);line-height:1.2;color:var(--color-text-accent);}
-  .done-title p{margin:0;font-weight:700;font-size:var(--size-head-4);line-height:1.2;color:var(--color-text-default);}
-  .done-lead{font-weight:700;font-size:var(--size-head-4);line-height:1.2;color:var(--color-text-default);}
-  .done-lead .ch{color:var(--color-text-accent);}
-  .done-btns{display:flex;gap:16px;align-items:stretch;}
+  .done-title{display:flex;flex-direction:column;gap:var(--spacing-gap-head-group);align-items:center;text-align:center;}
+  .done-title h2{margin:0;font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-2);line-height:1.2;
+    color:var(--color-text-accent);}
+  .done-title p{margin:0;font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-4);line-height:1.2;
+    color:var(--color-text-default);}
+  .done-lead{font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-4);line-height:1.6;
+    color:var(--color-text-default);}
+  .done-lead a{color:var(--color-text-accent);text-decoration:underline;text-underline-offset:var(--spacing-gap-underbar);}
+  .done-mentions{margin:0;padding-inline-start:1.4em;font-weight:var(--typo-weight-body);
+    font-size:var(--typo-size-body);line-height:2;color:var(--color-text-default);}
+  .done-btns{display:flex;gap:var(--spacing-gap-input-group);align-items:stretch;}
   .done-btns button,.done-btns a{
-    flex:1 0 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--gap-icon-group);
-    border:1px solid var(--color-border-default);border-radius:var(--radius-textarea);
-    padding:var(--pad-textarea);cursor:pointer;text-decoration:none;
-    font-weight:700;font-size:var(--size-head-4);line-height:1.2;color:var(--color-text-sub);
-    transition:background .15s,color .15s,border-color .15s;
+    flex:1 0 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--spacing-gap-icon-group);
+    border:1px solid var(--color-border-default);border-radius:var(--radius-button-s);
+    padding:var(--spacing-padding-textarea);cursor:pointer;text-decoration:none;
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1.4;
+    color:var(--color-text-default);
+    transition:background-color var(--motion-ui-transition) ease-out;
   }
-  .done-btns .copy{background:var(--color-bg-default);}
-  .done-btns .copy:hover{background:var(--color-bg-hover);}
+  .done-btns .copy{background:var(--color-bg-hover);}
   .done-btns .open{background:var(--color-bg-box);}
-  .done-btns .open:hover{background:var(--color-bg-hover);}
-  .done-btns .copy.copied{background:var(--color-bg-select);border-color:var(--color-bg-select);color:#fff;}
-  .done-btns .emoji{font-weight:400;font-size:var(--size-body);line-height:2;}
+  @media(hover:hover){ .done-btns .copy:hover,.done-btns .open:hover{background:var(--color-bg-hover);} }
+  .done-btns .copy.copied{background:var(--color-bg-select);border-color:var(--color-bg-select);color:var(--color-text-white);}
   .notion-mark{flex:none;width:23px;height:23px;}
-  .annotation{margin:0;text-align:center;font-weight:400;font-size:var(--size-body);
+  .annotation{margin:0;text-align:center;font-weight:var(--typo-weight-body);font-size:var(--typo-size-body);
     line-height:2;color:var(--color-text-default);}
 
-  /* ── ポップアップ（納期目安表・サイズ表） ──────────────── */
+  /* ==========================================================================
+     モーダル（納期目安表・サイズ目安表）
+     ========================================================================== */
   .modal-overlay{
     position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
-    padding:var(--pad-page-y) var(--pad-page-x);
-    background:rgba(51,51,51,.7);
+    padding:var(--spacing-padding-page-y) var(--spacing-padding-page-x);
+    background:var(--color-bg-scrim);
   }
   .modal-overlay.hidden{display:none}
+  /* 影は白いパネルにだけ掛ける。shellにfilterを掛けると閉じるボタンにも影がついてしまう */
   .modal-shell{position:relative;display:flex;flex-direction:column;width:100%;max-width:784px;
-    max-height:100%;min-height:0;filter:drop-shadow(0 8px 8px rgba(51,51,51,.2));}
+    max-height:100%;min-height:0;}
   .modal{
     display:flex;flex-direction:column;overflow:hidden;flex:0 1 auto;min-height:0;
+    box-shadow:var(--shadow-modal);
     background:var(--color-bg-box);border-radius:var(--radius-section);
-    padding:var(--pad-section) 0 0;
+    padding:var(--spacing-padding-box) 0 0;
     animation:modalIn .22s cubic-bezier(.2,.8,.3,1) both;
   }
   @keyframes modalIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
-  .modal-head{flex:none;display:flex;flex-direction:column;gap:var(--gap-head-group);
-    padding:0 var(--pad-box) var(--gap-content);}
-  .modal-title{display:flex;align-items:flex-start;gap:var(--gap-icon-group);
-    font-weight:700;font-size:var(--size-head-3);line-height:1.2;color:var(--color-text-accent);}
-  .modal-lead{margin:0;font-weight:400;font-size:var(--size-body);line-height:2;color:var(--color-text-sub);}
-  .modal-rule{flex:none;height:1px;background:var(--color-border-default);margin:0 var(--pad-box);}
-  .nd-list{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:var(--gap-content);
-    padding:var(--gap-content) var(--pad-box) var(--pad-section);}
-  .nd-item{display:flex;flex-direction:column;gap:var(--gap-subhead-group);}
-  .nd-head{display:flex;align-items:center;gap:var(--gap-subhead-group);flex-wrap:wrap;}
-  .nd-name{font-weight:700;font-size:var(--size-head-4);line-height:1.2;color:var(--color-text-default);}
-  .nd-period{font-weight:700;font-size:var(--size-label-l);line-height:1;color:var(--color-text-accent);}
-  .nd-note{font-weight:400;font-size:var(--size-caption);line-height:1.6;color:var(--color-text-sub);}
-  .sz-list{margin:0;padding:0;list-style:disc;font-weight:400;font-size:var(--size-caption);
-    line-height:1.6;color:var(--color-text-sub);}
+  .modal-head{flex:none;display:flex;flex-direction:column;gap:var(--spacing-gap-head-group);
+    padding:0 var(--spacing-padding-box) var(--spacing-gap-content);}
+  .modal-title{display:flex;align-items:flex-start;gap:var(--spacing-gap-icon-group);
+    font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-3);line-height:1.2;
+    color:var(--color-text-accent);}
+  .modal-lead{margin:0;font-weight:var(--typo-weight-body);font-size:var(--typo-size-body);
+    line-height:2;color:var(--color-text-sub);}
+  .nd-list{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;
+    gap:var(--spacing-gap-content);
+    padding:0 var(--spacing-padding-box) var(--spacing-padding-box);}
+  .nd-item{display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-group);}
+  .nd-head{display:flex;align-items:center;gap:var(--spacing-gap-subhead-group);flex-wrap:wrap;}
+  .nd-name{font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-4);line-height:1.2;
+    color:var(--color-text-default);}
+  .nd-period{font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;
+    color:var(--color-text-accent);}
+  .nd-note{font-weight:var(--typo-weight-caption);font-size:var(--typo-size-caption);line-height:1.6;
+    color:var(--color-text-sub);}
+  .sz-list{margin:0;padding:0;list-style:disc;font-weight:var(--typo-weight-caption);
+    font-size:var(--typo-size-caption);line-height:1.6;color:var(--color-text-sub);}
   .sz-list li{margin-inline-start:18px;}
   .modal-close{
-    position:absolute;top:24px;right:24px;width:40px;height:40px;padding:0;border:none;cursor:pointer;
-    border-radius:var(--radius-full);background-color:transparent;
-    background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Ccircle cx='20' cy='20' r='20' fill='%230079C0'/%3E %3Cpath d='M14.4 27L13 25.6L18.6 20L13 14.4L14.4 13L20 18.6L25.6 13L27 14.4L21.4 20L27 25.6L25.6 27L20 21.4L14.4 27Z' fill='white'/%3E %3C/svg%3E");
-    background-repeat:no-repeat;background-position:center;background-size:40px 40px;
-    box-shadow:var(--shadow);transition:filter .15s;
+    position:absolute;top:16px;right:16px;width:24px;height:24px;padding:0;border:none;cursor:pointer;
+    border-radius:var(--radius-full);background:var(--color-btn-secondary-default);
+    display:flex;align-items:center;justify-content:center;color:var(--color-icon-white);
   }
-  .modal-close:hover{filter:brightness(1.12);}
+  .modal-close .i{width:16px;height:16px}
+  @media(hover:hover){ .modal-close:hover{background:var(--color-btn-secondary-hover);} }
 
-  /* ── 動きを抑える設定の環境 ── */
+  /* ==========================================================================
+     縮退（ブレークポイントは768pxの1段のみ。DESIGN.md §7）
+     個別セレクタにpxを書かず、CSS変数の上書きで縮退させる。
+     ========================================================================== */
+  @media(max-width:768px){
+    :root{
+      --spacing-padding-page-x:16px;
+      --spacing-padding-page-y:32px;
+      --spacing-gap-head-offset:40px;
+      --spacing-gap-section:40px;
+      --spacing-gap-box:24px;
+      --spacing-gap-content:24px;
+      --spacing-padding-box:20px;
+      --spacing-padding-card-x:20px;
+      --spacing-padding-card-y:16px;
+      --spacing-padding-button-x:20px;
+      --spacing-padding-button-y:20px;
+      --typo-size-head-1:32px;
+      --typo-size-head-2:24px;
+      --typo-size-head-3:18px;
+      --radius-section:16px;
+    }
+    .options-cards{flex-direction:column;}
+    .checks{grid-template-columns:1fr;}
+    .ms-row{flex-wrap:wrap;position:relative;padding-right:32px;}
+    .ms-row .field-date{flex:1 1 auto;width:auto;}
+    .ms-row .ms-text{flex:1 0 100%;order:3;}
+    .ms-del{position:absolute;top:0;right:0;}
+    .ms-add{width:100%;}
+    .done-btns{flex-direction:column;}
+    .modal-overlay{padding:16px;}
+    .modal-shell{max-height:90vh;}
+    .modal-close{right:12px;top:12px;width:36px;height:36px;}
+    /* タップ領域の確保 */
+    .btn-linktext,.ms-del{min-height:44px;min-width:44px;}
+    .ms-del{display:flex;align-items:center;justify-content:center;}
+  }
+
+  /* ==========================================================================
+     動きを抑える設定の環境
+     スピナーだけは止めず、4秒/回転まで遅くする（処理中だと伝わらなくなるため）
+     ========================================================================== */
   @media(prefers-reduced-motion:reduce){
     html{scroll-behavior:auto}
     .done-hero .ic,.modal{animation:none}
     *{transition-duration:.01ms !important}
+    .btn-primary[aria-busy="true"] .spinner{animation-duration:4s}
   }
 
-  /* ── 画面幅による縮退 ─────────────────────────────────
-     Figmaはデスクトップ幅1280px（本文960px）の1本のみ。
-     以下はユウキの承認のうえでこちらが妥当に詰めた縮退指定。 */
-  @media(max-width:1180px){
-    :root{--pad-page-x:64px;--gap-head-offset:56px;--gap-section:48px;}
+  /* ==========================================================================
+     UIプレビュー（localhost でのみ表示される開発用の帯）
+     本番（GitHub Pages）では JS 側の判定により一切表示されない
+     ========================================================================== */
+  .uipreview{
+    position:fixed;left:0;right:0;bottom:0;z-index:200;
+    display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;
+    padding:8px;background:#333;color:#fff;font-size:12px;line-height:1.6;
   }
-  @media(max-width:860px){
-    :root{
-      --pad-page-x:32px;--pad-page-y:40px;
-      --gap-head-offset:40px;--gap-section:40px;--gap-box:24px;--gap-content:24px;
-      --pad-box:24px;--pad-section:40px;--pad-button-x:24px;--pad-button-y:20px;
-      --size-head-1:32px;--size-head-2:26px;--size-head-3:20px;
-    }
-    .options-cards{flex-direction:column;}
-    .checks{grid-template-columns:1fr;}
-    .modal-close{right:16px;top:16px;}
-  }
-  @media(max-width:600px){
-    :root{
-      --pad-page-x:16px;--pad-page-y:32px;
-      --gap-head-offset:32px;--gap-section:32px;--gap-content:20px;
-      --pad-box:20px;--pad-section:32px;--pad-textarea:14px;
-      --size-head-1:28px;--size-head-2:22px;--size-head-3:18px;--size-head-4:16px;
-      --size-body:15px;--radius-section:16px;
-    }
-    body{line-height:1.9}
-    .type-btn{flex-direction:row;align-items:baseline;justify-content:flex-start;text-align:left;gap:12px;}
-    .type-btn .t{white-space:nowrap;}
-    .type-btn .d br{display:none}
-    .ms-row{flex-wrap:wrap;}
-    .ms-row .ms-date-wrap{flex:1 1 auto;width:auto;}
-    .ms-row .ms-text{flex:1 0 100%;order:3}
-    .done-btns{flex-direction:column;}
-    .user-chip{gap:16px}
-    .user-chip img{width:40px;height:40px}
-    .modal-overlay{padding:16px}
-    .modal-close{right:12px;top:12px;width:36px;height:36px}
-    .img-thumb{width:76px;height:76px}
+  .uipreview button{
+    background:#fff;color:#333;border:none;border-radius:4px;padding:4px 10px;
+    font-size:12px;font-weight:700;cursor:pointer;
   }
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+
 <div class="wrap">
   <div class="column">
 
     <div class="header-area">
       <h1>REQUEST</h1>
-      <p class="lead" id="leadText">クリエイティブチームへの制作依頼・相談申請フォームです。</p>
+      <p class="lead">クリエイティブチームへの制作依頼・相談申請フォームです。</p>
     </div>
 
     <!-- ===== 完了画面（送信後に表示） ===== -->
     <div class="section hidden" id="doneArea">
       <div class="input-section">
         <div class="box done-hero">
-          <div class="ic" id="doneIc">🌟</div>
+          <div class="ic">🌟</div>
           <div class="done-title">
-            <h2 id="doneTitle">＼ 依頼ページを作成しました! ／</h2>
-            <p id="doneMsg">あと1ステップで、依頼を起票できます！</p>
+            <h2>＼ 依頼ページを作成しました! ／</h2>
+            <p>あと1ステップで、依頼を起票できます！</p>
           </div>
         </div>
 
-        <!-- ▼ Ver.1限定：Slackへの手動共有ブロック（Ver.3でBot自動投稿に切り替えたらこのブロックごと削除） -->
+        <!-- ▼ 暫定機能：Slackへの手動共有ブロック
+             Slack Bot による自動投稿を導入したら、このブロックごと削除する。
+             （HTML／CSS（.done-lead〜.notion-mark）／JS（copyUrlBtn の節）の3か所） -->
         <div class="box">
           <div class="input">
             <div class="subhead-group">
-              <div class="done-lead">NotionページのURLをコピーして <span class="ch">#83_creative_クリ室依頼受付</span> に貼り付け。</div>
-              <div class="done-lead">@宮川雄気 / Miyakawa Yuki 宛に投稿してください</div>
+              <div class="done-lead">NotionページのURLをコピーして
+                <a href="https://crazyincworkspace.slack.com/" target="_blank" rel="noopener noreferrer">Slackチャンネル</a>
+                に貼り付け。</div>
+              <ul class="done-mentions">
+                <li>ANV、PSC、MKT広告バナーの制作依頼・相談は、@笹原光 / Hikari Sasahara 宛に投稿してください。</li>
+                <li>それ以外は、@宮川雄気 / Miyakawa Yuki 宛に投稿してください。</li>
+              </ul>
               <div class="caption">依頼内容の確認・修正はNotionから行えます。</div>
             </div>
             <div class="done-btns">
-              <button type="button" class="copy" id="copyUrlBtn"><span class="emoji">🔗</span>URLをコピー</button>
+              <button type="button" class="copy" id="copyUrlBtn"><span aria-hidden="true">🔗</span>URLをコピー</button>
               <a class="open" id="doneNotion" href="#" target="_blank" rel="noopener"><svg class="notion-mark" aria-hidden="true" width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M3.20338 2.36282L14.2698 1.54544C15.6291 1.42884 15.9783 1.50744 16.8331 2.12883L20.3656 4.61738C20.9482 5.04537 21.1422 5.16197 21.1422 5.62796V19.2763C21.1422 20.1317 20.8316 20.6377 19.7443 20.7149L6.89331 21.4933C6.07732 21.5319 5.68873 21.4153 5.26134 20.8707L2.65999 17.4879C2.1934 16.8653 2 16.3994 2 15.8546V3.7228C2 3.02341 2.31059 2.44022 3.20338 2.36282Z" fill="white"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2698 1.54564L3.20338 2.36302C2.31059 2.44022 2 3.02361 2 3.7228V15.8546C2 16.3991 2.1934 16.8651 2.65999 17.4879L5.26134 20.8705C5.68873 21.4151 6.07732 21.5318 6.89331 21.4931L19.7445 20.7151C20.831 20.6377 21.1424 20.1317 21.1424 19.2765V5.62816C21.1424 5.18617 20.9678 5.05877 20.4538 4.68158L16.8331 2.12883C15.9785 1.50744 15.6291 1.42884 14.2698 1.54544V1.54564ZM7.1839 5.40476C6.13452 5.47536 5.89653 5.49136 5.30054 5.00677L3.78537 3.80159C3.63137 3.6456 3.70877 3.451 4.09676 3.4122L14.7352 2.63482C15.6285 2.55682 16.0937 2.86821 16.4431 3.14021L18.2677 4.46218C18.3457 4.50158 18.5397 4.73418 18.3063 4.73418L7.3199 5.39556L7.1839 5.40476ZM5.96052 19.1599V7.57352C5.96052 7.06753 6.11592 6.83413 6.58111 6.79494L19.1997 6.05615C19.6277 6.01755 19.8211 6.28955 19.8211 6.79474V18.3039C19.8211 18.8099 19.7431 19.2379 19.0445 19.2765L6.9693 19.9765C6.27072 20.0151 5.96072 19.7825 5.96072 19.1599H5.96052ZM17.8803 8.19471C17.9577 8.5447 17.8803 8.8947 17.5303 8.93469L16.9483 9.05009V17.6045C16.4429 17.8765 15.9777 18.0319 15.5889 18.0319C14.9676 18.0319 14.8124 17.8373 14.347 17.2545L10.541 11.2666V17.0599L11.745 17.3325C11.745 17.3325 11.745 18.0325 10.7736 18.0325L8.09568 18.1879C8.01768 18.0319 8.09568 17.6433 8.36708 17.5659L9.06646 17.3719V9.71208L8.09588 9.63348C8.01788 9.28349 8.21188 8.7781 8.75587 8.7389L11.6292 8.5455L15.5891 14.6108V9.24489L14.5798 9.12889C14.5018 8.7003 14.8124 8.38891 15.2003 8.35091L17.8803 8.19471Z" fill="black"/> </svg>Notionページを開く</a>
             </div>
           </div>
         </div>
-        <!-- ▲ Ver.1限定ブロックここまで -->
+        <!-- ▲ 暫定機能ここまで -->
 
-        <p class="annotation">※CRAZY ANNIVERSARY、PARKSIDE CAFEに関する制作物は @笹原光 / Hikari Sasahara 宛に投稿してください。<br>※初めて依頼した方は、ページを開くと「アクセスをリクエスト」と表示されます。そのまま承認依頼を出してください。</p>
+        <p class="annotation">※初めて依頼した方は、ページを開くとアクセス権リクエストが表示されます。<br>そのまま承認依頼を出してください。</p>
       </div>
     </div>
 
     <!-- ===== フォーム ===== -->
     <div id="formArea">
-      <form id="form">
+      <form id="form" novalidate>
         <div class="section">
           <div class="input-section">
 
             <!-- ===== STEP 1 依頼者 ===== -->
-            <div class="box">
+            <div class="box" id="step1Box">
               <div class="section-header"><span class="en">STEP 1</span><span class="ja">依頼者</span></div>
 
               <div class="input">
                 <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">依頼者</span><span class="req">必須</span></div>
+                  <div class="subhead-row"><span class="fl">依頼者</span><span class="badge-required">必須</span></div>
                   <div class="caption">Googleアカウント（@crazy.co.jp）でのログインが必要です。</div>
                 </div>
-                <!-- 未ログイン時 -->
+                <!-- 未ログイン -->
                 <div id="loginBox">
-                  <div id="gsiButton"></div>
+                  <button type="button" class="input-add-login" id="googleLoginBtn">
+                    <span class="g" aria-hidden="true"></span>Googleでログインする
+                  </button>
                   <p class="caption" id="loginHint" style="margin:8px 0 0"></p>
                 </div>
-                <!-- ログイン済み時 -->
+                <!-- ログイン済み -->
                 <div id="userBox" class="hidden">
-                  <div class="user-chip">
-                    <img id="userPic" alt="" referrerpolicy="no-referrer">
-                    <div class="user-meta">
+                  <div class="login-row">
+                    <div class="who">
                       <b id="userName"></b>
                       <span id="userEmail"></span>
                     </div>
-                    <button type="button" class="user-switch" id="switchUser">別のアカウント</button>
+                    <button type="button" class="btn-tertiary" id="switchUser">別のアカウント</button>
                   </div>
                 </div>
               </div>
 
               <div class="input">
                 <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">所属部署</span><span class="req">必須</span></div>
+                  <div class="subhead-row"><span class="fl">所属部署</span><span class="badge-required">必須</span></div>
                   <div class="caption">部署がない、その他の方は「その他」を選択してください。</div>
                 </div>
-                <select id="requesterDept" class="is-empty">
-                  <option value="">選択してください</option>
-                  <option>ANV</option>
-                  <option>CAREER</option>
-                  <option>CCA</option>
-                  <option>CGM-BP</option>
-                  <option>CGM-D</option>
-                  <option>CGM-Kitchen</option>
-                  <option>CGM-P</option>
-                  <option>CR室</option>
-                  <option>CW（婚礼企画・営業企画）</option>
-                  <option>CWA</option>
-                  <option>HR（ハピネス室・組織開発）</option>
-                  <option>IWAI-BP</option>
-                  <option>IWAI-D</option>
-                  <option>IWAI-Kitchen</option>
-                  <option>IWAI-P</option>
-                  <option>MKT・広報</option>
-                  <option>MT-BP</option>
-                  <option>MT-D</option>
-                  <option>MT-Kitchen</option>
-                  <option>MT-P</option>
-                  <option>その他（AI推進・BD・食企画・経営企画）</option>
-                </select>
+                <div class="field-select">
+                  <select id="requesterDept" class="ctl is-empty">
+                    <option value="">選択してください</option>
+                    <option>ANV</option>
+                    <option>CAREER</option>
+                    <option>CCA</option>
+                    <option>CGM-BP</option>
+                    <option>CGM-D</option>
+                    <option>CGM-Kitchen</option>
+                    <option>CGM-P</option>
+                    <option>CR室</option>
+                    <option>CW（婚礼企画・営業企画）</option>
+                    <option>CWA</option>
+                    <option>HR（ハピネス室・組織開発）</option>
+                    <option>IWAI-BP</option>
+                    <option>IWAI-D</option>
+                    <option>IWAI-Kitchen</option>
+                    <option>IWAI-P</option>
+                    <option>MKT・広報</option>
+                    <option>MT-BP</option>
+                    <option>MT-D</option>
+                    <option>MT-Kitchen</option>
+                    <option>MT-P</option>
+                    <option>その他（AI推進・BD・食企画・経営企画）</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -541,228 +795,231 @@
             <div class="box">
               <div class="section-header"><span class="en">STEP 2</span><span class="ja">依頼種別</span></div>
               <div class="options-cards">
-                <button type="button" class="type-btn" data-type="新規" aria-pressed="false">
+                <button type="button" class="type-card" data-type="新規" aria-pressed="false">
                   <span class="t">新規</span><span class="d">プランニングを<br>はじめる</span>
                 </button>
-                <button type="button" class="type-btn" data-type="改訂・流用" aria-pressed="false">
+                <button type="button" class="type-card" data-type="改訂・流用" aria-pressed="false">
                   <span class="t">改訂・流用</span><span class="d">既存ツールの<br>文言修正・画像差替など</span>
                 </button>
-                <button type="button" class="type-btn" data-type="相談" aria-pressed="false">
+                <button type="button" class="type-card" data-type="相談" aria-pressed="false">
                   <span class="t">相談</span><span class="d">まずは話しながら考えたい<br>制作以外の相談もこちら</span>
                 </button>
               </div>
             </div>
 
-            <!-- ===== STEP 3 依頼内容 ===== -->
+            <!-- ===== STEP 3 依頼内容 =====
+                 DOMの並びは固定し、依頼種別ごとの表示順は CSS の order で切り替える。
+                 （新規と改訂・流用で「スケジュール」の位置が違うため） -->
             <div class="box hidden" id="detailCard">
-              <div class="section-header"><span class="en">STEP 3</span><span class="ja">依頼内容</span></div>
+              <div class="section-header" style="order:0"><span class="en">STEP 3</span><span class="ja">依頼内容</span></div>
 
               <!-- 依頼タイトル：全種別 -->
-              <div class="input" data-types="新規,改訂・流用,相談">
+              <div class="input f-title" data-types="新規,改訂・流用,相談">
                 <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">依頼タイトル</span><span class="req">必須</span></div>
+                  <div class="subhead-row"><span class="fl">依頼タイトル</span><span class="badge-required">必須</span></div>
                   <div class="caption">今回の依頼・相談を分かりやすく一言で記入してください。</div>
                 </div>
-                <input type="text" name="title" placeholder="例：6月◯◯フェア 集客バナー">
+                <input type="text" class="ctl" name="title" placeholder="例：6月◯◯フェア 集客バナー">
               </div>
 
-              <!-- 対象事業・部署：全種別（選択肢と並び順はNotion DB「対象事業・部署」に一致） -->
-              <div class="input" data-types="新規,改訂・流用,相談">
+              <!-- 対象事業・部署：全種別（選択肢と並び順はNotion「対象事業・部署」に一致させる） -->
+              <div class="input f-brand" data-types="新規,改訂・流用,相談">
                 <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">対象事業・部署</span><span class="req">必須</span></div>
+                  <div class="subhead-row"><span class="fl">対象事業・部署</span><span class="badge-required">必須</span></div>
                   <div class="caption">納品物を使用する場所や部署を選んでください。</div>
                 </div>
-                <select name="brand" class="is-empty">
-                  <option value="">選択してください</option>
-                  <option>ANV｜アニバに関する制作物</option>
-                  <option>CAREER｜CRAZY CAREERに関する制作物</option>
-                  <option>CCA｜CCA事業に関する制作物</option>
-                  <option>CGM-PSC｜PARKSIDE CAFEに関する制作物</option>
-                  <option>CGM-レストラン｜レストランに関する制作物</option>
-                  <option>CGM-館内｜館内備品等に関する制作物</option>
-                  <option>CGM-婚礼｜婚礼に関する制作物</option>
-                  <option>CRAZY｜全社周年・自社WEBサイト等に関する制作物</option>
-                  <option>CR室｜クリ室の自主企画・外部案件の管理用</option>
-                  <option>CW｜CWブランド全体の婚礼・営業に関する制作物</option>
-                  <option>CWA｜CWAに関する制作物</option>
-                  <option>HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物</option>
-                  <option>IWAI-館内｜館内備品等に関する制作物</option>
-                  <option>IWAI-婚礼｜婚礼に関する制作物</option>
-                  <option>MT-the-Terrace｜the Terraceに関する制作物</option>
-                  <option>MT-館内｜館内備品等に関する制作物</option>
-                  <option>MT-婚礼｜婚礼に関する制作物</option>
-                  <option>その他｜AI推進・BD・食企画・経営企画等に関する制作物</option>
-                </select>
+                <div class="field-select">
+                  <select name="brand" class="ctl is-empty">
+                    <option value="">選択してください</option>
+                    <option>ANV｜アニバに関する制作物</option>
+                    <option>CAREER｜CRAZY CAREERに関する制作物</option>
+                    <option>CCA｜CCA事業に関する制作物</option>
+                    <option>CGM-PSC｜PARKSIDE CAFEに関する制作物</option>
+                    <option>CGM-レストラン｜レストランに関する制作物</option>
+                    <option>CGM-館内｜館内備品等に関する制作物</option>
+                    <option>CGM-婚礼｜婚礼に関する制作物</option>
+                    <option>CRAZY｜全社周年・自社WEBサイト等に関する制作物</option>
+                    <option>CR室｜クリ室の自主企画・外部案件の管理用</option>
+                    <option>CW｜CWブランド全体の婚礼・営業に関する制作物</option>
+                    <option>CWA｜CWAに関する制作物</option>
+                    <option>HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物</option>
+                    <option>IWAI-館内｜館内備品等に関する制作物</option>
+                    <option>IWAI-婚礼｜婚礼に関する制作物</option>
+                    <option>MT-the-Terrace｜the Terraceに関する制作物</option>
+                    <option>MT-館内｜館内備品等に関する制作物</option>
+                    <option>MT-婚礼｜婚礼に関する制作物</option>
+                    <option>その他｜AI推進・BD・食企画・経営企画等に関する制作物</option>
+                  </select>
+                </div>
               </div>
 
               <!-- 制作物の種別：新規・改訂・流用
-                   value はNotion DB「制作物の種別」の選択肢と完全一致させること。
-                   ラベル（value）を変えるとNotionに同名の新選択肢が生成され既存データと分裂する。 -->
-              <div class="input" id="prodTypeField" data-types="新規,改訂・流用">
+                   value はNotion「制作物の種別」の選択肢と完全一致させること。
+                   ラベルを変えるとNotionに同名の新選択肢が生成され既存データと分裂する。 -->
+              <div class="input f-prodtypes" data-types="新規,改訂・流用">
                 <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">制作物の種別</span><span class="req">必須</span></div>
+                  <div class="subhead-row"><span class="fl">制作物の種別</span><span class="badge-required">必須</span></div>
                   <div class="caption">複数選択可</div>
                 </div>
                 <div class="checks" id="prodTypes">
-                  <label class="chk"><input type="checkbox" value="KV・アイキャッチ"><span class="chk-text"><span class="name">KV・アイキャッチ</span><span class="sub">イベントやキャンペーンの世界観を象徴する一枚絵</span></span></label>
-                  <label class="chk"><input type="checkbox" value="スライド・ePDF"><span class="chk-text"><span class="name">スライド・ePDF</span><span class="sub">営業資料・プレゼンスライド・デジタルパンフなど</span></span></label>
-                  <label class="chk"><input type="checkbox" value="バナー・告知画像"><span class="chk-text"><span class="name">バナー・告知画像</span><span class="sub">NEWS・マガジン・フィード投稿画像など</span></span></label>
-                  <label class="chk"><input type="checkbox" value="LP・WEBサイト"><span class="chk-text"><span class="name">LP・WEBサイト</span><span class="sub">ディレクション・サイト内パーツ制作など</span></span></label>
-                  <label class="chk"><input type="checkbox" value="チラシ・ポスター・パネル"><span class="chk-text"><span class="name">チラシ・ポスター・パネル</span><span class="sub">ペラ一枚の印刷物</span></span></label>
-                  <label class="chk"><input type="checkbox" value="リーフレット・パンフレット"><span class="chk-text"><span class="name">リーフレット・パンフレット</span><span class="sub">二つ折り・蛇腹折り・ホチキス留めなどの小冊子</span></span></label>
-                  <label class="chk"><input type="checkbox" value="看板・サイン"><span class="chk-text"><span class="name">看板・サイン</span><span class="sub">案内看板・表札・ポップ・サイネージなど</span></span></label>
-                  <label class="chk"><input type="checkbox" value="ペーパーアイテム"><span class="chk-text"><span class="name">ペーパーアイテム</span><span class="sub">メニュー表・手紙・ショップカードなど</span></span></label>
-                  <label class="chk"><input type="checkbox" value="招待状・紙袋・ノベルティ"><span class="chk-text"><span class="name">招待状・紙袋・ノベルティ</span><span class="sub">招待状・紙袋・書籍・ステッカーなどグッズ類</span></span></label>
-                  <label class="chk"><input type="checkbox" value="その他"><span class="chk-text"><span class="name">その他</span><span class="sub">足拭きマットなど迷ったらこちら</span></span></label>
+                  <label class="check-card"><input type="checkbox" value="KV・アイキャッチ"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">KV・アイキャッチ</span><span class="sub">イベントやキャンペーンの世界観を象徴する一枚絵</span></span></label>
+                  <label class="check-card"><input type="checkbox" value="スライド・ePDF"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">スライド・ePDF</span><span class="sub">営業資料・プレゼンスライド・デジタルパンフなど</span></span></label>
+                  <label class="check-card"><input type="checkbox" value="バナー・告知画像"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">バナー・告知画像</span><span class="sub">NEWS・マガジン・フィード投稿画像など</span></span></label>
+                  <label class="check-card"><input type="checkbox" value="LP・WEBサイト"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">LP・WEBサイト</span><span class="sub">ディレクション・サイト内パーツ制作など</span></span></label>
+                  <label class="check-card"><input type="checkbox" value="チラシ・ポスター・パネル"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">チラシ・ポスター・パネル</span><span class="sub">ペラ一枚の印刷物</span></span></label>
+                  <label class="check-card"><input type="checkbox" value="リーフレット・パンフレット"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">リーフレット・パンフレット</span><span class="sub">二つ折り・蛇腹折り・ホチキス留めなどの小冊子</span></span></label>
+                  <label class="check-card"><input type="checkbox" value="看板・サイン"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">看板・サイン</span><span class="sub">案内看板・表札・ポップ・サイネージなど</span></span></label>
+                  <label class="check-card"><input type="checkbox" value="ペーパーアイテム"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">ペーパーアイテム</span><span class="sub">メニュー表・手紙・ショップカードなど</span></span></label>
+                  <label class="check-card"><input type="checkbox" value="招待状・紙袋・ノベルティ"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">招待状・紙袋・ノベルティ</span><span class="sub">招待状・紙袋・書籍・ステッカーなどグッズ類</span></span></label>
+                  <label class="check-card"><input type="checkbox" value="その他"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">その他</span><span class="sub">足拭きマットなど迷ったらこちら</span></span></label>
                 </div>
               </div>
 
               <!-- 与件整理：新規 -->
-              <div class="input" data-types="新規">
-                <div class="subhead-group"><div class="subhead-row"><span class="fl">依頼背景・抱えている課題感</span></div></div>
-                <textarea name="purpose" placeholder="何を解決するための企画・制作物ですか？（例：既存資料が古く、今の客層に届いていない）"></textarea>
+              <div class="input f-purpose" data-types="新規">
+                <div class="subhead-group"><div class="subhead-row"><span class="fl">依頼背景・課題感</span></div></div>
+                <div class="field-textarea"><textarea class="ctl" name="purpose" placeholder="何を解決するための企画・制作物ですか？（例：既存資料が古く、今の客層に届いていない）"></textarea></div>
               </div>
-              <div class="input" data-types="新規">
+              <div class="input f-target" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">ターゲット</span></div></div>
-                <textarea name="target" placeholder="誰に届ける企画・制作物ですか？その人の年齢層や性格、初対面か既存顧客か、本人が抱えている悩みや気づいていない本音など、ペルソナ像を教えてください"></textarea>
+                <div class="field-textarea"><textarea class="ctl" name="target" placeholder="誰に届ける企画・制作物ですか？その人の年齢層や性格、初対面か既存顧客か、本人が抱えている悩みや気づいていない本音など、ペルソナ像を教えてください"></textarea></div>
               </div>
-              <div class="input" data-types="新規">
+              <div class="input f-usedate" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">使用開始日</span></div></div>
-                <textarea name="useDate" placeholder="いつ使いますか？（例：7月20日にインターン告知で使用）"></textarea>
+                <div class="field-textarea"><textarea class="ctl" name="useDate" placeholder="いつ使いますか？（例：7月20日にインターン告知で使用）"></textarea></div>
               </div>
-              <div class="input" data-types="新規">
+              <div class="input f-useplace" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">使用場所・使用シーン</span></div></div>
-                <textarea name="usePlace" placeholder="どこで使いますか？（例：IWAIの館内見学中にリビングで配布）"></textarea>
+                <div class="field-textarea"><textarea class="ctl" name="usePlace" placeholder="どこで使いますか？（例：IWAIの館内見学中にリビングで配布）"></textarea></div>
               </div>
-              <div class="input" data-types="新規">
+              <div class="input f-outcome" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">得たい成果</span></div></div>
-                <textarea name="outcome" placeholder="目指している数値目標や定性的な目標を教えてください（例：申し込み30件獲得・SNSで話題になるくらい可愛く）"></textarea>
+                <div class="field-textarea"><textarea class="ctl" name="outcome" placeholder="目指している数値目標や定性的な目標を教えてください（例：申し込み30件獲得・SNSで話題になるくらい可愛く）"></textarea></div>
               </div>
-              <div class="input" data-types="新規">
+              <div class="input f-afterfeeling" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">読後感や体験後の感情</span></div></div>
-                <textarea name="afterFeeling" placeholder="アウトプットを読んだり使用した後、ターゲットの心に残る感情や余韻は何ですか？"></textarea>
+                <div class="field-textarea"><textarea class="ctl" name="afterFeeling" placeholder="アウトプットを読んだり使用した後、ターゲットの心に残る感情や余韻は何ですか？"></textarea></div>
               </div>
-              <div class="input" data-types="新規">
+              <div class="input f-budget" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">予算感</span></div></div>
-                <textarea name="budget" placeholder="おおよその予算感を教えてください（例：印刷費：1万円以内／看板購入費2万円）"></textarea>
+                <div class="field-textarea"><textarea class="ctl" name="budget" placeholder="おおよその予算感を教えてください（例：印刷費：1万円以内／看板購入費2万円）"></textarea></div>
               </div>
 
-              <!-- 希望納期：新規・改訂・流用 -->
-              <div class="input" data-types="新規,改訂・流用">
-                <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">希望納期</span><button type="button" class="sublink" id="ndOpen">納期目安表をみる</button></div>
-                </div>
-                <div class="date-wrap">
-                  <input type="date" name="deadline" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">
-                  <span class="date-ph"></span>
+              <!-- 広報チームの企画確認状況：新規 -->
+              <div class="input f-prstatus" data-types="新規">
+                <div class="subhead-group"><div class="subhead-row"><span class="fl">広報チームの企画確認状況</span></div></div>
+                <div class="field-select">
+                  <select id="prStatus" class="ctl is-empty">
+                    <option value="">選択してください</option>
+                    <option>必要なし</option>
+                    <option>これから</option>
+                    <option>共有済み</option>
+                  </select>
                 </div>
               </div>
 
-              <!-- スケジュール感：新規 -->
-              <div class="input" data-types="新規">
+              <!-- スケジュール：新規・改訂・流用 -->
+              <div class="input f-schedule" data-types="新規,改訂・流用">
                 <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">スケジュール感</span><button type="button" class="sublink" id="addMs">＋日程を追加する</button></div>
+                  <div class="subhead-row"><span class="fl">スケジュール</span><button type="button" class="btn-linktext" id="ndOpen">納期目安表をみる</button></div>
+                  <div class="caption">希望納品日や原稿素材の格納日などスケジュール感を教えてください。</div>
                 </div>
-                <div id="msRows">
+                <div class="ms-rows" id="msRows">
                   <div class="ms-row">
-                    <div class="date-wrap ms-date-wrap">
-                      <input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">
+                    <div class="field-date">
+                      <input type="date" class="ctl ms-date" aria-label="日付">
                       <span class="date-ph"></span>
                     </div>
-                    <input type="text" class="ms-text" placeholder="原稿格納・デザインチェック・上長提案など">
-                    <button type="button" class="ms-del" aria-label="この行を削除"></button>
+                    <input type="text" class="ctl ms-text" aria-label="内容" placeholder="デザインチェック・上長提案・校了など">
+                    <button type="button" class="ms-del" aria-label="この行を消す"><span class="i i-close"></span></button>
                   </div>
                 </div>
+                <button type="button" class="input-add ms-add" id="addMs">＋日程を追加する</button>
+              </div>
+
+              <!-- 制作物の概要：新規 -->
+              <div class="input f-manuscript" data-types="新規">
+                <div class="subhead-group">
+                  <div class="subhead-row"><span class="fl">制作物の概要</span><button type="button" class="btn-linktext" id="szOpen">サイズ目安表をみる</button></div>
+                  <div class="caption">印刷費の見積りには「サイズ・ページ数・部数」の3点が最低限必須になります。</div>
+                </div>
+                <div class="field-textarea"><textarea class="ctl" name="manuscript" placeholder="アウトプットのサイズ・ページ数・部数・掲載テキスト・使用写真など"></textarea></div>
+              </div>
+
+              <!-- プロトタイプ：新規 -->
+              <div class="input f-prototype" data-types="新規">
+                <div class="subhead-group"><div class="subhead-row"><span class="fl">プロトタイプ</span></div></div>
+                <div class="field-textarea"><textarea class="ctl" name="prototype" placeholder="Canva・Figma・KeynoteなどのURL"></textarea></div>
               </div>
 
               <!-- 改訂・流用元のデータ：改訂・流用 -->
-              <div class="input" data-types="改訂・流用">
+              <div class="input f-sourceurls" data-types="改訂・流用">
                 <div class="subhead-group">
                   <div class="subhead-row"><span class="fl">改訂・流用元のデータ</span></div>
                   <div class="caption">元データの所在が不明の場合、現物の写真やスクリーンショットを下の「参考資料・画像を添付」に添えてください。</div>
                 </div>
                 <div id="srcUrls">
-                  <input type="text" class="src-url" placeholder="GoogleドライブのフォルダURLなど">
+                  <input type="text" class="ctl src-url" placeholder="GoogleドライブのフォルダURLなど">
                 </div>
               </div>
 
               <!-- 制作内容：改訂・流用 -->
-              <div class="input" data-types="改訂・流用">
+              <div class="input f-revise" data-types="改訂・流用">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">制作内容</span></div></div>
-                <textarea name="reviseManuscript" placeholder="差し替える文言は、そのままコピペできる状態で記入されていると転記ミスを防げます"></textarea>
-              </div>
-
-              <!-- 広報チームの確認状況：新規 -->
-              <div class="input" data-types="新規">
-                <div class="subhead-group"><div class="subhead-row"><span class="fl">広報チームの確認状況</span></div></div>
-                <select id="prStatus" class="is-empty">
-                  <option value="">選択してください</option>
-                  <option>必要なし</option>
-                  <option>これから</option>
-                  <option>共有済み</option>
-                </select>
-              </div>
-
-              <!-- 制作物の概要：新規 -->
-              <div class="input" data-types="新規">
-                <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">制作物の概要</span><button type="button" class="sublink" id="szOpen">サイズ目安表をみる</button></div>
-                  <div class="caption">印刷費の見積りには「サイズ・ページ数・部数」の3点が最低限必須になります。</div>
-                </div>
-                <textarea name="manuscript" placeholder="アウトプットのサイズ・ページ数・部数・形成テキストや使用写真など"></textarea>
-              </div>
-
-              <!-- 構成ラフ・プロトタイプ：新規 -->
-              <div class="input" data-types="新規">
-                <div class="subhead-group"><div class="subhead-row"><span class="fl">構成ラフ・プロトタイプ</span></div></div>
-                <textarea name="prototype" placeholder="Canva・Figma・KeynoteなどのURL"></textarea>
+                <div class="field-textarea"><textarea class="ctl" name="reviseManuscript" placeholder="差し替える文言は、そのままコピペできる状態で記入されていると転記ミスを防げます"></textarea></div>
               </div>
 
               <!-- 相談内容：相談 -->
-              <div class="input" data-types="相談">
-                <div class="subhead-group"><div class="subhead-row"><span class="fl">相談内容</span><span class="req">必須</span></div></div>
-                <textarea name="consultDetail" placeholder="ざっくりでOK。やりたいこと、困っていること、現状の企画内容など相談・共有したいことを記入"></textarea>
+              <div class="input f-consult" data-types="相談">
+                <div class="subhead-group"><div class="subhead-row"><span class="fl">相談内容</span><span class="badge-required">必須</span></div></div>
+                <div class="field-textarea"><textarea class="ctl" name="consultDetail" placeholder="ざっくりでOK。やりたいこと、困っていること、現状の企画内容など相談・共有したいことを記入"></textarea></div>
               </div>
 
               <!-- 参考資料・画像を添付：全種別 -->
-              <div class="input" data-types="新規,改訂・流用,相談">
+              <div class="input f-images" data-types="新規,改訂・流用,相談">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">参考資料・画像を添付</span></div></div>
-                <input type="file" id="images" accept="image/*" multiple class="file-native">
-                <label for="images" class="file-pick">＋画像を添付する</label>
-                <div id="imgPreview" class="img-preview"></div>
+                <div>
+                  <input type="file" id="images" accept="image/*" multiple class="file-native">
+                  <label for="images" class="input-add">＋画像を添付する</label>
+                  <div id="imgPreview" class="img-preview"></div>
+                </div>
               </div>
 
-              <!-- 制作物に対する想い・意気込み：新規 -->
-              <div class="input" data-types="新規">
-                <div class="subhead-group"><div class="subhead-row"><span class="fl">制作物に対する想い・意気込み</span></div></div>
-                <textarea name="intentSeisaku" placeholder="企画や制作物に対する意気込みや悩みなど、定量・定性目標とは別にある個人的な想いや情熱を教えてください"></textarea>
+              <!-- プロジェクトに対する想い：新規 -->
+              <div class="input f-intent" data-types="新規">
+                <div class="subhead-group">
+                  <div class="subhead-row"><span class="fl">プロジェクトに対する想い</span></div>
+                  <div class="caption">定量・定性目標とは別にある個人的な想いや情熱を教えてください。</div>
+                </div>
+                <div class="field-textarea"><textarea class="ctl" name="intentSeisaku" placeholder="企画や制作物に対する意気込みや悩みなど、定量・定性目標とは別にある個人的な想いや情熱を教えてください"></textarea></div>
               </div>
             </div>
           </div>
 
           <div class="submit-section">
-            <button type="submit" class="submit" id="submitBtn" disabled>送信する</button>
-            <div class="err hidden" id="errBox"></div>
+            <button type="submit" class="btn-primary" id="submitBtn" disabled>
+              <span class="spinner" aria-hidden="true"></span><span class="btn-label">送信する</span>
+            </button>
+            <div class="error-message hidden" id="errBox" role="alert"></div>
             <p class="flow">送信するとNotionページが作成されます。<br>作成したページのリンクを次の画面に沿ってクリエイティブ室へ共有してください。</p>
           </div>
         </div>
       </form>
     </div>
 
-    <div class="footer" id="footerForm"><button type="button" id="toTopBtn">▲ ページTOPに戻る</button></div>
-    <div class="footer hidden" id="footerDone"><button type="button" class="plain" id="againBtn">別の依頼を起票する</button></div>
+    <div class="footer" id="footerForm"><button type="button" class="btn-linktext" id="toTopBtn">▲ ページTOPに戻る</button></div>
+    <div class="footer hidden" id="footerDone"><button type="button" class="btn-linktext" id="againBtn">別の依頼を起票する</button></div>
   </div>
 </div>
 
-<!-- ===== 納期目安表（UIのみ・Notion非連携） ===== -->
+<!-- ===== 納期目安表（表示専用・Notion非連携） ===== -->
 <div class="modal-overlay hidden" id="ndModal" role="dialog" aria-modal="true" aria-labelledby="ndTitle">
   <div class="modal-shell">
     <div class="modal">
       <div class="modal-head">
         <div class="modal-title" id="ndTitle"><span>📅</span><span>納期目安表</span></div>
-        <p class="modal-lead">制作着手から納品までにかかる目安です。依頼内容によって短縮も可能なのでスケジュール感とともにご相談ください。 ※原稿（テキストや画像素材など）が揃った状態からの目安です。依頼起票からではないのでご注意ください。</p>
+        <p class="modal-lead">納品までにかかる期間の目安になります。依頼内容によって短縮可能なので、希望スケジュールを記入してご相談ください。 ※納期は依頼承諾後の制作着手からの目安です。依頼起票からではないのでご注意ください。</p>
       </div>
-      <div class="modal-rule"></div>
       <div class="nd-list">
         <div class="nd-item"><div class="nd-head"><span class="nd-name">KV・アイキャッチ</span><span class="nd-period">1週間〜2週間</span></div><div class="nd-note">展開物の作成は別途工数が必要になります。</div></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">スライド・ePDF</span><span class="nd-period">1週間〜2週間</span></div><div class="nd-note">ページ数や内容によって変わります。</div></div>
@@ -776,11 +1033,11 @@
         <div class="nd-item"><div class="nd-head"><span class="nd-name">その他</span><span class="nd-period">都度対応</span></div><div class="nd-note">発注先に事前に、データ入稿後の納期目安を事前に確認してあると安心です。</div></div>
       </div>
     </div>
-    <button type="button" class="modal-close" id="ndClose" aria-label="閉じる"></button>
+    <button type="button" class="modal-close" id="ndClose" aria-label="閉じる"><span class="i i-close"></span></button>
   </div>
 </div>
 
-<!-- ===== サイズ表（UIのみ・Notion非連携） ===== -->
+<!-- ===== サイズ目安表（表示専用・Notion非連携） ===== -->
 <div class="modal-overlay hidden" id="szModal" role="dialog" aria-modal="true" aria-labelledby="szTitle">
   <div class="modal-shell">
     <div class="modal">
@@ -788,157 +1045,114 @@
         <div class="modal-title" id="szTitle"><span>✏️</span><span>サイズ目安表</span></div>
         <p class="modal-lead">制作目的別の一般的なサイズ表です。依頼内容によって変更する可能性もありますが、アウトプットのイメージを擦り合わせるために活用してください。 ※横幅×縦幅で掲載しています。</p>
       </div>
-      <div class="modal-rule"></div>
       <div class="nd-list">
         <div class="nd-item"><div class="nd-head"><span class="nd-name">KV・アイキャッチ</span></div><ul class="sz-list"><li>掲載メディア次第。以下項目を参照。</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">スライド・ePDF</span></div><ul class="sz-list"><li>モニターやスクリーン表示：1920×1080px</li><li>タブレット表示：1060×750px</li><li>紙資料：A4</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">バナー・告知画像</span></div><ul class="sz-list"><li>ストーリーズ：1080×1920px</li><li>自社NEWSバナー：1200×600px</li><li>フィード投稿：1080×1350px（スクエア型は縦横1080px）</li><li>PR TIMES見出し：1920×1280px</li><li>Peatix：920×450px</li><li>Googleフォーム見出し：1200×300px</li><li>自社HPポップアップ：1920×1080px</li><li>Notion ページヘッダー：1500×600px</li><li>Notion 共有プレビュー：1500×775px</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">LP・WEBサイト</span></div><ul class="sz-list"><li>作成内容次第。デザイナー側で調整。</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">チラシ・ポスター・パネル</span></div><ul class="sz-list"><li>告知・案内チラシ：A5・A4</li><li>パネル・ポスター：A3・B3・A2・B2・A1・B1・A0・B0</li><li>ポップ：A5・ハガキサイズ</li></ul></div>
-        <div class="nd-item"><div class="nd-head"><span class="nd-name">リーフレット・パンフレット</span></div><ul class="sz-list"><li>小冊子：B6, A5, B5, A4</li><li>蛇腹折・観音折：印刷会社によってサイズ規定ある。<br>また片面3ページが基本のため4ページを超えると加工コスト増。</li></ul></div>
+        <div class="nd-item"><div class="nd-head"><span class="nd-name">リーフレット・パンフレット</span></div><ul class="sz-list"><li>小冊子：B6, A5, B5, A4</li><li>蛇腹折・観音折：印刷会社によってサイズ規定ある。</li><li>また片面3ページが基本のため4ページを超えると加工コスト増。</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">看板・サイン</span></div><ul class="sz-list"><li>店内案内：A4〜A3</li><li>店頭大型看板：A1〜A0</li><li>什器系：PIECE OF SIGN等を検索してリサーチ。</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">ペーパーアイテム</span></div><ul class="sz-list"><li>名刺・ショップカード：91×55mm</li><li>作成内容次第。デザイナー側で調整。</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">招待状・紙袋・ノベルティ</span></div><ul class="sz-list"><li>作成内容次第。デザイナー側で調整。</li></ul></div>
       </div>
     </div>
-    <button type="button" class="modal-close" id="szClose" aria-label="閉じる"></button>
+    <button type="button" class="modal-close" id="szClose" aria-label="閉じる"><span class="i i-close"></span></button>
   </div>
 </div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-  // ===== 設定 =====
-  var ENDPOINT = "https://creative-request.yukimiyakawa.workers.dev/submit";
+(function(){
+  "use strict";
+
+  // ===== 設定 =====================================================
+  var WORKER_BASE   = "https://creative-request.yukimiyakawa.workers.dev";
+  var ENDPOINT      = WORKER_BASE + "/submit";
+  var AUTH_ENDPOINT = WORKER_BASE + "/auth/exchange";
   // GCPで発行したOAuthクライアントID（公開情報なのでここに直書きでOK）。
-  // Worker側（wrangler.toml の GOOGLE_CLIENT_ID）にも同じ値を設定すること。
+  // クライアントシークレットは Worker Secrets（GOOGLE_CLIENT_SECRET）にのみ置く。
   var GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleusercontent.com";
-  var HOSTED_DOMAIN = "crazy.co.jp";
+  var HOSTED_DOMAIN    = "crazy.co.jp";
 
-  // ===== Googleログイン（GIS）=====
-  // idToken: Googleが発行する署名付きJWT。送信時にWorkerへ渡し、Worker側で署名検証する。
-  var auth = { idToken: null, payload: null };
+  // localhost で開いたときだけ、ログインなしでUIを確認できるプレビュー帯を出す。
+  // 本番（GitHub Pages）では false になり、帯もダミーログインも一切動かない。
+  var IS_LOCAL = ["localhost","127.0.0.1","0.0.0.0",""].indexOf(location.hostname) !== -1;
 
-  function b64urlDecode(s){
-    s = s.replace(/-/g, "+").replace(/_/g, "/");
-    while (s.length % 4) s += "=";
-    return decodeURIComponent(Array.prototype.map.call(atob(s), function(c){
-      return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(""));
+  // ===== 共通ユーティリティ ========================================
+  function $(id){ return document.getElementById(id); }
+  function show(el, on){ if (el) el.classList.toggle("hidden", !on); }
+  function prefersReducedMotion(){
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
-  function parseJwtPayload(token){
-    try { return JSON.parse(b64urlDecode(token.split(".")[1])); }
-    catch(e){ return null; }
-  }
-  function authExpired(){
-    // 期限60秒前から「切れた」扱いにして、送信直前の失敗を防ぐ
-    return !auth.payload || (auth.payload.exp * 1000) < (Date.now() + 60 * 1000);
-  }
+  function scrollBehavior(){ return prefersReducedMotion() ? "auto" : "smooth"; }
 
-  function onCredential(response){
-    var p = parseJwtPayload(response.credential);
-    if (!p){ setLoginHint("ログイン情報の読み取りに失敗しました。もう一度お試しください。"); return; }
-    var email = String(p.email || "");
-    // 画面側の先回りチェック（最終判定はWorker側の署名検証）
-    if (p.hd !== HOSTED_DOMAIN || !/@crazy\.co\.jp$/i.test(email)){
-      setLoginHint("@crazy.co.jp のアカウントでログインしてください（" + email + " は使用できません）。");
-      if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
-      return;
-    }
-    auth.idToken = response.credential;
-    auth.payload = p;
-    document.getElementById("userName").textContent = p.name || email;
-    document.getElementById("userEmail").textContent = email;
-    var pic = document.getElementById("userPic");
-    if (p.picture) { pic.src = p.picture; pic.style.display = ""; } else { pic.style.display = "none"; }
-    show(document.getElementById("loginBox"), false);
-    show(document.getElementById("userBox"), true);
-    errBox.classList.add("hidden");
-  }
+  var form       = $("form");
+  var detailCard = $("detailCard");
+  var submitBtn  = $("submitBtn");
+  var errBox     = $("errBox");
+  var typeCards  = document.querySelectorAll(".type-card");
+  var branchEls  = document.querySelectorAll("#detailCard [data-types]");
+  var current    = null;
+  var sending    = false;
+  var idemKey    = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random();
 
-  function setLoginHint(msg){
-    var el = document.getElementById("loginHint");
-    el.textContent = msg || "";
+  // ===== エラー表示（error-message） ===============================
+  function showErr(msg){
+    errBox.textContent = msg;
+    show(errBox, true);
+    errBox.scrollIntoView({behavior: scrollBehavior(), block: "center"});
   }
+  function clearErr(){ show(errBox, false); errBox.textContent = ""; }
 
-  function initGsi(){
-    if (!window.google || !google.accounts){ setTimeout(initGsi, 200); return; }
-    if (GOOGLE_CLIENT_ID.indexOf("PASTE_CLIENT_ID_HERE") === 0){
-      setLoginHint("⚠️ 管理者向け：GOOGLE_CLIENT_ID が未設定です（index.html の設定欄を確認）。");
-      return;
-    }
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      hd: HOSTED_DOMAIN,           // 表示ヒント（強制はWorker側で実施）
-      callback: onCredential,
-      auto_select: true,
-      itp_support: true
-    });
-    google.accounts.id.renderButton(document.getElementById("gsiButton"), {
-      type: "standard", theme: "outline", size: "large",
-      text: "signin_with", shape: "pill", logo_alignment: "left", locale: "ja", width: 400
-    });
-    google.accounts.id.prompt(); // One Tap（右上ポップアップ）
-  }
-  initGsi();
-
-  function requireLogin(){
-    // 期限切れ（約1時間）ならログインカードに戻して再ログインしてもらう
-    auth.idToken = null; auth.payload = null;
-    show(document.getElementById("userBox"), false);
-    show(document.getElementById("loginBox"), true);
-    setLoginHint("");
-    if (window.google && google.accounts) google.accounts.id.prompt();
-    document.querySelector(".box").scrollIntoView({behavior:"smooth", block:"start"});
-  }
-
-  var switchBtn = document.getElementById("switchUser");
-  if (switchBtn){
-    switchBtn.addEventListener("click", function(){
-      if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
-      requireLogin();
+  // ===== 依頼種別ごとの表示順（DOMは固定、CSSのorderで並べ替える） ==
+  var ORDER = {
+    "新規":       ["f-title","f-brand","f-prodtypes","f-purpose","f-target","f-usedate","f-useplace",
+                   "f-outcome","f-afterfeeling","f-budget","f-prstatus","f-schedule","f-manuscript",
+                   "f-prototype","f-images","f-intent"],
+    "改訂・流用": ["f-title","f-brand","f-prodtypes","f-schedule","f-sourceurls","f-revise","f-images"],
+    "相談":       ["f-title","f-brand","f-consult","f-images"]
+  };
+  function applyOrder(type){
+    var list = ORDER[type] || [];
+    branchEls.forEach(function(el){ el.style.order = ""; });
+    list.forEach(function(cls, i){
+      var el = detailCard.querySelector("." + cls);
+      if (el) el.style.order = String(i + 1);
     });
   }
 
-  var typeBtns = document.querySelectorAll(".type-btn");
-  var detailCard = document.getElementById("detailCard");
-  var branchEls = document.querySelectorAll("#detailCard [data-types]");
-  var submitBtn = document.getElementById("submitBtn");
-  var errBox = document.getElementById("errBox");
-  var form = document.getElementById("form");
-  var current = null;
-  var idemKey = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
-  var sending = false;
-
-  function show(el, on){ el.classList.toggle("hidden", !on); }
-
-  // セレクトは未選択のあいだサブ色（プレースホルダ扱い）で表示する
+  // ===== セレクトの未選択表示 ======================================
   function syncSelectEmpty(sel){ sel.classList.toggle("is-empty", !sel.value); }
   document.querySelectorAll("select").forEach(function(sel){
     syncSelectEmpty(sel);
-    sel.addEventListener("change", function(){ syncSelectEmpty(sel); });
+    sel.addEventListener("change", function(){ syncSelectEmpty(sel); updateSubmitState(); });
   });
 
-  // 種別を選んで分岐フィールドを展開する
+  // ===== 依頼種別の選択 ============================================
   function applyType(type, scroll){
     current = type;
-    typeBtns.forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.type===type); });
+    typeCards.forEach(function(b){ b.setAttribute("aria-pressed", String(b.dataset.type === type)); });
     show(detailCard, true);
     branchEls.forEach(function(el){
       var t = el.getAttribute("data-types").split(",");
       show(el, t.indexOf(current) !== -1);
     });
-    // 改訂・流用のときは制作物の種別の補助テキストを隠す（項目名だけ残す）
-    var pt = document.getElementById("prodTypes");
+    applyOrder(current);
+    // 改訂・流用では制作物の種別の補助テキストを出さない
+    var pt = $("prodTypes");
     if (pt) pt.classList.toggle("no-sub", current === "改訂・流用");
-    submitBtn.disabled = false;
-    errBox.classList.add("hidden");
-    if (scroll) detailCard.scrollIntoView({behavior:"smooth", block:"start"});
+    clearErr();
+    updateSubmitState();
+    if (scroll) detailCard.scrollIntoView({behavior: scrollBehavior(), block: "start"});
   }
-  typeBtns.forEach(function(btn){
+  typeCards.forEach(function(btn){
     btn.addEventListener("click", function(){ applyType(btn.dataset.type, true); });
   });
 
+  // ===== 値の取得 ==================================================
   function val(name){
-    var el = form.querySelector('[name="'+name+'"]');
+    var el = form.querySelector('[name="' + name + '"]');
     return el ? el.value.trim() : "";
   }
   function collectProdTypes(){
@@ -948,20 +1162,133 @@
   }
   function collectSrcUrls(){
     var out = [];
-    document.querySelectorAll("#srcUrls .src-url").forEach(function(i){ var v=i.value.trim(); if(v) out.push(v); });
+    document.querySelectorAll("#srcUrls .src-url").forEach(function(i){
+      var v = i.value.trim(); if (v) out.push(v);
+    });
     return out;
   }
-  function showErr(msg){
-    errBox.textContent = msg;
-    errBox.classList.remove("hidden");
-    errBox.scrollIntoView({behavior:"smooth", block:"center"});
+  function collectSchedule(){
+    var out = [];
+    document.querySelectorAll("#msRows .ms-row").forEach(function(r){
+      var d = (r.querySelector(".ms-date") || {}).value || "";
+      var t = (r.querySelector(".ms-text") || {}).value || "";
+      d = d.trim(); t = t.trim();
+      if (d || t) out.push({ date: d, text: t });
+    });
+    return out;
   }
 
-  // ===== 画像添付（送信時にNotionページへ掲載・自動軽量化） =====
+  // ===== 必須が埋まったら送信ボタンを有効化 =========================
+  function missingRequired(){
+    var miss = [];
+    if (!auth.idToken) miss.push("Googleログインが必要です。上の「依頼者」欄からログインしてください。");
+    if (!$("requesterDept").value.trim()) miss.push("所属部署を選択してください。");
+    if (!current) miss.push("依頼種別を選択してください。");
+    else {
+      if (!val("title")) miss.push("依頼タイトルを入力してください。");
+      if (!val("brand")) miss.push("対象事業・部署を選択してください。");
+      if (current !== "相談" && collectProdTypes().length === 0) miss.push("制作物の種別を1つ以上選択してください。");
+      if (current === "相談" && !val("consultDetail")) miss.push("相談内容を入力してください。");
+    }
+    return miss;
+  }
+  function updateSubmitState(){
+    if (sending) return;
+    submitBtn.disabled = missingRequired().length > 0;
+  }
+  form.addEventListener("input", updateSubmitState);
+  form.addEventListener("change", updateSubmitState);
+
+  // ===== Googleログイン（認可コードフロー） =========================
+  // 自作ボタン → google.accounts.oauth2.initCodeClient（ポップアップ）で認可コードを受け取る
+  //   → Worker の /auth/exchange でトークン交換 → IDトークンを受け取る
+  //   → 送信時はそのIDトークンを渡し、Worker側で署名検証する
+  // クライアントシークレットはWorker Secretsにのみ置き、ブラウザには一切出さない。
+  var auth = { idToken: null, name: "", email: "", exp: 0 };
+  var codeClient = null;
+  var loginBtn = $("googleLoginBtn");
+
+  function setLoginHint(msg){ $("loginHint").textContent = msg || ""; }
+
+  function authExpired(){
+    // 期限60秒前から「切れた」扱いにして、送信直前の失敗を防ぐ
+    return !auth.exp || (auth.exp * 1000) < (Date.now() + 60 * 1000);
+  }
+
+  function applySignedIn(payload){
+    auth.idToken = payload.idToken;
+    auth.name    = payload.name || payload.email || "";
+    auth.email   = payload.email || "";
+    auth.exp     = payload.exp || 0;
+    $("userName").textContent  = auth.name;
+    $("userEmail").textContent = auth.email;
+    show($("loginBox"), false);
+    show($("userBox"), true);
+    setLoginHint("");
+    clearErr();
+    updateSubmitState();
+  }
+
+  function signOut(){
+    auth = { idToken: null, name: "", email: "", exp: 0 };
+    show($("userBox"), false);
+    show($("loginBox"), true);
+    updateSubmitState();
+  }
+
+  function initAuth(){
+    if (!window.google || !google.accounts || !google.accounts.oauth2){ setTimeout(initAuth, 200); return; }
+    codeClient = google.accounts.oauth2.initCodeClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: "openid email profile",
+      ux_mode: "popup",
+      hd: HOSTED_DOMAIN,          // 表示上のヒント。強制はWorker側で行う
+      callback: onCode
+    });
+  }
+  initAuth();
+
+  function onCode(res){
+    if (!res || !res.code){
+      setLoginHint("ログインがキャンセルされました。もう一度お試しください。");
+      loginBtn.disabled = false;
+      return;
+    }
+    fetch(AUTH_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: res.code })
+    })
+    .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+    .then(function(out){
+      if (!out.ok || !out.j || !out.j.ok) throw new Error((out.j && out.j.error) || "ログインに失敗しました。");
+      applySignedIn(out.j);
+    })
+    .catch(function(e){ setLoginHint(String(e.message || e)); })
+    .then(function(){ loginBtn.disabled = false; });
+  }
+
+  loginBtn.addEventListener("click", function(){
+    setLoginHint("");
+    if (!codeClient){
+      setLoginHint("Googleのログイン機能をまだ読み込めていません。数秒おいてからもう一度押してください。");
+      return;
+    }
+    loginBtn.disabled = true;
+    try { codeClient.requestCode(); }
+    catch(e){ loginBtn.disabled = false; setLoginHint("ログイン画面を開けませんでした。ポップアップがブロックされていないか確認してください。"); }
+  });
+
+  $("switchUser").addEventListener("click", function(){
+    signOut();
+    $("step1Box").scrollIntoView({behavior: scrollBehavior(), block: "start"});
+  });
+
+  // ===== 画像添付 ==================================================
   var MAX_IMAGES = 10;
-  var imageData = [];
-  var imgInput = document.getElementById("images");
-  var imgPreview = document.getElementById("imgPreview");
+  var imageData  = [];
+  var imgInput   = $("images");
+  var imgPreview = $("imgPreview");
 
   function compressImage(file){
     return new Promise(function(resolve){
@@ -977,7 +1304,7 @@
           var c = document.createElement("canvas");
           c.width = w; c.height = h;
           c.getContext("2d").drawImage(img, 0, 0, w, h);
-          try { resolve(c.toDataURL("image/jpeg", 0.72)); }
+          try { resolve({ src: c.toDataURL("image/jpeg", 0.72), name: file.name }); }
           catch(e){ resolve(null); }
         };
         img.onerror = function(){ resolve(null); };
@@ -989,49 +1316,73 @@
   }
 
   function renderImgPreview(){
-    if (!imgPreview) return;
     imgPreview.innerHTML = "";
-    imageData.forEach(function(src, i){
+    imageData.forEach(function(item, i){
       var box = document.createElement("div");
       box.className = "img-thumb";
+      box.title = item.name || "";
       var im = document.createElement("img");
-      im.src = src; im.alt = "";
+      im.src = item.src; im.alt = "";
       var x = document.createElement("button");
-      x.type = "button"; x.setAttribute("aria-label", "この画像を外す");
-      x.addEventListener("click", function(){ imageData.splice(i,1); renderImgPreview(); });
+      x.type = "button";
+      x.setAttribute("aria-label", (item.name || "この画像") + " を外す");
+      x.innerHTML = '<span class="i i-close"></span>';
+      x.addEventListener("click", function(){ imageData.splice(i, 1); renderImgPreview(); });
       box.appendChild(im); box.appendChild(x);
       imgPreview.appendChild(box);
     });
   }
 
-  if (imgInput){
-    imgInput.addEventListener("change", function(){
-      errBox.classList.add("hidden");
-      var files = Array.prototype.slice.call(imgInput.files);
-      var room = MAX_IMAGES - imageData.length;
-      if (room <= 0){ showErr("画像は最大" + MAX_IMAGES + "枚までです。11枚目以降は追加されませんでした。"); imgInput.value=""; return; }
-      files = files.slice(0, room);
-      Promise.all(files.map(compressImage)).then(function(results){
-        results.forEach(function(d){ if (d) imageData.push(d); });
-        renderImgPreview();
-        imgInput.value = "";
-      });
+  imgInput.addEventListener("change", function(){
+    clearErr();
+    var files = Array.prototype.slice.call(imgInput.files);
+    var room  = MAX_IMAGES - imageData.length;
+    if (room <= 0){
+      showErr("画像は最大" + MAX_IMAGES + "枚までです。これ以上は追加されませんでした。");
+      imgInput.value = "";
+      return;
+    }
+    files = files.slice(0, room);
+    Promise.all(files.map(compressImage)).then(function(results){
+      results.forEach(function(d){ if (d) imageData.push(d); });
+      renderImgPreview();
+      imgInput.value = "";
     });
-  }
+  });
 
-  // ===== モーダル（納期目安表・サイズ表：UIのみ） =====
+  // ===== モーダル ==================================================
   function bindModal(modalId, openId, closeId){
-    var modal = document.getElementById(modalId);
-    var openBtn = document.getElementById(openId);
-    var closeBtn = document.getElementById(closeId);
+    var modal   = $(modalId);
+    var openBtn = $(openId);
+    var closeBtn= $(closeId);
     if (!modal) return;
+    var lastFocused = null;
+
+    function focusables(){
+      return modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    }
     function setOpen(on){
       show(modal, on);
       document.body.style.overflow = on ? "hidden" : "";
+      if (on){
+        lastFocused = document.activeElement;
+        var f = focusables();
+        if (f.length) f[f.length - 1].focus();   // 閉じるボタンにフォーカス
+      } else if (lastFocused && lastFocused.focus){
+        lastFocused.focus();
+      }
     }
-    if (openBtn) openBtn.addEventListener("click", function(){ setOpen(true); });
+    if (openBtn)  openBtn.addEventListener("click", function(){ setOpen(true); });
     if (closeBtn) closeBtn.addEventListener("click", function(){ setOpen(false); });
     modal.addEventListener("click", function(e){ if (e.target === modal) setOpen(false); });
+    modal.addEventListener("keydown", function(e){
+      if (e.key !== "Tab") return;
+      var f = focusables();
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    });
     document.addEventListener("keydown", function(e){
       if (e.key === "Escape" && !modal.classList.contains("hidden")) setOpen(false);
     });
@@ -1039,49 +1390,41 @@
   bindModal("ndModal", "ndOpen", "ndClose");
   bindModal("szModal", "szOpen", "szClose");
 
-  // ===== スケジュール感（行の追加・削除・収集） =====
-  var msRows = document.getElementById("msRows");
-  var addMsBtn = document.getElementById("addMs");
-  if (addMsBtn && msRows){
-    addMsBtn.addEventListener("click", function(){
-      var row = document.createElement("div");
-      row.className = "ms-row";
-      row.innerHTML =
-        '<div class="date-wrap ms-date-wrap">' +
-          '<input type="date" class="ms-date" onfocus="this.showPicker&&this.showPicker()" onclick="this.showPicker&&this.showPicker()">' +
-          '<span class="date-ph"></span>' +
-        '</div>' +
-        '<input type="text" class="ms-text">' +
-        '<button type="button" class="ms-del" aria-label="この行を削除"></button>';
-      msRows.appendChild(row);
-      initDateField(row.querySelector(".date-wrap"));
-    });
-    msRows.addEventListener("click", function(e){
-      var btn = e.target.closest ? e.target.closest(".ms-del") : null;
-      if (!btn) return;
-      var rows = msRows.querySelectorAll(".ms-row");
-      if (rows.length > 1){ btn.parentNode.remove(); }
-      else { // 最後の1行は消さずに中身だけクリア
-        var r = btn.parentNode;
-        r.querySelector(".ms-date").value = "";
-        r.querySelector(".ms-text").value = "";
-      }
-    });
-  }
-  function collectSchedule(){
-    var out = [];
-    document.querySelectorAll("#msRows .ms-row").forEach(function(r){
-      var d = (r.querySelector(".ms-date") || {}).value || "";
-      var t = (r.querySelector(".ms-text") || {}).value || "";
-      d = d.trim(); t = t.trim();
-      if (d || t) out.push({ date: d, text: t });
-    });
-    return out;
-  }
+  // ===== スケジュール（行の追加・削除） ============================
+  var msRows = $("msRows");
+  $("addMs").addEventListener("click", function(){
+    if (msRows.querySelectorAll(".ms-row").length >= 20){
+      showErr("スケジュールの行は20行までです。");
+      return;
+    }
+    var row = document.createElement("div");
+    row.className = "ms-row";
+    row.innerHTML =
+      '<div class="field-date">' +
+        '<input type="date" class="ctl ms-date" aria-label="日付" >' +
+        '<span class="date-ph"></span>' +
+      '</div>' +
+      '<input type="text" class="ctl ms-text" aria-label="内容" placeholder="デザインチェック・上長提案・校了など">' +
+      '<button type="button" class="ms-del" aria-label="この行を消す"><span class="i i-close"></span></button>';
+    msRows.appendChild(row);
+    initDateField(row.querySelector(".field-date"));
+  });
+  msRows.addEventListener("click", function(e){
+    var btn = e.target.closest ? e.target.closest(".ms-del") : null;
+    if (!btn) return;
+    var row  = btn.closest(".ms-row");
+    var rows = msRows.querySelectorAll(".ms-row");
+    if (rows.length > 1){ row.remove(); }
+    else {  // 1行目は消さずに中身だけ空にする
+      row.querySelector(".ms-date").value = "";
+      row.querySelector(".ms-text").value = "";
+      initDateField(row.querySelector(".field-date"));
+    }
+  });
 
-  // ===== 日付欄：未入力のあいだ「今日の日付」をプレースホルダ表示 =====
-  // 実際の値は空のまま送信される（うっかり今日の日付が希望納期として登録されるのを防ぐため）。
-  // 既定値として入れたい場合は initDateField 内の1行（input.value = ...）を有効にする。
+  // ===== 日付欄：未入力のあいだ「今日の日付」をプレースホルダ表示 ===
+  // 実際の値は空のまま送信される（うっかり今日が希望納品日として登録されるのを防ぐため）。
+  // 既定値として入れたい場合は下の1行（input.value = ...）を有効にする。
   function todayLabel(){
     var d = new Date();
     var p = function(n){ return (n < 10 ? "0" : "") + n; };
@@ -1090,7 +1433,7 @@
   function initDateField(wrap){
     if (!wrap) return;
     var input = wrap.querySelector('input[type="date"]');
-    var ph = wrap.querySelector(".date-ph");
+    var ph    = wrap.querySelector(".date-ph");
     if (!input || !ph) return;
     ph.textContent = todayLabel();
     // input.value = new Date().toISOString().slice(0,10);  // ←既定値として今日を入れたい場合はこの行を有効化
@@ -1099,134 +1442,129 @@
     input.addEventListener("change", sync);
     sync();
   }
-  document.querySelectorAll(".date-wrap").forEach(initDateField);
+  document.querySelectorAll(".field-date").forEach(initDateField);
 
-  // ===== ページTOPに戻る =====
-  var toTopBtn = document.getElementById("toTopBtn");
-  if (toTopBtn) toTopBtn.addEventListener("click", function(){ window.scrollTo({top:0, behavior:"smooth"}); });
+  // 日付欄はクリックしたときだけネイティブのカレンダーを開く。
+  // フォーカスで開くとTabで送っただけで勝手に開いてしまい、キーボード操作の邪魔になる。
+  document.addEventListener("click", function(e){
+    var d = e.target && e.target.closest ? e.target.closest('input[type="date"]') : null;
+    if (!d) return;
+    try { if (d.showPicker) d.showPicker(); } catch(_){}
+  });
+
+  // ===== ページTOPに戻る ===========================================
+  $("toTopBtn").addEventListener("click", function(){
+    window.scrollTo({ top: 0, behavior: scrollBehavior() });
+  });
+
+  // ===== 送信 ======================================================
+  function setSending(on){
+    sending = on;
+    submitBtn.disabled = on;
+    submitBtn.setAttribute("aria-busy", String(on));
+    submitBtn.querySelector(".btn-label").textContent = on ? "送信中…" : "送信する";
+    if (!on) updateSubmitState();
+  }
 
   form.addEventListener("submit", function(e){
     e.preventDefault();
     if (sending) return;
-    errBox.classList.add("hidden");
+    clearErr();
 
-    var dept = document.getElementById("requesterDept").value.trim();
-    var title = val("title");
-    var brand = val("brand");
-    var prodTypes = collectProdTypes();
-
-    // 共通必須
-    if (!auth.idToken){ showErr("Googleログインが必要です。上の「依頼者」欄からログインしてください。"); requireLogin(); return; }
-    if (authExpired()){ showErr("ログインの有効期限（約1時間）が切れました。お手数ですがもう一度ログインしてください。入力内容はそのまま残ります。"); requireLogin(); return; }
-    if (!dept){ showErr("所属部署を選んでください。"); return; }
-    if (!current){ showErr("依頼の種別を選んでください。"); return; }
-    if (!title){ showErr("依頼タイトルを入力してください。"); return; }
-    // 対象事業・部署は全種別で必須（Notionの振り分けとDrive自動フォルダ作成の起点になるため）
-    if (!brand){ showErr("対象事業・部署を選んでください。"); return; }
+    var miss = missingRequired();
+    if (miss.length){ showErr(miss.join("\n")); return; }
+    if (authExpired()){
+      showErr("ログインの有効期限が切れました。もう一度ログインしてください。入力内容はそのまま残ります。");
+      signOut();
+      return;
+    }
 
     var payload = {
       idempotencyKey: idemKey,
       category: current,
-      title: title,
-      requesterDept: dept,
-      idToken: auth.idToken  // 名前・メールはWorkerがトークン検証後に取り出す（手入力廃止）
+      title: val("title"),
+      brand: val("brand"),
+      requesterDept: $("requesterDept").value.trim(),
+      idToken: auth.idToken   // 氏名・メールはWorkerが署名検証後に取り出す
     };
-    if (brand) payload.brand = brand;
-    // 参考資料・画像は3種別すべてで添付できる（Figma版で相談にも追加）
-    if (imageData.length) payload.images = imageData;
+    if (imageData.length) payload.images = imageData.map(function(x){ return x.src; });
 
     if (current === "相談"){
-      var consult = val("consultDetail");
-      if (!consult){ showErr("相談内容を入力してください。"); return; }
-      payload.consultDetail = consult;
+      payload.consultDetail = val("consultDetail");
     } else if (current === "改訂・流用"){
-      if (prodTypes.length === 0){ showErr("制作物の種別を1つ以上選んでください。"); return; }
-      payload.productTypes = prodTypes;
+      payload.productTypes = collectProdTypes();
       var srcUrls = collectSrcUrls();
       if (srcUrls.length) payload.sourceUrls = srcUrls;
-      payload.deadline = val("deadline");
       var rm = val("reviseManuscript");
       if (rm) payload.reviseManuscript = rm;
+      var schedM = collectSchedule();
+      if (schedM.length) payload.schedule = schedM;
     } else {
-      // 新規
-      if (prodTypes.length === 0){ showErr("制作物の種別を1つ以上選んでください。"); return; }
-      payload.productTypes = prodTypes;
-      payload.deadline = val("deadline");
-      payload.purpose = val("purpose");
-      payload.target = val("target");
-      payload.useDate = val("useDate");
-      payload.usePlace = val("usePlace");
-      payload.outcome = val("outcome");
+      payload.productTypes = collectProdTypes();
+      payload.purpose      = val("purpose");
+      payload.target       = val("target");
+      payload.useDate      = val("useDate");
+      payload.usePlace     = val("usePlace");
+      payload.outcome      = val("outcome");
       payload.afterFeeling = val("afterFeeling");
-      payload.budget = val("budget");
-      var sched = collectSchedule();
-      if (sched.length) payload.schedule = sched;
-      payload.manuscript = val("manuscript");
-      payload.prototype = val("prototype");
-      payload.intent = val("intentSeisaku");
-      var pr = document.getElementById("prStatus").value.trim();
+      payload.budget       = val("budget");
+      payload.manuscript   = val("manuscript");
+      payload.prototype    = val("prototype");
+      payload.intent       = val("intentSeisaku");
+      var pr = $("prStatus").value.trim();
       if (pr) payload.prStatus = pr;
+      var schedN = collectSchedule();
+      if (schedN.length) payload.schedule = schedN;
     }
 
-    sending = true;
-    submitBtn.disabled = true;
-    submitBtn.textContent = "送信中…";
+    setSending(true);
 
     fetch(ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     })
-    .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, status:r.status, j:j}; }); })
+    .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
     .then(function(res){
       if (!res.ok || !res.j || !res.j.ok){
-        if (res.j && res.j.code === "AUTH"){ requireLogin(); } // 認証エラーは再ログインを促す
-        var m = (res.j && res.j.error) ? res.j.error : "送信に失敗しました。時間をおいて再度お試しください。解消しない場合は #83_creative_クリ室依頼受付 でお知らせください。";
-        throw new Error(m);
+        if (res.j && res.j.code === "AUTH") signOut();
+        throw new Error((res.j && res.j.error) || "送信に失敗しました。時間をおいてもう一度お試しください。");
       }
-      // 完了画面（Notionページが唯一の正本）
-      document.getElementById("formArea").classList.add("hidden");
-      document.getElementById("footerForm").classList.add("hidden");
-      document.getElementById("doneNotion").href = res.j.notionUrl || "#";
-      show(document.getElementById("doneArea"), true);
-      show(document.getElementById("footerDone"), true);
-      window.scrollTo({top:0, behavior:"smooth"});
+      show($("formArea"), false);
+      show($("footerForm"), false);
+      $("doneNotion").href = res.j.notionUrl || "#";
+      show($("doneArea"), true);
+      show($("footerDone"), true);
+      window.scrollTo({ top: 0, behavior: scrollBehavior() });
     })
     .catch(function(err){
       showErr(String(err.message || err));
-      sending = false;
-      submitBtn.disabled = false;
-      submitBtn.textContent = "送信する";
+      setSending(false);
     });
   });
 
-  document.getElementById("againBtn").addEventListener("click", function(){
-    location.reload();
-  });
+  $("againBtn").addEventListener("click", function(){ location.reload(); });
 
-  // ===== 完了画面：NotionページURLのコピー（Ver.1のSlack手動共有用） =====
-  // Ver.3でSlack Bot自動投稿に切り替えたら、この節と完了画面の手順ブロックを一緒に削除する。
-  var copyUrlBtn = document.getElementById("copyUrlBtn");
-  if (copyUrlBtn){
-    copyUrlBtn.addEventListener("click", function(){
-      var url = document.getElementById("doneNotion").getAttribute("href") || "";
-      if (!url || url === "#") return;
-      var done = function(){
-        copyUrlBtn.innerHTML = '<span class="emoji">✓</span>コピーしました';
-        copyUrlBtn.classList.add("copied");
-        setTimeout(function(){
-          copyUrlBtn.innerHTML = '<span class="emoji">🔗</span>URLをコピー';
-          copyUrlBtn.classList.remove("copied");
-        }, 2200);
-      };
-      // navigator.clipboard はhttps必須。使えない環境（古いSafari等）は選択方式にフォールバック
-      if (navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(url).then(done, function(){ fallbackCopy(url, done); });
-      } else {
-        fallbackCopy(url, done);
-      }
-    });
-  }
+  // ===== 暫定機能：NotionページURLのコピー ==========================
+  // Slack Bot による自動投稿を導入したら、この節と完了画面の手順ブロックを一緒に削除する。
+  var copyUrlBtn = $("copyUrlBtn");
+  copyUrlBtn.addEventListener("click", function(){
+    var url = $("doneNotion").getAttribute("href") || "";
+    if (!url || url === "#") return;
+    var done = function(){
+      copyUrlBtn.innerHTML = '<span aria-hidden="true">✓</span>コピーしました';
+      copyUrlBtn.classList.add("copied");
+      setTimeout(function(){
+        copyUrlBtn.innerHTML = '<span aria-hidden="true">🔗</span>URLをコピー';
+        copyUrlBtn.classList.remove("copied");
+      }, 2200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(done, function(){ fallbackCopy(url, done); });
+    } else {
+      fallbackCopy(url, done);
+    }
+  });
   function fallbackCopy(text, onDone){
     var ta = document.createElement("textarea");
     ta.value = text;
@@ -1238,6 +1576,41 @@
     catch(e){ showErr("コピーできませんでした。「Notionページを開く」からURLをコピーしてください。"); }
     document.body.removeChild(ta);
   }
+
+  // ===== UIプレビュー（localhost限定） =============================
+  // Googleログインを設定する前でも、ログイン済み表示・送信中・エラー・完了画面を確認できるようにする。
+  // 本番のGitHub Pagesでは IS_LOCAL が false になるため、この節は何もしない。
+  if (IS_LOCAL){
+    var bar = document.createElement("div");
+    bar.className = "uipreview";
+    bar.innerHTML =
+      '<span>UIプレビュー（localhost限定）</span>' +
+      '<button type="button" data-a="login">ログイン済みにする</button>' +
+      '<button type="button" data-a="logout">未ログインに戻す</button>' +
+      '<button type="button" data-a="busy">送信中の表示</button>' +
+      '<button type="button" data-a="err">エラー表示</button>' +
+      '<button type="button" data-a="done">完了画面</button>';
+    document.body.appendChild(bar);
+    bar.addEventListener("click", function(e){
+      var a = e.target.getAttribute && e.target.getAttribute("data-a");
+      if (!a) return;
+      if (a === "login"){
+        applySignedIn({ idToken:"(preview)", name:"宮川 雄気", email:"yukimiyakawa@crazy.co.jp",
+                        exp: Math.floor(Date.now()/1000) + 3600 });
+      } else if (a === "logout"){ signOut(); }
+      else if (a === "busy"){ setSending(true); setTimeout(function(){ setSending(false); }, 3000); }
+      else if (a === "err"){ showErr("Googleログインが必要です。上の「依頼者」欄からログインしてください。"); }
+      else if (a === "done"){
+        show($("formArea"), false); show($("footerForm"), false);
+        $("doneNotion").href = "https://www.notion.so/";
+        show($("doneArea"), true); show($("footerDone"), true);
+        window.scrollTo({ top: 0, behavior: scrollBehavior() });
+      }
+    });
+  }
+
+  updateSubmitState();
+})();
 </script>
 </body>
 </html>
