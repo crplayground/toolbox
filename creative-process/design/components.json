@@ -1,6 +1,6 @@
 {
   "$meta": {
-    "name": "REQUEST components",
+    "name": "CREATIVE PROCESS components",
     "version": "2.0.0",
     "updatedAt": "2026-08-01",
     "source": {
@@ -434,13 +434,13 @@
     "logo/Notion": {
       "figmaNodeId": "11:1629",
       "size": [24, 24],
-      "asset": "G-Drive 04_ツールボックス/request/icon/syymbol_notion.svg",
+      "asset": "G-Drive 04_ツールボックス/creative-process/icon/syymbol_notion.svg",
       "note": "多色（白＋黒）のため currentColor 化しない"
     },
     "logo/google-g": {
       "figmaNodeId": "64:807",
       "size": [24, 24],
-      "asset": "G-Drive 04_ツールボックス/request/icon/syymbol_google.png",
+      "asset": "G-Drive 04_ツールボックス/creative-process/icon/syymbol_google.png",
       "assetSize": [2820, 2820],
       "assetBytes": 137714,
       "note": "多色（4色）のため currentColor 化しない。原寸2820pxは表示サイズ24pxに対して過大なので、埋め込み時は96×96へ縮小してからdata URI化する（原寸はG-Driveにマスターとして残す）"
@@ -455,12 +455,12 @@
 
     "icons": {
       "$rule": "すべて 24×24 / viewBox 0 0 24 24。インラインSVG化し fill=\"currentColor\" を付けて色をCSSで制御する（Illustrator書き出しのため fill 属性を持たない）。",
-      "icon/add":      { "figmaNodeId": "38:179",  "asset": "request/icon/add.svg",      "bytes": 427, "usedInCode": false, "note": "input/add の「＋」は文字なので、コードではこのアイコンを描画しない" },
-      "icon/calendar": { "figmaNodeId": "11:1234", "asset": "request/icon/calendar.svg", "bytes": 566 },
-      "icon/check":    { "figmaNodeId": "38:409",  "asset": "request/icon/check.svg",    "bytes": 417 },
-      "icon/close":    { "figmaNodeId": "11:1296", "asset": "request/icon/close.svg",    "bytes": 504 },
-      "icon/extend":   { "figmaNodeId": "38:355",  "asset": "request/icon/extend.svg",   "bytes": 511, "use": "textareaの右下リサイズハンドル" },
-      "icon/trg-down": { "figmaNodeId": "1:968",   "asset": "request/icon/trg-down.svg", "bytes": 308, "use": "プルダウンの▼" },
+      "icon/add":      { "figmaNodeId": "38:179",  "asset": "creative-process/icon/add.svg",      "bytes": 427, "usedInCode": false, "note": "input/add の「＋」は文字なので、コードではこのアイコンを描画しない" },
+      "icon/calendar": { "figmaNodeId": "11:1234", "asset": "creative-process/icon/calendar.svg", "bytes": 566 },
+      "icon/check":    { "figmaNodeId": "38:409",  "asset": "creative-process/icon/check.svg",    "bytes": 417 },
+      "icon/close":    { "figmaNodeId": "11:1296", "asset": "creative-process/icon/close.svg",    "bytes": 504 },
+      "icon/extend":   { "figmaNodeId": "38:355",  "asset": "creative-process/icon/extend.svg",   "bytes": 511, "use": "textareaの右下リサイズハンドル" },
+      "icon/trg-down": { "figmaNodeId": "1:968",   "asset": "creative-process/icon/trg-down.svg", "bytes": 308, "use": "プルダウンの▼" },
       "icon/loading":  {
         "figmaNodeId": "64:774",
         "asset": null,

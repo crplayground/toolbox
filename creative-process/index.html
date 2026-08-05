@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>REQUEST | クリ室制作依頼</title>
+<title>CREATIVE PROCESS | クリ室制作依頼</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 <style>
   /* ==========================================================================
-     REQUEST
-     デザインの正 = Figma『Request』 paEvn9ugpEQoYRPBWF3fc6 / セクション 27:3284
-     仕様書 = request/design/DESIGN.md（見た目）・request/SPEC.md（機能）
+     CREATIVE PROCESS
+     デザインの正 = Figma『Request』（ファイル名は Creative Process へ改称予定） paEvn9ugpEQoYRPBWF3fc6 / セクション 27:3284
+     仕様書 = creative-process/design/DESIGN.md（見た目）・creative-process/SPEC.md（機能）
 
      CSS変数名は Figma のバリアブル名をそのまま写している。
        color/text/accent            → --color-text-accent
@@ -693,7 +693,7 @@
   <div class="column">
 
     <div class="header-area">
-      <h1>REQUEST</h1>
+      <h1>CREATIVE PROCESS</h1>
       <p class="lead">クリエイティブチームへの制作依頼・相談申請フォームです。</p>
     </div>
 
@@ -1079,7 +1079,7 @@
   "use strict";
 
   // ===== 設定 =====================================================
-  var WORKER_BASE   = "https://creative-request.yukimiyakawa.workers.dev";
+  var WORKER_BASE   = "https://creative-process.yukimiyakawa.workers.dev";
   var ENDPOINT      = WORKER_BASE + "/submit";
   var AUTH_ENDPOINT = WORKER_BASE + "/auth/exchange";
   // GCPで発行したOAuthクライアントID（公開情報なのでここに直書きでOK）。

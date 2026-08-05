@@ -1,7 +1,7 @@
-# Cloudflare Worker 設定ファイル（制作依頼ツール REQUEST）
+# Cloudflare Worker 設定ファイル（制作依頼ツール CREATIVE PROCESS）
 # 既存ツール（revision-share / project-board）と命名の系統を揃える。
 
-name = "creative-request"
+name = "creative-process"
 main = "src/worker.js"
 compatibility_date = "2025-06-01"
 
@@ -30,7 +30,7 @@ GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleuse
 # 【GOOGLE_CLIENT_SECRET】ログイン方式を「認可コードフロー」に変えたため必須になった。
 #   フォームの自作ログインボタン → 認可コード → Worker が /auth/exchange でIDトークンに交換する。
 #   未登録の間は /auth/exchange が「サーバー設定が未完了です」を返し、ログインできない。
-#   登録: cd workers/request && npx wrangler secret put GOOGLE_CLIENT_SECRET
+#   登録: cd workers/creative-process && npx wrangler secret put GOOGLE_CLIENT_SECRET
 #
 # 【フェーズ3】SLACK_WEBHOOK_URL はT0（前提タスク）で登録する。
 #   未登録の間はSlack投稿がスキップされ、初依頼者の「既知マーク」も付かない

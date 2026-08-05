@@ -1,11 +1,11 @@
-# creative-request Worker セットアップ手順
+# creative-process Worker セットアップ手順
 
 > 既存ツール（revision-share / project-board）と同じ Cloudflare Worker 構成です。
-> ターミナルで `creative-request` フォルダに移動してから順に実行します。
+> ターミナルで `creative-process` フォルダに移動してから順に実行します。
 > 専門用語は都度補足します。詰まったら画面のスクショを送ってください。
 
 ```
-cd "（このフォルダのパス）/creative-request"
+cd "（このフォルダのパス）/creative-process"
 ```
 
 ---
@@ -31,7 +31,7 @@ npx wrangler kv namespace create REQUESTS
 ## 2. IDを wrangler.toml に貼る
 
 `wrangler.toml` の
-`id = "ここに creative-request 用 KV の ID を貼り付け"`
+`id = "ここに creative-process 用 KV の ID を貼り付け"`
 を、手順1のIDに置き換えて保存します。
 
 ## 3. 鍵（Secrets）を登録する
@@ -59,15 +59,15 @@ npx wrangler secret put SLACK_WEBHOOK_URL   # ← Webhookが届いてから
 npx wrangler deploy
 ```
 
-成功すると `https://creative-request.<あなたのサブドメイン>.workers.dev` が発行されます。
+成功すると `https://creative-process.<あなたのサブドメイン>.workers.dev` が発行されます。
 このURLが依頼の受け口になります（フォーム側の送信先にこのURLを設定します）。
 
 ---
 
 ## 5. 動作確認
 
-- ブラウザで `https://creative-request.<...>.workers.dev/` を開く
-  → 「creative-request Worker は稼働中です。」が出れば起動OK。
+- ブラウザで `https://creative-process.<...>.workers.dev/` を開く
+  → 「creative-process Worker は稼働中です。」が出れば起動OK。
 - フォーム送信のテストは、フォームMVP（次の工程）を作ってから通します。
   Worker単体のテストをしたい場合は、curl で `/submit` にJSONを送る方法を別途案内します。
 

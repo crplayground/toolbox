@@ -1,5 +1,5 @@
 // ============================================================
-// creative-request Worker（制作依頼ツール／フェーズ3: Notion一本化）
+// creative-process Worker（制作依頼ツール／フェーズ3: Notion一本化）
 // ------------------------------------------------------------
 // 役割：依頼フォーム（静的HTML）から送られた1件の依頼を、サーバー側で一括処理する。
 //   ① Notion DB にページを作成（プロパティ＋本文全文＋参考画像）＝唯一の正本
@@ -803,7 +803,7 @@ export default {
 
     // 稼働確認
     if (request.method === "GET" && path === "/") {
-      return htmlResponse("creative-request Worker は稼働中です。");
+      return htmlResponse("creative-process Worker は稼働中です。");
     }
 
     return new Response("Not Found", { status: 404, headers: corsHeaders(request, env) });

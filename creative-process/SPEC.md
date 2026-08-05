@@ -1,11 +1,11 @@
-# REQUEST — SPEC.md（機能仕様書）
+# CREATIVE PROCESS — SPEC.md（機能仕様書）
 
 > **このファイルの役割**
 > 設問構成・画面フロー・Worker／Notionのデータマッピングの**単一の情報源**。
-> **棲み分け**：見た目（色・余白・コンポーネント）は [`design/DESIGN.md`](./design/DESIGN.md)、インフラ・セキュリティ・運用手順は Google Drive `04_ツールボックス/request/開発/BRIEF.md` が担当する。
+> **棲み分け**：見た目（色・余白・コンポーネント）は [`design/DESIGN.md`](./design/DESIGN.md)、インフラ・セキュリティ・運用手順は Google Drive `04_ツールボックス/creative-process/開発/BRIEF.md` が担当する。
 
 - 最終更新: 2026-08-01
-- 対象コード: `request/index.html`（フォーム）／`workers/request/src/worker.js`（Worker）／`workers/request/test/unit.test.mjs`（テスト）
+- 対象コード: `creative-process/index.html`（フォーム）／`workers/creative-process/src/worker.js`（Worker）／`workers/creative-process/test/unit.test.mjs`（テスト）
 
 ---
 
@@ -14,8 +14,8 @@
 社内の各部署がクリエイティブ室へ制作依頼を出すためのWebフォーム。
 送信すると Notion のデータベースにページが1つ作られ、依頼者がそのページのURLを Slack でクリエイティブ室に共有する。
 
-- フォーム: `https://crplayground.github.io/toolbox/request/`
-- Worker: `https://creative-request.yukimiyakawa.workers.dev`
+- フォーム: `https://crplayground.github.io/toolbox/creative-process/`
+- Worker: `https://creative-process.yukimiyakawa.workers.dev`
 - 保存先: Notion データベース「案件管理（テスト）」（`37f6d45e-597d-8046-b35e-e0a310821fd3`）
 
 **Notionページが唯一の正本。** 依頼内容の確認・修正はNotionページ上で直接行う。フォーム側に編集機能は持たせない。
@@ -213,7 +213,7 @@ ANV｜アニバに関する制作物／CAREER｜CRAZY CAREERに関する制作�
 
 ### 8-2. Workerのコードとの対応
 
-`workers/request/src/worker.js` の `buildNotionProperties()` が書き込むのは上表の●の7つだけ。
+`workers/creative-process/src/worker.js` の `buildNotionProperties()` が書き込むのは上表の●の7つだけ。
 以前あった **「担当者名」「依頼者メール」「希望納期」への書き込みは行わない**（データベースに該当プロパティが存在しないため、送ると Notion API が 400 を返してリクエスト全体が失敗する）。
 
 ### 8-3. Notionページ本文の構成
@@ -400,7 +400,7 @@ One Tapが出なかったとき、別のアカウントに切り替えたいと�
 
 **このツールはまだ公開しておらず、実利用者はいない。**
 
-コード（`request/index.html`・`workers/request/`）はこの仕様書の内容にそろっている。
+コード（`creative-process/index.html`・`workers/creative-process/`）はこの仕様書の内容にそろっている。
 一方で **デプロイ済みのWorkerはまだ古い**ため、現時点ではデプロイ済みWorkerとNotionデータベースが不整合の状態にある（古いWorkerは、いまは存在しない「担当者名」「依頼者メール」「希望納期」へ書き込もうとして失敗する）。未公開なので実害はない。**次のデプロイで解消する。**
 
 **反映の順番は「フォームをpush → Workerをdeploy」。** 逆にすると、その間に古いフォームから送られた内容が捨てられる（2026-07-27 に確認した事象）。

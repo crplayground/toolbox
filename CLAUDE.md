@@ -10,7 +10,7 @@
 
 ## 構成
 ```
-print-check/ revision-request/ project-board/ request/   ← フロント（Pages配信）
+print-check/ revision-request/ project-board/ creative-process/   ← フロント（Pages配信）
 workers/<tool>/                                          ← Worker（別デプロイ）
 ```
 
@@ -19,5 +19,5 @@ workers/<tool>/                                          ← Worker（別デプ�
 - Worker：`cd workers/<tool> && npx wrangler deploy`（ユウキが手動）。
 
 ## 注意
-- `request` の `ALLOWED_ORIGIN`（wrangler.toml）を変えたら Worker の再デプロイが必要。
+- `creative-process` の `ALLOWED_ORIGIN`（wrangler.toml）を変えたら Worker の再デプロイが必要。
 - 詳細な構想・運用ルールは Google Drive `04_ツールボックス/`（CLAUDE.md / README.md）が正。

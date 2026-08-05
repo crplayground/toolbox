@@ -1,6 +1,6 @@
 // ============================================================
-// REQUEST Worker ユニットテスト（フェーズ3: Notion一本化）
-// 実行方法: workers/request/ で `node test/unit.test.mjs`
+// CREATIVE PROCESS Worker ユニットテスト（フェーズ3: Notion一本化）
+// 実行方法: workers/creative-process/ で `node test/unit.test.mjs`
 // ・純粋関数のロジック検証＋「廃止機構が残っていないか」のソース検査
 // ・ネットワーク・KV・Notion実呼び出しは行わない（実結合はT7の通しテストで確認）
 // ============================================================

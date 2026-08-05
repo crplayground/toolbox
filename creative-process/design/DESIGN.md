@@ -1,15 +1,16 @@
-# REQUEST — DESIGN.md（UIデザイン仕様書）
+# CREATIVE PROCESS — DESIGN.md（UIデザイン仕様書）
 
 > **このファイルの役割**
 > **UIデザインの正はFigma『Request』**（`https://www.figma.com/design/paEvn9ugpEQoYRPBWF3fc6/Request`／セクション `27:3284`）。
+> ※ツール名は 2026-08-05 に「Request」から「Creative Process」へ改称した。Figmaファイル名の追従は未実施のため、ここでは実在のファイル名『Request』を記載している。Figma側を改称したらこの記述も更新する。
 > このファイルは **Figmaにない部分を補完するときの基準**であり、Figmaと食い違ったら**必ずFigmaが勝つ**。
 > 見た目を変えるときはFigmaを先に直し、そこから反映する。コードだけを先に変えることはしない。
 
 **扱う範囲**：色・タイポグラフィ・余白・角丸・影・コンポーネント・レイアウト・モーションといった**見た目のこと**。
-**扱わない範囲**：設問構成・画面フロー・Worker／Notionのデータ設計は [`../SPEC.md`](../SPEC.md)、インフラ・セキュリティ・運用は Google Drive の `request/開発/BRIEF.md`。
+**扱わない範囲**：設問構成・画面フロー・Worker／Notionのデータ設計は [`../SPEC.md`](../SPEC.md)、インフラ・セキュリティ・運用は Google Drive の `creative-process/開発/BRIEF.md`。
 
 - 最終更新: 2026-08-01
-- 対象コード: `request/index.html`
+- 対象コード: `creative-process/index.html`
 - 関連ファイル: [`tokens.json`](./tokens.json)（トークン定義）／[`components.json`](./components.json)（コンポーネント定義）
 
 ---
@@ -20,7 +21,7 @@
 2. **CUS（CRAZY UI SYSTEM）は取り込まない**（2026-07-27 決定・恒久）。明示的な許可がない限り、提案・検討候補としても挙げない。
 3. **他ツール（print-check / revision-request / project-board）とのトーン統一はしない。** 「他ツールと見た目が揃わない」ことを変更の理由にしない。
 4. **CSS変数名はFigmaのバリアブル名をそのまま写す。** 詳細は §3。
-5. **アイコンの正はFigmaの書き出し** ＝ Google Drive `04_ツールボックス/request/icon/`。Figmaで描き直したらこのフォルダを更新し、コードに写す。
+5. **アイコンの正はFigmaの書き出し** ＝ Google Drive `04_ツールボックス/creative-process/icon/`。Figmaで描き直したらこのフォルダを更新し、コードに写す。
 6. **フォームは単一HTMLで完結させる。** 画像・アイコン・フォント以外の外部リソースを増やさない。
 
 ---
@@ -86,7 +87,7 @@ body（背景 color/bg/default）
 └ wrap（max-width 1280 / padding: padding-page-y padding-page-x）
   └ column（縦積み・gap: gap-head-offset）
     ├ header-area（gap: gap-head-group）
-    │   h1 REQUEST（English/head-1・accent）
+    │   h1 CREATIVE PROCESS（English/head-1・accent）
     │   p  リード文（Japanese/head-3・accent）
     └ section（gap: gap-section）
       ├ input-section（gap: gap-box）
@@ -306,7 +307,7 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 
 ## 8. アイコン運用
 
-- `request/icon/` のアイコンはすべて**純ベクター**で、合計約4.7KB。ラスタ埋め込みはない。**SVGOなどの軽量化は不要**。
+- `creative-process/icon/` のアイコンはすべて**純ベクター**で、合計約4.7KB。ラスタ埋め込みはない。**SVGOなどの軽量化は不要**。
 - `syymbol_notion.svg` 以外はIllustrator書き出しで **`fill` 属性を持たない**（＝黒固定）。
   → **インラインSVG化して `fill="currentColor"` を付ける。** 色はCSS変数で制御する。
 - 多色のロゴ（`syymbol_notion.svg`／`syymbol_google.png`）は `currentColor` 化しない。そのまま埋め込む。
