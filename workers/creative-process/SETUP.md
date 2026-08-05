@@ -44,7 +44,7 @@ npx wrangler secret put NOTION_DB_ID
 ```
 
 - `NOTION_TOKEN`：Notionインテグレーションのトークン。
-  Notion → 設定 → コネクト → インテグレーション作成 → 対象DB「案件管理（テスト）」にだけ共有 → トークンをコピー。
+  Notion → 設定 → コネクト → インテグレーション作成 → 対象DB「クリエイティブプロジェクト」にだけ共有 → トークンをコピー。
 - `NOTION_DB_ID`：登録先DBの ID。DBを開いた時のURL `notion.so/xxxx?v=...` の `xxxx` 部分（32文字）。
 
 Slackは Webhook が hiro さんから届いてから登録します（届くまではSlack投稿は自動でスキップされ、他は動きます）。

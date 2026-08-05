@@ -11,7 +11,7 @@
       "designPageNodeId": "0:1"
     },
     "rules": [
-      "figmaNodeId は出典。Figmaで開くURLは https://www.figma.com/design/paEvn9ugpEQoYRPBWF3fc6/Request?node-id=<idの : を - に置換>",
+      "figmaNodeId は出典。Figmaで開くURLは https://www.figma.com/design/paEvn9ugpEQoYRPBWF3fc6/CREATIVE-PROCESS?node-id=<idの : を - に置換>",
       "tokens は tokens.json のキー。色や数値を直書きせずトークン名で参照する。",
       "status=undefined-in-figma は Figma に定義がなく、コード側で決めた仕様。根拠は DESIGN.md に記載する。"
     ],

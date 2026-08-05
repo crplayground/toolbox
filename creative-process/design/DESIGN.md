@@ -1,8 +1,7 @@
 # CREATIVE PROCESS — DESIGN.md（UIデザイン仕様書）
 
 > **このファイルの役割**
-> **UIデザインの正はFigma『Request』**（`https://www.figma.com/design/paEvn9ugpEQoYRPBWF3fc6/Request`／セクション `27:3284`）。
-> ※ツール名は 2026-08-05 に「Request」から「Creative Process」へ改称した。Figmaファイル名の追従は未実施のため、ここでは実在のファイル名『Request』を記載している。Figma側を改称したらこの記述も更新する。
+> **UIデザインの正はFigma『CREATIVE PROCESS』**（`https://www.figma.com/design/paEvn9ugpEQoYRPBWF3fc6/CREATIVE-PROCESS`／セクション `27:3284`）。
 > このファイルは **Figmaにない部分を補完するときの基準**であり、Figmaと食い違ったら**必ずFigmaが勝つ**。
 > 見た目を変えるときはFigmaを先に直し、そこから反映する。コードだけを先に変えることはしない。
 
@@ -29,7 +28,7 @@
 ## 2. Figmaの構成
 
 ### ページ `design`（`0:1`）— 画面
-セクション `Request`（`27:3284`）配下に8フレーム。**これがすべて最新の正**。
+セクション `CREATIVE PROCESS`（`27:3284`）配下に8フレーム。**これがすべて最新の正**。
 
 | ノード | 名前 | 何を描いているか |
 |---|---|---|

@@ -16,7 +16,7 @@
 
 - フォーム: `https://crplayground.github.io/toolbox/creative-process/`
 - Worker: `https://creative-process.yukimiyakawa.workers.dev`
-- 保存先: Notion データベース「案件管理（テスト）」（`37f6d45e-597d-8046-b35e-e0a310821fd3`）
+- 保存先: Notion データベース「クリエイティブプロジェクト」（`37f6d45e-597d-8046-b35e-e0a310821fd3`）
 
 **Notionページが唯一の正本。** 依頼内容の確認・修正はNotionページ上で直接行う。フォーム側に編集機能は持たせない。
 
@@ -190,7 +190,7 @@ ANV｜アニバに関する制作物／CAREER｜CRAZY CAREERに関する制作�
 ## 8. Notion データベースとのマッピング
 
 ### 8-1. データベースの現行スキーマ
-「案件管理（テスト）」`collection://37f6d45e-597d-80ff-98e4-000beb279829`
+「クリエイティブプロジェクト」`collection://37f6d45e-597d-80ff-98e4-000beb279829`
 
 | プロパティ | 型 | Workerの書き込み | 対応するフォーム項目 |
 |---|---|---|---|
@@ -272,7 +272,7 @@ ANV｜アニバに関する制作物／CAREER｜CRAZY CAREERに関する制作�
 
 ```
 🌟
-＼ 依頼ページを作成しました! ／
+＼ プランニングシートを作成しました! ／
 あと1ステップで、依頼を起票できます！
 
 NotionページのURLをコピーして [Slackチャンネル] に貼り付け。

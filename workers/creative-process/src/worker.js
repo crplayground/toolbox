@@ -332,7 +332,7 @@ function buildGuideHtml() {
     ".note{font-size:12.5px;color:#8a92a0;border-top:1px solid #eceef1;padding-top:14px;margin-top:18px}" +
     "</style></head><body><div class=\"wrap\">" +
     "<h1>🗂 共有ページはNotionに移行しました</h1>" +
-    "<p>制作依頼の内容は、現在は Notion の「案件管理」データベースにのみ保存されています。このURLでの共有ページは公開を終了しました。</p>" +
+    "<p>制作依頼の内容は、現在は Notion の「クリエイティブプロジェクト」データベースにのみ保存されています。このURLでの共有ページは公開を終了しました。</p>" +
     "<p>依頼の内容は、Slack の受付チャンネル <b>#83_creative_クリ室依頼受付</b> の該当投稿にある Notion リンクから確認できます。</p>" +
     "<p class=\"note\">見つからない場合は、クリエイティブ室（宮川）までお知らせください。</p>" +
     "</div></body></html>"
@@ -341,9 +341,9 @@ function buildGuideHtml() {
 
 // ---- Notion 登録 ------------------------------------------------
 // 最小プロパティ＋ページ本文（長文与件・スケジュール感・参考画像）。
-// ※プロパティ名は DB「案件管理」の確定名に合わせている。名称変更時はここを直す。
+// ※プロパティ名は DB「クリエイティブプロジェクト」の確定名に合わせている。名称変更時はここを直す。
 // DBに存在しないプロパティ名を送るとNotion APIが400を返し、リクエスト全体が失敗する。
-// ここに書いてよいのは「案件管理」に実在するプロパティだけ。
+// ここに書いてよいのは「クリエイティブプロジェクト」に実在するプロパティだけ。
 // ・「担当者」（person型）はクリエイティブ室側の割り当て欄なので、Workerからは書かない。
 // ・依頼者のメールアドレスはプロパティに入れず、ページ本文の先頭に記載する。
 function buildNotionProperties(data) {
@@ -556,7 +556,7 @@ function buildSlackText(data, notionUrl, firstRequest) {
   if (firstRequest) {
     lines.push(
       "🆕 初依頼の方です。" + (data.requesterName || "依頼者") + " さん（" + normEmail(data.requesterEmail) + "）を" +
-      "案件管理DBにゲスト招待してください（DB右上「共有」→メールを入力→「今はスキップ」）。招待は1人1回だけでOKです。"
+      "「クリエイティブプロジェクト」DBにゲスト招待してください（DB右上「共有」→メールを入力→「今はスキップ」）。招待は1人1回だけでOKです。"
     );
   }
   return lines.join("\n");
@@ -613,7 +613,7 @@ function buildSlackBlocks(data, notionUrl, firstRequest) {
         type: "mrkdwn",
         text:
           "🆕 *初依頼の方です。* " + (data.requesterName || "依頼者") + " さん（`" + normEmail(data.requesterEmail) + "`）を" +
-          "案件管理DBにゲスト招待してください（DB右上「共有」→メールを入力→「今はスキップ」）。招待は1人1回だけでOKです。",
+          "「クリエイティブプロジェクト」DBにゲスト招待してください（DB右上「共有」→メールを入力→「今はスキップ」）。招待は1人1回だけでOKです。",
       },
     });
   }
