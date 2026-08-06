@@ -22,6 +22,14 @@ import {
   buildNotionBlocks,
   buildSlackText,
   buildSlackBlocks,
+  brandShortName,
+  formatSeq,
+  parseSeq,
+  sanitizeFolderName,
+  extractDriveFolderId,
+  DRIVE_BRAND_FOLDERS,
+  DRIVE_SOUDAN_FOLDER_ID,
+  DRIVE_SUBFOLDERS,
   CATEGORY_EMOJI,
   SEC_YOKEN,
   SEC_SEISAKU,
@@ -231,6 +239,88 @@ t("File Upload APIを使用", src.indexOf("/v1/file_uploads") !== -1);
 t("editId送信には410で案内", src.indexOf("EDIT_REMOVED") !== -1);
 t("Slack投稿にblocksを送信（Block Kit・フェーズ4先行分）", src.indexOf("blocks: buildSlackBlocks") !== -1);
 t("Slack投稿にfallback textも送信（通知用）", src.indexOf("text: buildSlackText") !== -1);
+
+// ---- 10. V1-5 Drive自動フォルダ作成 ----
+section("10. V1-5 起票番号（formatSeq / parseSeq）");
+t("1 → no00001（5桁ゼロ埋め）", formatSeq(1) === "no00001");
+t("42 → no00042", formatSeq(42) === "no00042");
+t("99999 → no99999", formatSeq(99999) === "no99999");
+t("5桁を超えたら桁を伸ばす", formatSeq(100000) === "no100000");
+t("0以下は1に丸める", formatSeq(0) === "no00001" && formatSeq(-5) === "no00001");
+t("数値でない入力も1に丸める", formatSeq(undefined) === "no00001" && formatSeq("あ") === "no00001");
+t("no00042 → 42", parseSeq("no00042") === 42);
+t("前後の空白を許容", parseSeq("  no00007 ") === 7);
+t("形式外は0（採番の起点＝1になる）", parseSeq("") === 0 && parseSeq("42") === 0 && parseSeq("NO00042") === 0);
+t("ゼロ埋め文字列は辞書順＝数値順", ["no00002","no00010","no00001"].sort().join(",") === "no00001,no00002,no00010");
+
+section("11. V1-5 略称の切り出し（brandShortName）");
+t("IWAI-婚礼｜… → IWAI-婚礼", brandShortName("IWAI-婚礼｜婚礼に関する制作物") === "IWAI-婚礼");
+t("MT-the-Terrace｜… → MT-the-Terrace", brandShortName("MT-the-Terrace｜the Terraceに関する制作物") === "MT-the-Terrace");
+t("その他｜… → その他", brandShortName("その他｜AI推進・BD・食企画・経営企画等に関する制作物") === "その他");
+t("｜が無ければ全体を返す", brandShortName("CR室") === "CR室");
+t("空文字は空のまま", brandShortName("") === "" && brandShortName(undefined) === "");
+t("18件すべてが｜を持ち略称を切り出せる",
+  Object.keys(DRIVE_BRAND_FOLDERS).every((k) => brandShortName(k).length > 0 && brandShortName(k) !== k));
+
+section("12. V1-5 フォルダ名のサニタイズ（sanitizeFolderName）");
+t("スラッシュをハイフンに寄せる", sanitizeFolderName("6月/フェア") === "6月-フェア");
+t("バックスラッシュも同様", sanitizeFolderName("A\\B") === "A-B");
+t("前後の空白を落とす", sanitizeFolderName("  春の展示会  ") === "春の展示会");
+t("連続する空白は1つに畳む", sanitizeFolderName("春の  展示会") === "春の 展示会");
+t("制御文字を除去", sanitizeFolderName("春の\u0000展示\u001f会") === "春の展示会");
+t("60字で切り詰める", sanitizeFolderName("あ".repeat(100)).length === 60);
+t("空・未定義は「無題」", sanitizeFolderName("") === "無題" && sanitizeFolderName(undefined) === "無題");
+t("空白だけでも「無題」", sanitizeFolderName("   ") === "無題");
+
+section("13. V1-5 Drive URLからのフォルダID抽出（extractDriveFolderId）");
+t("フォルダURL", extractDriveFolderId("https://drive.google.com/drive/folders/1T3J-bOCpWrCKDlOwb3-wFIImg6mgNuFz") === "1T3J-bOCpWrCKDlOwb3-wFIImg6mgNuFz");
+t("共有パラメータ付き", extractDriveFolderId("https://drive.google.com/drive/folders/1abcDEFghij-1234?usp=drive_link") === "1abcDEFghij-1234");
+t("アカウント番号付きURL", extractDriveFolderId("https://drive.google.com/drive/u/0/folders/1abcDEFghij-1234") === "1abcDEFghij-1234");
+t("ファイルURL", extractDriveFolderId("https://drive.google.com/file/d/1abcDEFghij-1234/view") === "1abcDEFghij-1234");
+t("open?id= 形式", extractDriveFolderId("https://drive.google.com/open?id=1abcDEFghij-1234") === "1abcDEFghij-1234");
+t("文章に混ざっていても拾う", extractDriveFolderId("元データはこちら https://drive.google.com/drive/folders/1abcDEFghij-1234 です") === "1abcDEFghij-1234");
+t("Drive以外のURLは空", extractDriveFolderId("https://example.com/drive/folders/1abcDEFghij-1234") === "");
+t("URLでない文字列は空", extractDriveFolderId("元データは共有ドライブのどこかです") === "");
+t("空入力は空", extractDriveFolderId("") === "" && extractDriveFolderId(undefined) === "");
+
+section("14. V1-5 フォルダID対応表");
+const brandKeys = Object.keys(DRIVE_BRAND_FOLDERS);
+t("Notionの18選択肢＋旧CRAZY名の互換キー＝19件", brandKeys.length === 19);
+t("すべてDriveのファイルID形式", brandKeys.every((k) => /^[A-Za-z0-9_-]{20,}$/.test(DRIVE_BRAND_FOLDERS[k])));
+t("旧CRAZY名は現行と同じフォルダを指す（リネーム漏れの保険）",
+  DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・自社WEBサイト等に関する制作物"] ===
+  DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・全社会議・自社HP等に関する制作物"]);
+t("相談フォルダIDはブランドと重複しない", !Object.values(DRIVE_BRAND_FOLDERS).includes(DRIVE_SOUDAN_FOLDER_ID));
+t("フォルダIDに重複がない（互換キーの1件を除く）", new Set(Object.values(DRIVE_BRAND_FOLDERS)).size === 18);
+t("サブフォルダは3点セット", JSON.stringify(DRIVE_SUBFOLDERS) === JSON.stringify(["01_支給素材", "02_作業データ", "03_納品データ"]));
+t("サブフォルダ名は番号順に並ぶ", [...DRIVE_SUBFOLDERS].sort().join(",") === DRIVE_SUBFOLDERS.join(","));
+
+section("15. V1-5 起票番号のNotion書き込み");
+const propsSeq = buildNotionProperties({ title: "テスト", category: "新規", brand: "IWAI-婚礼｜婚礼に関する制作物", seqLabel: "no00007" });
+t("起票番号をrich_textで書く", propsSeq["起票番号"].rich_text[0].text.content === "no00007");
+t("Driveのフォルダ名と同じ文字列", propsSeq["起票番号"].rich_text[0].text.content === formatSeq(7));
+const propsNoSeq = buildNotionProperties({ title: "テスト", category: "新規" });
+t("採番できなかったときは起票番号を送らない（Notionの400回避）", !("起票番号" in propsNoSeq));
+t("データ格納先は依頼者入力があるときだけ載せる", !("データ格納先" in propsNoSeq));
+
+// ---- 16. ソース検査：V1-5 Drive連携 ----
+section("16. ソース検査（V1-5 Drive連携）");
+t("共有ドライブ対応（supportsAllDrives）", src.indexOf("supportsAllDrives=true") !== -1);
+t("サービスアカウントのJWT Bearerフローを使う", src.indexOf("urn:ietf:params:oauth:grant-type:jwt-bearer") !== -1);
+t("Driveのスコープを要求", src.indexOf("https://www.googleapis.com/auth/drive") !== -1);
+t("秘密鍵はenvから読む（ソースに直書きしない）", src.indexOf("env.GOOGLE_SA_PRIVATE_KEY") !== -1);
+t("秘密鍵の実体がソースに無い", src.indexOf("BEGIN PRIVATE KEY-----\\n") === -1 && src.indexOf("MIIE") === -1);
+t("起票番号はNotionから採番する（KVカウンタを持たない）",
+  src.indexOf("nextSeqNumber") !== -1 && src.indexOf('"seq:"') === -1);
+t("採番は対象事業・部署で絞り込む", /filter: \{ property: "対象事業・部署"/.test(src));
+t("採番は起票番号の降順1件で最大値を取る", /direction: "descending"[\s\S]{0,60}page_size: 1/.test(src));
+t("Drive失敗時も送信を止めない（createDriveFolderForRequestがthrowしない）",
+  /async function createDriveFolderForRequest[\s\S]*?\n\}/.test(src) &&
+  /createDriveFolderForRequest[\s\S]{0,2000}?catch \(e\) \{[\s\S]{0,120}?out\.reason/.test(src));
+t("フォルダURLはNotionの「データ格納先」へ書き戻す", src.indexOf("patchNotionStorageUrl") !== -1);
+t("相談はフラット配置（略称を先頭に付ける）", /"\[" \+ brandShortName\(brand\) \+ "\]_" \+ seqLabel/.test(src));
+t("改訂は2階層で止める（親をたどる上限がある）", /resolveRevisionParent[\s\S]{0,900}?i < 5/.test(src));
+t("改訂元は sourceUrls（フォームの設問名）を読む", src.indexOf("data.sourceUrls") !== -1);
 
 // ---- 結果 ----
 console.log("\n============================");

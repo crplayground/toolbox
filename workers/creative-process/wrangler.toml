@@ -40,3 +40,12 @@ GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleuse
 #   FORM_URL / SHARE_URL_PROP（vars）… 共有URL廃止に伴い削除済み
 #   CREATIVE_EDITOR_EMAILS（Secret）… 再編集機構の撤去で未使用。
 #     登録済みなら `npx wrangler secret delete CREATIVE_EDITOR_EMAILS` で消してよい（残っていても無害）
+
+# 【V1-5 2026-08-06】Drive自動フォルダ作成のサービスアカウント
+#   GOOGLE_SA_EMAIL       … サービスアカウントのメール（xxx@<project>.iam.gserviceaccount.com）
+#   GOOGLE_SA_PRIVATE_KEY … 同アカウントの秘密鍵（JSON鍵の private_key の値をそのまま貼る）
+#   どちらも `npx wrangler secret put <名前>` で登録する。tomlには書かない。
+#   ※メール自体は機密ではないが、鍵と対で管理した方が事故が少ないためSecretに寄せている。
+#   ※どちらか未設定ならフォルダ作成はスキップされ、依頼の登録だけが行われる（送信は成功する）。
+#   ※サービスアカウントを共有ドライブ「CRAZY CREATIVE」のメンバー（コンテンツ管理者）に
+#     追加しないと、権限エラーでフォルダが作れない。GCPの設定だけでは足りない点に注意。
