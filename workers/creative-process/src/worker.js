@@ -26,7 +26,8 @@
 //   クライアントが送ってきた requesterName / requesterEmail は一切信用しない。
 //
 // エンドポイント：
-//   POST /submit    … フォーム送信。{ ok, notionUrl, notionPageId, slackPosted, firstRequest } を返す
+//   POST /submit    … フォーム送信。{ ok, notionUrl, notionPageId, firstRequest, seqLabel, imagesQueued, deferred } を返す
+//                      （V1-5.8＝画像・Drive・Slackの結果は応答に含まれない。応答後に処理される）
 //   GET  /v/<id>    … 【移行措置】Notionページへ302リダイレクト（記録が無い旧依頼は案内ページ）
 //   GET  /form/<id> … 【廃止】410 を返す（開きっぱなしの旧編集画面への案内用）
 //   GET  /          … 稼働確認
@@ -49,6 +50,17 @@
 //   依頼1件ごとに 02_案件管理 配下へ案件フォルダを作り、URLをNotionの
 //   「データ格納先」に書き戻す。番号は対象事業・部署ごとの連番（no00001形式）で、
 //   発番元はNotionの「起票番号」プロパティの最大値。詳細は下の該当セクションを参照。
+//
+// V1-5.8（起票高速化・2026-08）：
+//   /submit の応答は「Notionページ作成の直後」に返す。時間のかかる後続処理は
+//   ctx.waitUntil で応答後（バックグラウンド）に回す＝依頼者の待ち時間を数秒短縮する。
+//   - 応答後に回すもの：①参考画像のアップロード＋本文への追記（並列化済み）
+//                       ②Driveフォルダ作成＋「データ格納先」の書き戻し ③Slack投稿＋既知マーク
+//   - 同期のまま残すもの：ログイン検証／冪等チェック／改訂の親フォルダ事前チェック（400で弾く）／
+//                       起票番号の採番（ページのプロパティに入れるため）／Notionページ作成
+//   - ページは「画像なし」で先に作り、画像はアップロード完了後に本文へ追記する。
+//     副作用＝完了画面から即Notionを開くと参考画像が数秒〜十数秒遅れて現れる（許容済み・SPEC §注記）。
+//   - 冪等キーの結果保存も応答前に行う（後続処理の結果は含まれない）。
 //
 // KVキー（binding=REQUESTS）：
 //   idem:<key>     冪等キー（二重送信防止・7日保持）
@@ -441,11 +453,12 @@ function buildNotionSectionBlocks(data) {
   return blocks;
 }
 
-// ページ本文全体（セクション本文 → 参考画像）。
+// 参考画像のブロック列（見出し → 画像 → 失敗注記）。
+// 【V1-5.8】ページ作成時とバックグラウンドでの本文追記の両方で使うため、独立した関数に切り出した。
 // imageUploads = { ids: [file_upload_id...], failed: 失敗枚数 }（uploadImagesToNotion の結果）
-function buildNotionBlocks(data, imageUploads) {
-  const blocks = buildNotionSectionBlocks(data);
+function buildImageBlocks(imageUploads) {
   const up = imageUploads || { ids: [], failed: 0 };
+  const blocks = [];
   if (up.ids.length || up.failed) {
     blocks.push({
       object: "block",
@@ -468,6 +481,11 @@ function buildNotionBlocks(data, imageUploads) {
     }
   }
   return blocks;
+}
+
+// ページ本文全体（セクション本文 → 参考画像）。
+function buildNotionBlocks(data, imageUploads) {
+  return buildNotionSectionBlocks(data).concat(buildImageBlocks(imageUploads));
 }
 
 // ---- 参考画像のNotionアップロード（フェーズ3・File Upload API） --
@@ -515,18 +533,14 @@ async function uploadOneImageToNotion(dataUrl, index, env) {
 }
 
 async function uploadImagesToNotion(images, env) {
-  const ids = [];
-  let failed = 0;
-  for (let i = 0; i < images.length; i++) {
-    try {
-      const id = await uploadOneImageToNotion(images[i], i, env);
-      if (id) ids.push(id);
-      else failed++;
-    } catch {
-      failed++;
-    }
-  }
-  return { ids, failed };
+  // 【V1-5.8】直列→並列化。Promise.all は入力順どおりに結果を返すため、
+  // 本文に載る画像の順序（依頼者が添付した順）は保たれる。
+  // 失敗した1枚は null に落とし、全体は止めない（失敗枚数は本文の注記に使う）。
+  const results = await Promise.all(
+    images.map((img, i) => uploadOneImageToNotion(img, i, env).catch(() => null)),
+  );
+  const ids = results.filter(Boolean);
+  return { ids, failed: results.length - ids.length };
 }
 
 async function createNotionPage(data, imageUploads, env) {
@@ -1227,9 +1241,96 @@ async function appendNotionNote(pageId, text, env) {
   }
 }
 
+// ---- V1-5.8 応答後処理（バックグラウンド） ----------------------
+
+// アップロード済み画像をページ本文の末尾に追記する（見出し＋画像＋失敗注記）。
+// ページ作成時と同じブロック構成（buildImageBlocks）を使う＝見た目は従来と変わらない。
+async function appendImageBlocksToNotion(pageId, imageUploads, env) {
+  const children = buildImageBlocks(imageUploads);
+  if (!children.length) return;
+  const version = (env.NOTION_VERSION || "2022-06-28").trim();
+  const res = await fetch("https://api.notion.com/v1/blocks/" + pageId + "/children", {
+    method: "PATCH",
+    headers: {
+      Authorization: "Bearer " + env.NOTION_TOKEN,
+      "Notion-Version": version,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ children }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error("参考画像の追記に失敗: " + (body.message || res.status));
+  }
+}
+
+// /submit の応答後に ctx.waitUntil で実行する後続処理のまとまり。
+//   ① 参考画像：並列アップロード → 本文へ追記（失敗したら本文に⚠️注記）
+//   ② Drive：フォルダ作成 → 「データ格納先」書き戻し（改訂の採番・事業もここで書く）
+//   ③ Slack：投稿 → 成功した初依頼者にだけ既知マーク
+// ①②③は互いに依存しないため並走させる。どれが失敗しても他は続行する
+// （Promise.allSettled）。依頼そのもの（Notionページ）は応答時点で成立済み。
+async function finishSubmitInBackground(data, images, notion, seqLabel, firstRequest, env) {
+  const imagesJob = (async () => {
+    if (!images.length) return;
+    try {
+      const uploads = await uploadImagesToNotion(images, env);
+      await appendImageBlocksToNotion(notion.pageId, uploads, env);
+    } catch {
+      // アップロード枠の作成や本文追記が丸ごと失敗した場合の目印（依頼は成立している）
+      await appendNotionNote(
+        notion.pageId,
+        "⚠️ 参考画像の掲載に失敗：" + images.length + "枚（お手数ですが元データを直接共有してください）",
+        env,
+      );
+    }
+  })();
+
+  const driveJob = (async () => {
+    // 従来と同じ実施条件：採番できた依頼か、改訂（採番はDrive処理の中で行う）
+    if (!(seqLabel || data.category === "改訂")) return;
+    const drive = await createDriveFolderForRequest(data, seqLabel, env);
+    if (drive.created && drive.url) {
+      try {
+        await patchNotionStorageUrl(notion.pageId, drive.url, env, {
+          // 改訂でDrive処理中に確定した値だけ追記する（それ以外は作成時に書いてある）
+          seqLabel: data.category === "改訂" ? drive.seqLabel : "",
+          brand: data.category === "改訂" ? drive.inferredBrand : "",
+        });
+      } catch {
+        // 書き戻し失敗はフォルダURLがNotionに残らないだけ。フォルダ自体は作られている
+      }
+    } else if (data.category === "改訂" && !drive.created) {
+      // フォルダを作れなかったことをページ本文に残す（ユウキが後から手で対処できるように）
+      await appendNotionNote(
+        notion.pageId,
+        "⚠️ 改訂元の親フォルダにアクセスできなかったため、データ格納用フォルダは自動作成されていません（" +
+          (drive.reason || "原因不明") + "）。お手数ですが手動で作成してください。",
+        env,
+      );
+    }
+  })();
+
+  const slackJob = (async () => {
+    let slack = { posted: false, reason: "" };
+    try {
+      slack = await postToSlack(data, notion.notionUrl, firstRequest, env);
+    } catch (e) {
+      slack = { posted: false, reason: String(e.message || e) };
+    }
+    // 既知マークは「初依頼者の通知が実際に投稿できたとき」だけ付ける。
+    // （Webhook未設定・投稿失敗のときは付けず、次回の送信で再通知させる）
+    if (firstRequest && slack.posted) {
+      try { await markGuestKnown(env, data.requesterEmail, data.requesterName); } catch {}
+    }
+  })();
+
+  await Promise.allSettled([imagesJob, driveJob, slackJob]);
+}
+
 // ---- ルーター ---------------------------------------------------
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -1369,12 +1470,8 @@ export default {
         firstRequest = false; // 照合に失敗しても送信は止めない（安全網＝アクセスリクエスト承認）
       }
 
-      // ① 参考画像を Notion にアップロード（失敗しても致命にしない）
+      // ① 参考画像の検証だけ同期で行う（アップロードは応答後＝V1-5.8）
       const images = asImageList(data.images);
-      let uploads = { ids: [], failed: 0 };
-      if (images.length) {
-        uploads = await uploadImagesToNotion(images, env);
-      }
 
       // ②-a【V1-5】起票番号を採番する。
       //    対象事業・部署ごとの連番で、発番元は Notion（＝唯一の正本）。
@@ -1391,74 +1488,35 @@ export default {
       }
       data.seqLabel = seqLabel;
 
-      // ②-b Notionページ作成（唯一の正本）
+      // ②-b Notionページ作成（唯一の正本）。
+      //    【V1-5.8】画像は応答後にアップロードするため、ページは「画像なし」で先に作る。
       let notion;
       try {
-        notion = await createNotionPage(data, uploads, env);
+        notion = await createNotionPage(data, { ids: [], failed: 0 }, env);
       } catch (e) {
         return json({ error: String(e.message || e) }, 502, request, env);
       }
 
-      // ②-c【V1-5】Driveに案件フォルダ（＋3点セット）を作り、URLを「データ格納先」に書き戻す。
-      //    任意処理。失敗しても依頼そのものは成立させ、依頼者に再送信させない。
-      //    【V1-5.6】改訂は起票番号なしでもDrive処理を実行する（採番はDrive処理の中で行う）。
-      let drive = { created: false, url: "", reason: "起票番号が採れなかったためスキップ", seqLabel, inferredBrand: "" };
-      if (seqLabel || data.category === "改訂") {
-        drive = await createDriveFolderForRequest(data, seqLabel, env);
-        if (drive.created && drive.url) {
-          seqLabel = drive.seqLabel || seqLabel;
-          try {
-            await patchNotionStorageUrl(notion.pageId, drive.url, env, {
-              // 改訂でDrive処理中に確定した値だけ追記する（それ以外は作成時に書いてある）
-              seqLabel: data.category === "改訂" ? drive.seqLabel : "",
-              brand: data.category === "改訂" ? drive.inferredBrand : "",
-            });
-          } catch (e) {
-            drive.reason = String(e.message || e);
-          }
-        } else if (data.category === "改訂" && !drive.created) {
-          // フォルダを作れなかったことをページ本文に残す（ユウキが後から手で対処できるように）
-          await appendNotionNote(
-            notion.pageId,
-            "⚠️ 改訂元の親フォルダにアクセスできなかったため、データ格納用フォルダは自動作成されていません（" +
-              (drive.reason || "原因不明") + "）。お手数ですが手動で作成してください。",
-            env,
-          );
-        }
-      }
-
-      // ③ Slack投稿（任意・失敗しても致命にしない）
-      let slack = { posted: false, reason: "" };
-      try {
-        slack = await postToSlack(data, notion.notionUrl, firstRequest, env);
-      } catch (e) {
-        slack = { posted: false, reason: String(e.message || e) };
-      }
-
-      // ④ 既知マークは「初依頼者の通知が実際に投稿できたとき」だけ付ける。
-      //    （Webhook未設定・投稿失敗のときは付けず、次回の送信で再通知させる）
-      if (firstRequest && slack.posted) {
-        try { await markGuestKnown(env, actor.email, actor.name); } catch {}
-      }
-
+      // 【V1-5.8】応答はここで確定する。フォームが使うのは notionUrl のみ。
+      //   画像・Drive・Slackは応答後に処理するため、このレスポンス（と冪等キーの保存値）には
+      //   最終結果が入らない。deferred:true がその目印。
       const result = {
         ok: true,
         notionUrl: notion.notionUrl,
         notionPageId: notion.pageId,
-        slackPosted: slack.posted,
-        slackNote: slack.reason,
         firstRequest,
-        imagesUploaded: uploads.ids.length,
-        imagesFailed: uploads.failed,
-        // 【V1-5】Drive自動フォルダ作成の結果（フォームは今のところ表示しない）
         seqLabel,
-        driveFolderUrl: drive.url,
-        driveCreated: drive.created,
-        driveNote: drive.reason,
+        imagesQueued: images.length,
+        deferred: true, // 画像アップロード・Driveフォルダ作成・Slack投稿は応答後に実行
       };
       if (idem) {
         await env.REQUESTS.put("idem:" + idem, JSON.stringify(result), { expirationTtl: 60 * 60 * 24 * 7 });
       }
+
+      // ②-c〜③【V1-5.8】時間のかかる後続処理（画像・Drive・Slack）は応答後に回す。
+      //    ctx.waitUntil に渡すことで、レスポンス返却後もWorkerが処理を続行できる。
+      ctx.waitUntil(finishSubmitInBackground(data, images, notion, seqLabel, firstRequest, env));
+
       return json(result, 200, request, env);
     }
 
@@ -1573,6 +1631,8 @@ export {
   buildNotionProperties,
   buildNotionSectionBlocks,
   buildNotionBlocks,
+  // 【V1-5.8】起票高速化（画像ブロックの切り出し＝応答後の本文追記で共用）
+  buildImageBlocks,
   buildSlackText,
   buildSlackBlocks,
   // 【V1-5】Drive自動フォルダ作成

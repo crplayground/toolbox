@@ -20,6 +20,7 @@ import {
   buildNotionProperties,
   buildNotionSectionBlocks,
   buildNotionBlocks,
+  buildImageBlocks,
   buildSlackText,
   buildSlackBlocks,
   brandShortName,
@@ -368,12 +369,51 @@ t("棚は名前検索で解決し、無ければ正式名で作る", /resolveTyp
 t("改訂は送信前に親フォルダを検証する（V1-5.7事前チェック）", src.indexOf('code: "KAITEI_PARENT"') !== -1);
 t("02_案件管理の外は400で弾く", /02_案件管理」の中にありません[\s\S]{0,200}?400/.test(src));
 t("エラー文言で「転用」への切り替えを案内する", src.indexOf("依頼種別を「転用」にして") !== -1);
-t("事前チェックはNotionページ作成より前に行う", src.indexOf('code: "KAITEI_PARENT"') < src.indexOf("createNotionPage(data, uploads, env)"));
+t("事前チェックはNotionページ作成より前に行う", src.indexOf('code: "KAITEI_PARENT"') < src.indexOf("await createNotionPage(data"));
 t("相談フォルダ配下は略称から事業を引く", /inferBrandFromFolder[\s\S]{0,1200}?brandFromShortName/.test(src));
 t("診断エンドポイント /drive/health がある", src.indexOf('"/drive/health"') !== -1);
 t("診断は秘密鍵の中身を返さない（長さと有無のみ）", !/診断[\s\S]{0,3000}?pem\s*\}/.test(src) && src.indexOf("詳細: pem") === -1);
 t("診断はテストフォルダを後片付けする", /_接続テスト[\s\S]{0,1200}?trashed: true/.test(src));
 t("共有ドライブで権限不足になるDELETEを使わない", src.indexOf('method: "DELETE"') === -1);
+
+// ---- 17. V1-5.8 起票高速化（応答後処理） ----
+section("17. V1-5.8 buildImageBlocks（画像ブロックの切り出し）");
+t("画像なし・失敗なしは空", buildImageBlocks({ ids: [], failed: 0 }).length === 0);
+t("未定義でも空（null安全）", buildImageBlocks(undefined).length === 0);
+const imgBlocks = buildImageBlocks({ ids: ["fu-1", "fu-2"], failed: 1 });
+t("先頭は「参考画像」見出し", imgBlocks[0].type === "heading_2"
+  && imgBlocks[0].heading_2.rich_text[0].text.content === "参考画像");
+t("画像ブロックはfile_upload型で枚数ぶん", imgBlocks.filter(b => b.type === "image" && b.image.type === "file_upload").length === 2);
+t("画像IDが順に引き継がれる", imgBlocks[1].image.file_upload.id === "fu-1" && imgBlocks[2].image.file_upload.id === "fu-2");
+t("失敗注記が末尾に付く", imgBlocks[imgBlocks.length - 1].type === "paragraph"
+  && JSON.stringify(imgBlocks).indexOf("失敗：1枚") !== -1);
+t("失敗のみ（全滅）でも注記は出る", buildImageBlocks({ ids: [], failed: 3 }).length === 2);
+t("buildNotionBlocks＝セクション＋画像の合成（作成時と追記時で構成が一致）",
+  JSON.stringify(buildNotionBlocks(dataNew, { ids: ["fu-1"], failed: 0 })) ===
+  JSON.stringify(buildNotionSectionBlocks(dataNew).concat(buildImageBlocks({ ids: ["fu-1"], failed: 0 }))));
+
+section("18. ソース検査（V1-5.8 応答後処理＝waitUntil化・並列化）");
+t("fetchがctxを受け取る", /async fetch\(request, env, ctx\)/.test(src));
+t("応答後処理はctx.waitUntilに渡す", src.indexOf("ctx.waitUntil(finishSubmitInBackground") !== -1);
+t("画像アップロードは並列（Promise.all・入力順を保持）", /async function uploadImagesToNotion[\s\S]{0,600}?Promise\.all\(/.test(src));
+t("画像は応答後に本文へ追記する（appendImageBlocksToNotion）", src.indexOf("appendImageBlocksToNotion") !== -1);
+t("追記はNotionの blocks/children API を使う", /appendImageBlocksToNotion[\s\S]{0,600}?\/v1\/blocks\//.test(src));
+t("ページは画像なしで先に作る", src.indexOf("await createNotionPage(data, { ids: [], failed: 0 }, env)") !== -1);
+t("改訂の事前チェックは同期のまま（waitUntilより前＝400で弾ける）",
+  src.indexOf('code: "KAITEI_PARENT"') < src.indexOf("ctx.waitUntil("));
+t("採番も同期のまま（ページのプロパティに入れるため）",
+  src.indexOf("formatSeq(await nextSeqNumber(env, data.brand))") !== -1
+  && src.indexOf("formatSeq(await nextSeqNumber(env, data.brand))") < src.indexOf("ctx.waitUntil("));
+t("冪等キーの保存は応答前（waitUntilより前）", src.indexOf('put("idem:') !== -1
+  && src.indexOf('put("idem:') < src.indexOf("ctx.waitUntil("));
+t("Driveフォルダ作成はバックグラウンド内", /finishSubmitInBackground[\s\S]*?createDriveFolderForRequest/.test(src));
+t("Slack投稿と既知マークもバックグラウンド内（順序：投稿成功→既知マーク）",
+  /finishSubmitInBackground[\s\S]*?postToSlack[\s\S]*?markGuestKnown/.test(src));
+t("後続処理は互いに独立して続行（Promise.allSettled）", src.indexOf("Promise.allSettled") !== -1);
+t("画像の丸ごと失敗も本文に⚠️注記を残す", src.indexOf("参考画像の掲載に失敗") !== -1);
+t("応答にdeferredの目印を持つ（後続処理は結果に含まれない）", src.indexOf("deferred: true") !== -1);
+t("改訂のフォルダ作成失敗の注記も引き続き残す（バックグラウンド内）",
+  /finishSubmitInBackground[\s\S]*?改訂元の親フォルダにアクセスできなかった/.test(src));
 
 // ---- 結果 ----
 console.log("\n============================");
