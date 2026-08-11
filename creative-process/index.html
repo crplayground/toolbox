@@ -487,8 +487,8 @@
     color:var(--color-text-default);}
   .check-text .name{font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;}
   .check-text .sub{font-weight:var(--typo-weight-caption);font-size:var(--typo-size-caption);line-height:1.6;}
-  /* 改訂・流用では補助テキストを出さない */
-  .checks.no-sub .sub{display:none;}
+  /* 転用では「イベント・キャンペーン」「その他」を出さない（V1-5.6） */
+  .checks.hide-only-new .only-new{display:none;}
 
   /* ==========================================================================
      スケジュール（日付＋内容の複数行）
@@ -810,8 +810,11 @@
                 <button type="button" class="type-card" data-type="新規" aria-pressed="false">
                   <span class="t">新規</span><span class="d">プランニングを<br>はじめる</span>
                 </button>
-                <button type="button" class="type-card" data-type="改訂・流用" aria-pressed="false">
-                  <span class="t">改訂・流用</span><span class="d">既存ツールの<br>文言修正・画像差替など</span>
+                <button type="button" class="type-card" data-type="改訂" aria-pressed="false">
+                  <span class="t">改訂</span><span class="d">既存ツールのアップデート<br>文章や画像変更程度</span>
+                </button>
+                <button type="button" class="type-card" data-type="転用" aria-pressed="false">
+                  <span class="t">転用</span><span class="d">既存ツールを利用した<br>新規の制作物</span>
                 </button>
                 <button type="button" class="type-card" data-type="相談" aria-pressed="false">
                   <span class="t">相談</span><span class="d">まずは話しながら考えたい<br>制作以外の相談もこちら</span>
@@ -821,12 +824,12 @@
 
             <!-- ===== STEP 3 依頼内容 =====
                  DOMの並びは固定し、依頼種別ごとの表示順は CSS の order で切り替える。
-                 （新規と改訂・流用で「スケジュール」の位置が違うため） -->
+                 （依頼種別ごとに「スケジュール」等の位置が違うため） -->
             <div class="box hidden" id="detailCard">
               <div class="section-header" style="order:0"><span class="en">STEP 3</span><span class="ja">依頼内容</span></div>
 
               <!-- 依頼タイトル：全種別 -->
-              <div class="input f-title" data-types="新規,改訂・流用,相談">
+              <div class="input f-title" data-types="新規,改訂,転用,相談">
                 <div class="subhead-group">
                   <div class="subhead-row"><span class="fl">依頼タイトル</span><span class="badge-required">必須</span></div>
                   <div class="caption">今回の依頼・相談を分かりやすく一言で記入してください。</div>
@@ -835,7 +838,7 @@
               </div>
 
               <!-- 対象事業・部署：全種別（選択肢と並び順はNotion「対象事業・部署」に一致させる） -->
-              <div class="input f-brand" data-types="新規,改訂・流用,相談">
+              <div class="input f-brand" data-types="新規,転用,相談">
                 <div class="subhead-group">
                   <div class="subhead-row"><span class="fl">対象事業・部署</span><span class="badge-required">必須</span></div>
                   <div class="caption">納品物を使用する場所や部署を選んでください。</div>
@@ -850,7 +853,7 @@
                     <option>CGM-レストラン｜レストランに関する制作物</option>
                     <option>CGM-館内｜館内備品等に関する制作物</option>
                     <option>CGM-婚礼｜婚礼に関する制作物</option>
-                    <option>CRAZY｜全社周年・自社WEBサイト等に関する制作物</option>
+                    <option>CRAZY｜全社周年・全社会議・自社HP等に関する制作物</option>
                     <option>CR室｜クリ室の自主企画・外部案件の管理用</option>
                     <option>CW｜CWブランド全体の婚礼・営業に関する制作物</option>
                     <option>CWA｜CWAに関する制作物</option>
@@ -865,25 +868,25 @@
                 </div>
               </div>
 
-              <!-- 制作物の種別：新規・改訂・流用
+              <!-- 制作物の種別：新規・転用（V1-5.6で単一選択のラジオに変更。Driveの種別フォルダ振り分けの根拠になる）
                    value はNotion「制作物の種別」の選択肢と完全一致させること。
-                   ラベルを変えるとNotionに同名の新選択肢が生成され既存データと分裂する。 -->
-              <div class="input f-prodtypes" data-types="新規,改訂・流用">
+                   ラベルを変えるとNotionに同名の新選択肢が生成され既存データと分裂する。
+                   only-new ＝ 転用では表示しない選択肢（イベント・キャンペーン／その他） -->
+              <div class="input f-prodtypes" data-types="新規,転用">
                 <div class="subhead-group">
                   <div class="subhead-row"><span class="fl">制作物の種別</span><span class="badge-required">必須</span></div>
-                  <div class="caption">複数選択可</div>
                 </div>
                 <div class="checks" id="prodTypes">
-                  <label class="check-card"><input type="checkbox" value="KV・アイキャッチ"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">KV・アイキャッチ</span><span class="sub">イベントやキャンペーンの世界観を象徴する一枚絵</span></span></label>
-                  <label class="check-card"><input type="checkbox" value="スライド・ePDF"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">スライド・ePDF</span><span class="sub">営業資料・プレゼンスライド・デジタルパンフなど</span></span></label>
-                  <label class="check-card"><input type="checkbox" value="バナー・告知画像"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">バナー・告知画像</span><span class="sub">NEWS・マガジン・フィード投稿画像など</span></span></label>
-                  <label class="check-card"><input type="checkbox" value="LP・WEBサイト"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">LP・WEBサイト</span><span class="sub">ディレクション・サイト内パーツ制作など</span></span></label>
-                  <label class="check-card"><input type="checkbox" value="チラシ・ポスター・パネル"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">チラシ・ポスター・パネル</span><span class="sub">ペラ一枚の印刷物</span></span></label>
-                  <label class="check-card"><input type="checkbox" value="リーフレット・パンフレット"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">リーフレット・パンフレット</span><span class="sub">二つ折り・蛇腹折り・ホチキス留めなどの小冊子</span></span></label>
-                  <label class="check-card"><input type="checkbox" value="看板・サイン"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">看板・サイン</span><span class="sub">案内看板・表札・ポップ・サイネージなど</span></span></label>
-                  <label class="check-card"><input type="checkbox" value="ペーパーアイテム"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">ペーパーアイテム</span><span class="sub">メニュー表・手紙・ショップカードなど</span></span></label>
-                  <label class="check-card"><input type="checkbox" value="招待状・紙袋・ノベルティ"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">招待状・紙袋・ノベルティ</span><span class="sub">招待状・紙袋・書籍・ステッカーなどグッズ類</span></span></label>
-                  <label class="check-card"><input type="checkbox" value="その他"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">その他</span><span class="sub">足拭きマットなど迷ったらこちら</span></span></label>
+                  <label class="check-card only-new"><input type="radio" name="prodType" value="イベント・キャンペーン"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">イベント・キャンペーン</span><span class="sub">KV・ロゴを含む複数の制作物が発生する企画はこちら</span></span></label>
+                  <label class="check-card"><input type="radio" name="prodType" value="スライド・ePDF"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">スライド・ePDF</span><span class="sub">営業資料・プレゼンスライド・デジタルパンフなど</span></span></label>
+                  <label class="check-card"><input type="radio" name="prodType" value="バナー・告知画像"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">バナー・告知画像</span><span class="sub">NEWS・マガジン・フィード投稿画像など</span></span></label>
+                  <label class="check-card"><input type="radio" name="prodType" value="LP・WEBサイト"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">LP・WEBサイト</span><span class="sub">ディレクション・サイト内パーツ制作など</span></span></label>
+                  <label class="check-card"><input type="radio" name="prodType" value="チラシ・ポスター・パネル"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">チラシ・ポスター・パネル</span><span class="sub">ペラ一枚の印刷物</span></span></label>
+                  <label class="check-card"><input type="radio" name="prodType" value="リーフレット・パンフレット"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">リーフレット・パンフレット</span><span class="sub">二つ折り・蛇腹折り・ホチキス留めなどの小冊子</span></span></label>
+                  <label class="check-card"><input type="radio" name="prodType" value="看板・サイン"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">看板・サイン</span><span class="sub">案内看板・表札・ポップ・サイネージなど</span></span></label>
+                  <label class="check-card"><input type="radio" name="prodType" value="ペーパーアイテム"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">ペーパーアイテム</span><span class="sub">メニュー表・手紙・ポストカードなど</span></span></label>
+                  <label class="check-card"><input type="radio" name="prodType" value="招待状・紙袋・ノベルティ"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">招待状・紙袋・ノベルティ</span><span class="sub">招待状・紙袋・書籍・ステッカーなどグッズ類</span></span></label>
+                  <label class="check-card only-new"><input type="radio" name="prodType" value="その他"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">その他</span><span class="sub">足拭きマットなど迷ったらこちら</span></span></label>
                 </div>
               </div>
 
@@ -930,8 +933,8 @@
                 </div>
               </div>
 
-              <!-- スケジュール：新規・改訂・流用 -->
-              <div class="input f-schedule" data-types="新規,改訂・流用">
+              <!-- スケジュール：新規・改訂・転用 -->
+              <div class="input f-schedule" data-types="新規,改訂,転用">
                 <div class="subhead-group">
                   <div class="subhead-row"><span class="fl">スケジュール</span><button type="button" class="btn-linktext" id="ndOpen">納期目安表をみる</button></div>
                   <div class="caption">希望納品日や原稿素材の格納日などスケジュール感を教えてください。</div>
@@ -964,19 +967,19 @@
                 <div class="field-textarea"><textarea class="ctl" name="prototype" placeholder="Canva・Figma・KeynoteなどのURL"></textarea></div>
               </div>
 
-              <!-- 改訂・流用元のデータ：改訂・流用 -->
-              <div class="input f-sourceurls" data-types="改訂・流用">
+              <!-- 改訂＝親フォルダURL（必須）／転用＝転用元のデータ（任意）。ラベルはJSで切り替える -->
+              <div class="input f-sourceurls" data-types="改訂,転用">
                 <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">改訂・流用元のデータ</span></div>
-                  <div class="caption">元データの所在が不明の場合、現物の写真やスクリーンショットを下の「参考資料・画像を添付」に添えてください。</div>
+                  <div class="subhead-row"><span class="fl" id="srcUrlsLabel">転用元のデータ</span><span class="badge-required hidden" id="srcUrlsBadge">必須</span></div>
+                  <div class="caption" id="srcUrlsCaption">元データの所在が不明の場合、現物の写真やスクリーンショットを下の「参考資料・画像を添付」に添えてください。</div>
                 </div>
                 <div id="srcUrls">
-                  <input type="text" class="ctl src-url" placeholder="GoogleドライブのフォルダURLなど">
+                  <input type="text" class="ctl src-url" placeholder="GoogleドライブのフォルダURLを記入">
                 </div>
               </div>
 
-              <!-- 制作内容：改訂・流用 -->
-              <div class="input f-revise" data-types="改訂・流用">
+              <!-- 制作内容：改訂・転用 -->
+              <div class="input f-revise" data-types="改訂,転用">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">制作内容</span></div></div>
                 <div class="field-textarea"><textarea class="ctl" name="reviseManuscript" placeholder="差し替える文言は、そのままコピペできる状態で記入されていると転記ミスを防げます"></textarea></div>
               </div>
@@ -988,7 +991,7 @@
               </div>
 
               <!-- 参考資料・画像を添付：全種別 -->
-              <div class="input f-images" data-types="新規,改訂・流用,相談">
+              <div class="input f-images" data-types="新規,改訂,転用,相談">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">参考資料・画像を添付</span></div></div>
                 <div>
                   <input type="file" id="images" accept="image/*" multiple class="file-native">
@@ -1119,11 +1122,12 @@
 
   // ===== 依頼種別ごとの表示順（DOMは固定、CSSのorderで並べ替える） ==
   var ORDER = {
-    "新規":       ["f-title","f-brand","f-prodtypes","f-purpose","f-target","f-usedate","f-useplace",
-                   "f-outcome","f-afterfeeling","f-budget","f-prstatus","f-schedule","f-manuscript",
-                   "f-prototype","f-images","f-intent"],
-    "改訂・流用": ["f-title","f-brand","f-prodtypes","f-schedule","f-sourceurls","f-revise","f-images"],
-    "相談":       ["f-title","f-brand","f-consult","f-images"]
+    "新規": ["f-title","f-brand","f-prodtypes","f-purpose","f-target","f-usedate","f-useplace",
+             "f-outcome","f-afterfeeling","f-budget","f-prstatus","f-schedule","f-manuscript",
+             "f-prototype","f-images","f-intent"],
+    "改訂": ["f-title","f-schedule","f-sourceurls","f-revise","f-images"],
+    "転用": ["f-title","f-brand","f-prodtypes","f-schedule","f-sourceurls","f-revise","f-images"],
+    "相談": ["f-title","f-brand","f-consult","f-images"]
   };
   function applyOrder(type){
     var list = ORDER[type] || [];
@@ -1151,9 +1155,27 @@
       show(el, t.indexOf(current) !== -1);
     });
     applyOrder(current);
-    // 改訂・流用では制作物の種別の補助テキストを出さない
+    // 転用では「イベント・キャンペーン」「その他」を選択肢から外す（V1-5.6）
     var pt = $("prodTypes");
-    if (pt) pt.classList.toggle("no-sub", current === "改訂・流用");
+    if (pt){
+      pt.classList.toggle("hide-only-new", current === "転用");
+      if (current === "転用"){
+        pt.querySelectorAll(".only-new input:checked").forEach(function(c){ c.checked = false; });
+      }
+    }
+    // 元データ欄のラベル・必須表示を種別で切り替える（改訂＝必須／転用＝任意）
+    var srcLabel = $("srcUrlsLabel"), srcBadge = $("srcUrlsBadge"), srcCap = $("srcUrlsCaption");
+    if (srcLabel && srcBadge && srcCap){
+      if (current === "改訂"){
+        srcLabel.textContent = "改訂データが格納されている親フォルダのURL";
+        srcCap.textContent = "同じフォルダにデータ格納用のフォルダが作成されます。";
+        show(srcBadge, true);
+      } else {
+        srcLabel.textContent = "転用元のデータ";
+        srcCap.textContent = "元データの所在が不明の場合、現物の写真やスクリーンショットを下の「参考資料・画像を添付」に添えてください。";
+        show(srcBadge, false);
+      }
+    }
     clearErr();
     updateSubmitState();
     if (scroll) detailCard.scrollIntoView({behavior: scrollBehavior(), block: "start"});
@@ -1198,8 +1220,9 @@
     if (!current) miss.push("依頼種別を選択してください。");
     else {
       if (!val("title")) miss.push("依頼タイトルを入力してください。");
-      if (!val("brand")) miss.push("対象事業・部署を選択してください。");
-      if (current !== "相談" && collectProdTypes().length === 0) miss.push("制作物の種別を1つ以上選択してください。");
+      if (current !== "改訂" && !val("brand")) miss.push("対象事業・部署を選択してください。");
+      if ((current === "新規" || current === "転用") && collectProdTypes().length === 0) miss.push("制作物の種別を選択してください。");
+      if (current === "改訂" && collectSrcUrls().length === 0) miss.push("改訂データが格納されている親フォルダのURLを入力してください。");
       if (current === "相談" && !val("consultDetail")) miss.push("相談内容を入力してください。");
     }
     return miss;
@@ -1554,16 +1577,17 @@
       idempotencyKey: idemKey,
       category: current,
       title: val("title"),
-      brand: val("brand"),
       requesterDept: $("requesterDept").value.trim(),
       idToken: auth.idToken   // 氏名・メールはWorkerが署名検証後に取り出す
     };
+    // 改訂は対象事業・部署を聞かない（Workerが親フォルダから推定する・V1-5.6）
+    if (current !== "改訂") payload.brand = val("brand");
     if (imageData.length) payload.images = imageData.map(function(x){ return x.src; });
 
     if (current === "相談"){
       payload.consultDetail = val("consultDetail");
-    } else if (current === "改訂・流用"){
-      payload.productTypes = collectProdTypes();
+    } else if (current === "改訂" || current === "転用"){
+      if (current === "転用") payload.productTypes = collectProdTypes();
       var srcUrls = collectSrcUrls();
       if (srcUrls.length) payload.sourceUrls = srcUrls;
       var rm = val("reviseManuscript");

@@ -35,6 +35,11 @@ import {
   SEC_SEISAKU,
   SEC_SOUDAN,
   SEC_KAITEI,
+  SEC_TENYO,
+  SEC_KAITEI_LEGACY,
+  DRIVE_TYPE_SHELVES,
+  DRIVE_FOLDER_TO_BRAND,
+  NUMBERED_FOLDER_RE,
 } from "../src/worker.js";
 
 let pass = 0, fail = 0;
@@ -47,7 +52,9 @@ function section(title) { console.log("\n" + title); }
 // ---- 1. sectionsFor（種別→セクション） ----
 section("1. sectionsFor");
 t("新規＝与件整理＋制作内容", JSON.stringify(sectionsFor("新規")) === JSON.stringify(SEC_YOKEN.concat(SEC_SEISAKU)));
-t("改訂・流用＝改訂専用", sectionsFor("改訂・流用") === SEC_KAITEI);
+t("改訂＝改訂専用（親フォルダURL＋制作内容）", sectionsFor("改訂") === SEC_KAITEI);
+t("転用＝転用専用（転用元＋制作内容）", sectionsFor("転用") === SEC_TENYO);
+t("旧「改訂・流用」は互換セクション（旧フォームの過渡期用）", sectionsFor("改訂・流用") === SEC_KAITEI_LEGACY);
 t("相談＝相談のみ", sectionsFor("相談") === SEC_SOUDAN);
 t("不明な種別は新規と同じ構成", sectionsFor("").length === SEC_YOKEN.length + SEC_SEISAKU.length);
 // 2026-07-26 テキストFIX：依頼概要(overview)を撤去し、広報確認を制作物の概要の前へ移した
@@ -56,7 +63,8 @@ t("与件整理の先頭は依頼背景・課題感", SEC_YOKEN[0][0] === "purpo
 t("与件整理から issue（現状の課題）を撤去", !SEC_YOKEN.some(([k]) => k === "issue"));
 t("制作内容の先頭は広報チームの企画確認状況", SEC_SEISAKU[0][0] === "prStatus" && SEC_SEISAKU[0][1] === "広報チームの企画確認状況");
 t("制作内容から reference（参考・インスピレーション）を撤去", !SEC_SEISAKU.some(([k]) => k === "reference"));
-t("旧カテゴリ名「改訂」では改訂セクションにならない", sectionsFor("改訂") !== SEC_KAITEI);
+t("改訂の見出しはFigma第3次改修の設問名", SEC_KAITEI[0][1] === "改訂データが格納されている親フォルダのURL");
+t("転用の見出しはFigma第3次改修の設問名", SEC_TENYO[0][1] === "転用元のデータ");
 // 2026-08-01 見出しの改称（フォームの設問名に合わせる）
 t("prototype の見出しは「プロトタイプ」", SEC_SEISAKU.some(([k, l]) => k === "prototype" && l === "プロトタイプ"));
 t("intent の見出しは「プロジェクトに対する想い」", SEC_SEISAKU.some(([k, l]) => k === "intent" && l === "プロジェクトに対する想い"));
@@ -295,6 +303,23 @@ t("フォルダIDに重複がない（互換キーの1件を除く）", new Set(
 t("サブフォルダは3点セット", JSON.stringify(DRIVE_SUBFOLDERS) === JSON.stringify(["01_支給素材", "02_作業データ", "03_納品データ"]));
 t("サブフォルダ名は番号順に並ぶ", [...DRIVE_SUBFOLDERS].sort().join(",") === DRIVE_SUBFOLDERS.join(","));
 
+section("14b. V1-5.6 種別フォルダ（棚）対応表・番号付きフォルダ判定");
+const shelfKeys = Object.keys(DRIVE_TYPE_SHELVES);
+t("棚は10種別すべてを持つ", shelfKeys.length === 10);
+t("棚名は「数字_種別名」で始まる", shelfKeys.every((k) => DRIVE_TYPE_SHELVES[k].replace(/^\d+_/, "").startsWith(k)));
+t("棚名の番号は01〜10で一意", new Set(shelfKeys.map((k) => DRIVE_TYPE_SHELVES[k].slice(0, 2))).size === 10);
+t("先頭はイベント・キャンペーン", DRIVE_TYPE_SHELVES["イベント・キャンペーン"] === "01_イベント・キャンペーン");
+t("その他の棚は（基本的に使用しない）付き", DRIVE_TYPE_SHELVES["その他"] === "10_その他（基本的に使用しない）");
+t("旧名KV・アイキャッチは棚に無い", !("KV・アイキャッチ" in DRIVE_TYPE_SHELVES));
+t("逆引き表がCRAZYのIDを正式名に解決する（互換キーに負けない）",
+  DRIVE_FOLDER_TO_BRAND[DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・全社会議・自社HP等に関する制作物"]] ===
+  "CRAZY｜全社周年・全社会議・自社HP等に関する制作物");
+t("逆引き表は18フォルダぶん", Object.keys(DRIVE_FOLDER_TO_BRAND).length === 18);
+t("no00001_… は番号付きフォルダ", NUMBERED_FOLDER_RE.test("no00001_夏フェア"));
+t("[IWAI-婚礼]_no00005_… も番号付きフォルダ（相談発）", NUMBERED_FOLDER_RE.test("[IWAI-婚礼]_no00005_看板の相談"));
+t("番号のない旧フォルダは対象外", !NUMBERED_FOLDER_RE.test("営業資料A") && !NUMBERED_FOLDER_RE.test("2025_周年ロゴ"));
+t("no123（5桁未満）は対象外", !NUMBERED_FOLDER_RE.test("no123_x"));
+
 section("15. V1-5 起票番号のNotion書き込み");
 const propsSeq = buildNotionProperties({ title: "テスト", category: "新規", brand: "IWAI-婚礼｜婚礼に関する制作物", seqLabel: "no00007" });
 t("起票番号をrich_textで書く", propsSeq["起票番号"].rich_text[0].text.content === "no00007");
@@ -316,11 +341,21 @@ t("採番は対象事業・部署で絞り込む", /filter: \{ property: "対象
 t("採番は起票番号の降順1件で最大値を取る", /direction: "descending"[\s\S]{0,60}page_size: 1/.test(src));
 t("Drive失敗時も送信を止めない（createDriveFolderForRequestがthrowしない）",
   /async function createDriveFolderForRequest[\s\S]*?\n\}/.test(src) &&
-  /createDriveFolderForRequest[\s\S]{0,2000}?catch \(e\) \{[\s\S]{0,120}?out\.reason/.test(src));
+  /createDriveFolderForRequest[\s\S]{0,5000}?catch \(e\) \{[\s\S]{0,120}?out\.reason/.test(src));
 t("フォルダURLはNotionの「データ格納先」へ書き戻す", src.indexOf("patchNotionStorageUrl") !== -1);
 t("相談はフラット配置（略称を先頭に付ける）", /"\[" \+ brandShortName\(brand\) \+ "\]_" \+ seqLabel/.test(src));
-t("改訂は2階層で止める（親をたどる上限がある）", /resolveRevisionParent[\s\S]{0,900}?i < 5/.test(src));
+t("改訂の親解決は位置非依存（resolveKaiteiParent）", src.indexOf("resolveKaiteiParent") !== -1 && src.indexOf("resolveRevisionParent") === -1);
+t("改訂は番号付き入れ子を1段引き上げる（2階層で止める）", /resolveKaiteiParent[\s\S]{0,1500}?NUMBERED_FOLDER_RE\.test/.test(src));
 t("改訂元は sourceUrls（フォームの設問名）を読む", src.indexOf("data.sourceUrls") !== -1);
+t("改訂は親から事業を推定して採番する", src.indexOf("inferBrandFromFolder") !== -1);
+t("新規・転用は種別フォルダ（棚）に振り分ける", src.indexOf("resolveTypeShelf") !== -1);
+t("転用の元URLは置き場所に使わない（改訂と旧種別のみ親解決）", !/category === "転用"[\s\S]{0,300}?resolveKaiteiParent/.test(src));
+t("改訂でフォルダを作れなかったら本文に注記を残す", src.indexOf("appendNotionNote") !== -1);
+t("棚は名前検索で解決し、無ければ正式名で作る", /resolveTypeShelf[\s\S]{0,900}?createDriveFolder\(canonical/.test(src));
+t("診断エンドポイント /drive/health がある", src.indexOf('"/drive/health"') !== -1);
+t("診断は秘密鍵の中身を返さない（長さと有無のみ）", !/診断[\s\S]{0,3000}?pem\s*\}/.test(src) && src.indexOf("詳細: pem") === -1);
+t("診断はテストフォルダを後片付けする", /_接続テスト[\s\S]{0,1200}?trashed: true/.test(src));
+t("共有ドライブで権限不足になるDELETEを使わない", src.indexOf('method: "DELETE"') === -1);
 
 // ---- 結果 ----
 console.log("\n============================");

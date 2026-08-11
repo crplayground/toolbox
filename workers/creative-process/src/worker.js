@@ -77,8 +77,19 @@ const SEC_SEISAKU = [
 const SEC_SOUDAN = [
   ["consultDetail", "相談内容"],
 ];
-// 改訂・流用は専用の最小構成（元データ＝URL配列／概要）
+// 【V1-5.6】「改訂・流用」を「改訂」「転用」に分離（Figma第3次改修に追従）。
+//   改訂＝同じものを直す（親フォルダURL必須・その中にフォルダを作る）
+//   転用＝既存データをもとに別のものを作る（新規と同じ置き場・元URLは記録のみ）
 const SEC_KAITEI = [
+  ["sourceUrls", "改訂データが格納されている親フォルダのURL"],
+  ["reviseManuscript", "制作内容"],
+];
+const SEC_TENYO = [
+  ["sourceUrls", "転用元のデータ"],
+  ["reviseManuscript", "制作内容"],
+];
+// 【互換】旧カテゴリ（2026-08-11以前のフォームが送る値）。デプロイの過渡期用に残す。
+const SEC_KAITEI_LEGACY = [
   ["sourceUrls", "改訂・流用元のデータ"],
   ["reviseManuscript", "制作内容"],
 ];
@@ -86,7 +97,9 @@ const SEC_KAITEI = [
 // 依頼種別 → 表示する長文セクション
 function sectionsFor(category) {
   if (category === "相談") return SEC_SOUDAN;
-  if (category === "改訂・流用") return SEC_KAITEI;
+  if (category === "改訂") return SEC_KAITEI;
+  if (category === "転用") return SEC_TENYO;
+  if (category === "改訂・流用") return SEC_KAITEI_LEGACY;
   // 新規は与件整理＋制作内容
   return SEC_YOKEN.concat(SEC_SEISAKU);
 }
@@ -547,7 +560,7 @@ async function createNotionPage(data, imageUploads, env) {
 // ※スレッド化・自動メンション・投稿URLのNotion記録はBotトークンが必要（フェーズ4本体）。
 
 // 依頼カテゴリ→絵文字（ひと目で種別が分かるように）
-const CATEGORY_EMOJI = { "新規": "🎨", "改訂・流用": "♻️", "相談": "💬" };
+const CATEGORY_EMOJI = { "新規": "🎨", "改訂": "♻️", "転用": "🔁", "改訂・流用": "♻️", "相談": "💬" };
 
 function buildSlackText(data, notionUrl, firstRequest) {
   const productTypes = asProductTypeList(data.productTypes);
@@ -653,11 +666,16 @@ async function postToSlack(data, notionUrl, firstRequest, env) {
 // 案件フォルダ（＋3点セットのサブフォルダ）を作り、そのURLを
 // Notion の「データ格納先」プロパティに書き戻す。
 //
-// 置き場所のルール：
-//   新規       … 02_案件管理/<対象事業・部署>/no00001_タイトル
-//   改訂・流用 … 上の案件フォルダの中に no00033_タイトル（＝2階層で止める）
-//                 ※「改訂・流用元のデータ」に貼られたDrive URLから親を特定する。
-//                   URLが無い／解析できない／別ブランドを指している場合は新規と同じ位置に作る。
+// 置き場所のルール（V1-5.6で改訂）：
+//   新規・転用 … 02_案件管理/<対象事業・部署>/<種別フォルダ>/no00001_タイトル
+//                 ※種別フォルダ＝「01_イベント・キャンペーン」〜「10_その他（基本的に使用しない）」。
+//                   制作物の種別（単一選択）で振り分ける。棚が見つからなければ作る。
+//                 ※転用の「転用元のデータ」URLは記録のみ。置き場所には使わない（元と並列に置く）。
+//   改訂       … 「改訂データが格納されている親フォルダのURL」（必須）が指すフォルダの中に作る。
+//                 貼られた場所がどこであっても従う＝位置非依存（02_案件管理の外でもよい）。
+//                 ただし貼られたのが番号付き案件フォルダの中の番号付きフォルダなら1段引き上げる
+//                 （＝入れ子は2階層で止める）。親がたどれない場合はフォルダを作らず、
+//                 Notion本文に「⚠️作成できなかった」旨を1行残す。
 //   相談       … 02_案件管理/相談/[対象事業・部署の略称]_no00005_タイトル（フラット）
 //
 // 起票番号（no00001）のルール：
@@ -666,6 +684,9 @@ async function postToSlack(data, notionUrl, firstRequest, env) {
 //     「起票番号」の最大値を取って +1 する（＝Notionが唯一の正本という方針に合わせる）。
 //   - 常に5桁ゼロ埋め。文字列のまま比較しても数値順になる。
 //   - Notionページを消すと欠番になる（最大値方式のため）。運用上の実害はない。
+//   - 改訂はフォームに「対象事業・部署」が無い。親フォルダから事業フォルダをさかのぼって
+//     特定できたときだけ採番し、Notionの「対象事業・部署」にも書き戻す。
+//     特定できないとき（02_案件管理の外など）は番号なし＝フォルダ名はタイトルのみ。
 //
 // 失敗したときの方針：
 //   Drive処理は「任意・失敗しても致命にしない」。フォルダが作れなくても
@@ -700,6 +721,32 @@ const DRIVE_BRAND_FOLDERS = {
 
 // 「相談」の置き場。02_案件管理 直下（2026-08-06作成）。
 const DRIVE_SOUDAN_FOLDER_ID = "1_YbqkpMimOFM5_zMF91YqQqw2jH38zvu";
+
+// フォルダID → 対象事業・部署 の逆引き（改訂の事業推定に使う）。
+// 互換キー（旧CRAZY名）は同じIDなので、先に定義された正式名が勝つ。
+const DRIVE_FOLDER_TO_BRAND = {};
+for (const [brand, id] of Object.entries(DRIVE_BRAND_FOLDERS)) {
+  if (!DRIVE_FOLDER_TO_BRAND[id]) DRIVE_FOLDER_TO_BRAND[id] = brand;
+}
+
+// 【V1-5.6】制作物の種別 → 事業フォルダ直下の種別フォルダ（棚）の正式名。
+// 実際の解決は名前検索で行う（brandFolderId配下から「数字_種別名…」に一致する子を探す）ため、
+// Drive側で番号や補足が変わっても種別名が先頭に残っていれば追従できる。見つからなければこの名前で作る。
+const DRIVE_TYPE_SHELVES = {
+  "イベント・キャンペーン": "01_イベント・キャンペーン",
+  "スライド・ePDF": "02_スライド・ePDF",
+  "バナー・告知画像": "03_バナー・告知画像",
+  "LP・WEBサイト": "04_LP・WEBサイト",
+  "チラシ・ポスター・パネル": "05_チラシ・ポスター・パネル",
+  "リーフレット・パンフレット": "06_リーフレット・パンフレット",
+  "看板・サイン": "07_看板・サイン",
+  "ペーパーアイテム": "08_ペーパーアイテム",
+  "招待状・紙袋・ノベルティ": "09_招待状・紙袋・ノベルティ",
+  "その他": "10_その他（基本的に使用しない）",
+};
+
+// 番号付き案件フォルダの名前パターン（no00001_… / [IWAI-婚礼]_no00005_…）
+const NUMBERED_FOLDER_RE = /^(\[[^\]]*\]_)?no\d{5,}_/;
 
 // 案件フォルダの中に必ず作るサブフォルダ（順序＝作成順＝名前順）
 const DRIVE_SUBFOLDERS = ["01_支給素材", "02_作業データ", "03_納品データ"];
@@ -882,12 +929,43 @@ async function getDriveFile(fileId, token) {
   );
 }
 
-// 改訂・流用の親を決める。貼られたURLが「改訂フォルダ」だった場合は親をたどり、
-// ブランド直下の案件フォルダまで引き上げる（＝入れ子は2階層で止める）。
-// たどれない・別ブランドを指している場合は null を返し、呼び出し側が新規と同じ扱いにする。
-async function resolveRevisionParent(sourceUrl, brandFolderId, token) {
+// 事業フォルダ直下の子フォルダ一覧（棚の名前解決に使う）
+async function listDriveChildFolders(parentId, token) {
+  const q = "'" + parentId + "' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false";
+  const body = await driveFetch(
+    DRIVE_API + "?q=" + encodeURIComponent(q) +
+      "&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id,name)&pageSize=100",
+    { method: "GET" },
+    token,
+  );
+  return body.files || [];
+}
+
+// 【V1-5.6】種別フォルダ（棚）を名前で解決する。無ければ正式名で作る。
+// 一致判定＝「先頭の数字_を外した残りが種別名で始まる」。
+//   例: 「10_その他（基本的に使用しない）」→「その他（…」→「その他」で始まる → 一致。
+// 種別が未知（対応表に無い）の場合は null（呼び出し側が事業フォルダ直下に置く）。
+async function resolveTypeShelf(brandFolderId, typeName, token) {
+  const canonical = DRIVE_TYPE_SHELVES[String(typeName || "").trim()];
+  if (!canonical) return null;
+  try {
+    const children = await listDriveChildFolders(brandFolderId, token);
+    const hit = children.find((f) => String(f.name || "").replace(/^\d+_/, "").startsWith(String(typeName).trim()));
+    if (hit) return hit.id;
+  } catch {
+    // 一覧に失敗しても作成は試みる
+  }
+  const made = await createDriveFolder(canonical, brandFolderId, token);
+  return made.id;
+}
+
+// 【V1-5.6】改訂の親を決める（位置非依存）。
+// 貼られたURLのフォルダをそのまま親にする。ファイルURLならその入れ物から始める。
+// 「番号付き案件フォルダの中の番号付きフォルダ」を指していたら1段引き上げる（入れ子は2階層で止める）。
+// たどれない場合は null（呼び出し側はフォルダを作らず、Notion本文に注記を残す）。
+async function resolveKaiteiParent(sourceUrl, token) {
   const startId = extractDriveFolderId(sourceUrl);
-  if (!startId || !brandFolderId) return null;
+  if (!startId) return null;
 
   let node;
   try {
@@ -895,7 +973,6 @@ async function resolveRevisionParent(sourceUrl, brandFolderId, token) {
   } catch {
     return null;
   }
-  // フォルダのURLではなくファイルのURLが貼られていたら、その入れ物から始める
   if (node.mimeType !== "application/vnd.google-apps.folder") {
     const up = (node.parents || [])[0];
     if (!up) return null;
@@ -906,19 +983,40 @@ async function resolveRevisionParent(sourceUrl, brandFolderId, token) {
     }
   }
 
-  // 最大5段さかのぼって「親がブランドフォルダ」になる階層を探す
-  for (let i = 0; i < 5; i++) {
-    const parent = (node.parents || [])[0];
-    if (!parent) return null;
-    if (parent === brandFolderId) return node.id;
-    if (parent === DRIVE_SOUDAN_FOLDER_ID) return node.id; // 相談から発生した案件
+  // 番号付き in 番号付き なら、案件フォルダの根元まで引き上げる（最大3段の保険）
+  for (let i = 0; i < 3; i++) {
+    if (!NUMBERED_FOLDER_RE.test(String(node.name || ""))) break;
+    const up = (node.parents || [])[0];
+    if (!up) break;
+    let parent;
     try {
-      node = await getDriveFile(parent, token);
+      parent = await getDriveFile(up, token);
     } catch {
-      return null;
+      break;
+    }
+    if (!NUMBERED_FOLDER_RE.test(String(parent.name || ""))) break;
+    node = parent;
+  }
+  return node; // { id, name, parents }
+}
+
+// 【V1-5.6】フォルダから親をさかのぼって「対象事業・部署」を推定する（改訂の採番用）。
+// 02_案件管理の外を指している場合は空文字（＝番号なしで運用する）。
+async function inferBrandFromFolder(node, token) {
+  let cur = node;
+  for (let i = 0; i < 6; i++) {
+    if (!cur) return "";
+    if (DRIVE_FOLDER_TO_BRAND[cur.id]) return DRIVE_FOLDER_TO_BRAND[cur.id];
+    const up = (cur.parents || [])[0];
+    if (!up) return "";
+    if (DRIVE_FOLDER_TO_BRAND[up]) return DRIVE_FOLDER_TO_BRAND[up];
+    try {
+      cur = await getDriveFile(up, token);
+    } catch {
+      return "";
     }
   }
-  return null;
+  return "";
 }
 
 // Notion から「対象事業・部署＝brand」の最大 起票番号 を取り、+1 した番号を返す。
@@ -959,36 +1057,82 @@ async function createProjectFolderTree(name, parentId, token) {
 }
 
 // 1件ぶんのフォルダ作成。呼び出し側は try/catch 不要（必ず結果オブジェクトを返す）。
+// 戻り値: { created, url, reason, seqLabel, inferredBrand }
+//   - seqLabel      … 実際にフォルダ名へ使った起票番号（改訂はここで採番するため呼び出し側に返す）
+//   - inferredBrand … 改訂で親フォルダから推定できた対象事業・部署（Notionへ書き戻す用）
 async function createDriveFolderForRequest(data, seqLabel, env) {
-  const out = { created: false, url: "", reason: "" };
+  const out = { created: false, url: "", reason: "", seqLabel: seqLabel || "", inferredBrand: "" };
   if (!(env.GOOGLE_SA_EMAIL || "").trim() || !env.GOOGLE_SA_PRIVATE_KEY) {
     out.reason = "Drive未設定（GOOGLE_SA_EMAIL / GOOGLE_SA_PRIVATE_KEY）";
     return out;
   }
+
   const brand = String(data.brand || "").trim();
-  const brandFolderId = DRIVE_BRAND_FOLDERS[brand];
-  if (!brandFolderId) {
-    out.reason = "対象事業・部署に対応するフォルダが見つかりません: " + (brand || "（未選択）");
-    return out;
-  }
+  const category = String(data.category || "").trim();
 
   try {
     const token = await getDriveAccessToken(env);
     const safeTitle = sanitizeFolderName(data.title);
 
+    // 改訂：貼られた親フォルダの中に作る（位置非依存・brand不要）
+    if (category === "改訂") {
+      const parent = await resolveKaiteiParent(data.sourceUrls, token);
+      if (!parent) {
+        out.reason = "改訂元の親フォルダにアクセスできませんでした（URLの誤り・権限不足の可能性）";
+        return out;
+      }
+      // 親から事業を推定できたときだけ採番する
+      out.inferredBrand = await inferBrandFromFolder(parent, token);
+      if (out.inferredBrand) {
+        try {
+          out.seqLabel = formatSeq(await nextSeqNumber(env, out.inferredBrand));
+        } catch {
+          out.seqLabel = "";
+        }
+      }
+      const name = out.seqLabel ? out.seqLabel + "_" + safeTitle : safeTitle;
+      out.url = await createProjectFolderTree(name, parent.id, token);
+      out.created = true;
+      return out;
+    }
+
+    // ここから先（新規・転用・相談・旧「改訂・流用」）は brand が必須
+    const brandFolderId = DRIVE_BRAND_FOLDERS[brand];
+    if (!brandFolderId) {
+      out.reason = "対象事業・部署に対応するフォルダが見つかりません: " + (brand || "（未選択）");
+      return out;
+    }
+
     // 相談：02_案件管理/相談/ にフラットに置く。どの事業か分かるよう略称を前に付ける。
-    if (data.category === "相談") {
+    if (category === "相談") {
       const name = "[" + brandShortName(brand) + "]_" + seqLabel + "_" + safeTitle;
       out.url = await createProjectFolderTree(name, DRIVE_SOUDAN_FOLDER_ID, token);
       out.created = true;
       return out;
     }
 
-    // 改訂・流用：元データのURLが解けたら、その案件フォルダの中に入れる
+    // 【互換】旧「改訂・流用」：元データのURLが解けたら、その中に入れる（旧挙動の踏襲）
+    if (category === "改訂・流用") {
+      let parentId = brandFolderId;
+      const revParent = await resolveKaiteiParent(data.sourceUrls, token);
+      if (revParent) parentId = revParent.id;
+      out.url = await createProjectFolderTree(seqLabel + "_" + safeTitle, parentId, token);
+      out.created = true;
+      return out;
+    }
+
+    // 新規・転用：事業フォルダ直下の種別フォルダ（棚）の中に作る。
+    // 棚が解決できない（種別未選択・未知の種別）ときは事業フォルダ直下に置く。
+    // ※転用の「転用元のデータ」URLは置き場所に使わない（元と並列に置く）＝V1-5.6確定
+    const productTypes = asProductTypeList(data.productTypes);
     let parentId = brandFolderId;
-    if (data.category === "改訂・流用") {
-      const revParent = await resolveRevisionParent(data.sourceUrls, brandFolderId, token);
-      if (revParent) parentId = revParent;
+    if (productTypes.length) {
+      try {
+        const shelfId = await resolveTypeShelf(brandFolderId, productTypes[0], token);
+        if (shelfId) parentId = shelfId;
+      } catch {
+        // 棚の解決に失敗しても事業フォルダ直下に作る（フォルダなしよりよい）
+      }
     }
     out.url = await createProjectFolderTree(seqLabel + "_" + safeTitle, parentId, token);
     out.created = true;
@@ -999,9 +1143,17 @@ async function createDriveFolderForRequest(data, seqLabel, env) {
   }
 }
 
-// 作ったフォルダのURLを Notion の「データ格納先」に書き戻す。
-async function patchNotionStorageUrl(pageId, url, env) {
+// 作ったフォルダのURL等を Notion のプロパティに書き戻す。
+// extra（任意）: { seqLabel, brand } … 改訂でDrive処理中に確定した値を追記する。
+async function patchNotionStorageUrl(pageId, url, env, extra) {
   const version = (env.NOTION_VERSION || "2022-06-28").trim();
+  const properties = { [DRIVE_STORAGE_PROP]: { url } };
+  if (extra && extra.seqLabel) {
+    properties[DRIVE_SEQ_PROP] = { rich_text: [{ text: { content: extra.seqLabel } }] };
+  }
+  if (extra && extra.brand) {
+    properties["対象事業・部署"] = { select: { name: extra.brand } };
+  }
   const res = await fetch("https://api.notion.com/v1/pages/" + pageId, {
     method: "PATCH",
     headers: {
@@ -1009,11 +1161,36 @@ async function patchNotionStorageUrl(pageId, url, env) {
       "Notion-Version": version,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ properties: { [DRIVE_STORAGE_PROP]: { url } } }),
+    body: JSON.stringify({ properties }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error("データ格納先の書き戻しに失敗: " + (body.message || res.status));
+  }
+}
+
+// ページ本文の末尾に注記を1行足す（改訂でフォルダを作れなかったときの目印）。
+// 失敗しても投げない（本文の注記は補助であり、依頼の成立を妨げない）。
+async function appendNotionNote(pageId, text, env) {
+  try {
+    const version = (env.NOTION_VERSION || "2022-06-28").trim();
+    await fetch("https://api.notion.com/v1/blocks/" + pageId + "/children", {
+      method: "PATCH",
+      headers: {
+        Authorization: "Bearer " + env.NOTION_TOKEN,
+        "Notion-Version": version,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        children: [{
+          object: "block",
+          type: "paragraph",
+          paragraph: { rich_text: [{ type: "text", text: { content: String(text).slice(0, 2000) } }] },
+        }],
+      }),
+    });
+  } catch {
+    // 何もしない
   }
 }
 
@@ -1129,8 +1306,10 @@ export default {
       // ②-a【V1-5】起票番号を採番する。
       //    対象事業・部署ごとの連番で、発番元は Notion（＝唯一の正本）。
       //    採番に失敗しても送信は止めない（番号なしでページだけ作る）。
+      //    【V1-5.6】改訂はフォームに「対象事業・部署」が無いため、ここでは採番しない。
+      //    Drive処理の中で親フォルダから事業を推定できたときだけ採番し、あとからNotionへ書き戻す。
       let seqLabel = "";
-      if (data.brand) {
+      if (data.brand && data.category !== "改訂") {
         try {
           seqLabel = formatSeq(await nextSeqNumber(env, data.brand));
         } catch {
@@ -1149,15 +1328,29 @@ export default {
 
       // ②-c【V1-5】Driveに案件フォルダ（＋3点セット）を作り、URLを「データ格納先」に書き戻す。
       //    任意処理。失敗しても依頼そのものは成立させ、依頼者に再送信させない。
-      let drive = { created: false, url: "", reason: "起票番号が採れなかったためスキップ" };
-      if (seqLabel) {
+      //    【V1-5.6】改訂は起票番号なしでもDrive処理を実行する（採番はDrive処理の中で行う）。
+      let drive = { created: false, url: "", reason: "起票番号が採れなかったためスキップ", seqLabel, inferredBrand: "" };
+      if (seqLabel || data.category === "改訂") {
         drive = await createDriveFolderForRequest(data, seqLabel, env);
         if (drive.created && drive.url) {
+          seqLabel = drive.seqLabel || seqLabel;
           try {
-            await patchNotionStorageUrl(notion.pageId, drive.url, env);
+            await patchNotionStorageUrl(notion.pageId, drive.url, env, {
+              // 改訂でDrive処理中に確定した値だけ追記する（それ以外は作成時に書いてある）
+              seqLabel: data.category === "改訂" ? drive.seqLabel : "",
+              brand: data.category === "改訂" ? drive.inferredBrand : "",
+            });
           } catch (e) {
             drive.reason = String(e.message || e);
           }
+        } else if (data.category === "改訂" && !drive.created) {
+          // フォルダを作れなかったことをページ本文に残す（ユウキが後から手で対処できるように）
+          await appendNotionNote(
+            notion.pageId,
+            "⚠️ 改訂元の親フォルダにアクセスできなかったため、データ格納用フォルダは自動作成されていません（" +
+              (drive.reason || "原因不明") + "）。お手数ですが手動で作成してください。",
+            env,
+          );
         }
       }
 
@@ -1215,6 +1408,76 @@ export default {
       return htmlResponse(buildGuideHtml(), 410);
     }
 
+    // ④【V1-5・診断用】GET /drive/health
+    //    Drive連携だけを切り離して、どの段階で失敗しているかを日本語で返す。
+    //    実際にフォルダを1つ作って消すところまで試すので、権限不足も検出できる。
+    //    秘密情報は返さない（メールアドレスの先頭だけ・鍵は長さのみ）。
+    if (request.method === "GET" && path === "/drive/health") {
+      const steps = [];
+      const note = (label, ok, detail) => steps.push({ 手順: label, 結果: ok ? "OK" : "NG", 詳細: detail || "" });
+      const email = (env.GOOGLE_SA_EMAIL || "").trim();
+      const pem = env.GOOGLE_SA_PRIVATE_KEY || "";
+
+      note("① GOOGLE_SA_EMAIL", !!email, email ? email.split("@")[0] + "@…" : "未設定");
+      note(
+        "② GOOGLE_SA_PRIVATE_KEY",
+        pem.length > 1000 && pem.indexOf("BEGIN PRIVATE KEY") !== -1 && pem.indexOf("END PRIVATE KEY") !== -1,
+        "長さ " + pem.length + "文字／BEGIN " + (pem.indexOf("BEGIN PRIVATE KEY") !== -1) +
+          "／END " + (pem.indexOf("END PRIVATE KEY") !== -1) +
+          "／改行 " + ((pem.match(/\n/g) || []).length) + "個／\\nリテラル " + ((pem.match(/\\n/g) || []).length) + "個",
+      );
+      if (!email || !pem) {
+        return json({ ok: false, 診断: steps, 次の一手: "Secretが未登録です。npx wrangler secret put で登録してください" }, 200, request, env);
+      }
+
+      let token = "";
+      try {
+        token = await getDriveAccessToken(env);
+        note("③ アクセストークンの取得", true, "成功");
+      } catch (e) {
+        note("③ アクセストークンの取得", false, String(e.message || e));
+        return json({ ok: false, 診断: steps, 次の一手: "鍵の中身が壊れているか、サービスアカウントが無効です。STEP5をやり直してください" }, 200, request, env);
+      }
+
+      try {
+        const parent = await getDriveFile("1T3J-bOCpWrCKDlOwb3-wFIImg6mgNuFz", token);
+        note("④ 02_案件管理 の読み取り", true, parent.name);
+      } catch (e) {
+        const msg = String(e.message || e);
+        note("④ 02_案件管理 の読み取り", false, msg);
+        // 原因が2つあり、対処が正反対なので文言を出し分ける
+        const hint = /has not been used in project|is disabled|accessNotConfigured/.test(msg)
+          ? "GCPで Google Drive API が有効化されていません。上記URLを開いて「有効にする」を押し、2〜3分待ってから再実行してください"
+          : "共有ドライブ CRAZY CREATIVE にサービスアカウントが追加されていません（STEP4）";
+        return json({ ok: false, 診断: steps, 次の一手: hint }, 200, request, env);
+      }
+
+      let tempId = "";
+      try {
+        const tmp = await createDriveFolder("_接続テスト_自動削除されます", DRIVE_SOUDAN_FOLDER_ID, token);
+        tempId = tmp.id;
+        note("⑤ フォルダの作成", true, tmp.name);
+      } catch (e) {
+        note("⑤ フォルダの作成", false, String(e.message || e));
+        return json({ ok: false, 診断: steps, 次の一手: "読めるが書けない状態です。共有ドライブでの権限を「コンテンツ管理者」にしてください（STEP4）" }, 200, request, env);
+      }
+
+      try {
+        // 共有ドライブでは DELETE（完全削除）は「管理者」権限が要る。
+        // 「コンテンツ管理者」でもできる “ゴミ箱に入れる”（trashed:true）を使う。
+        const res = await fetch(DRIVE_API + "/" + tempId + "?supportsAllDrives=true", {
+          method: "PATCH",
+          headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+          body: JSON.stringify({ trashed: true }),
+        });
+        note("⑥ テストフォルダの後片付け", res.ok, res.ok ? "ゴミ箱へ移動済み" : "HTTP " + res.status + "（相談フォルダに残っています。手で消してください）");
+      } catch (e) {
+        note("⑥ テストフォルダの後片付け", false, String(e.message || e));
+      }
+
+      return json({ ok: true, 診断: steps, 次の一手: "Drive連携は正常です。フォームから送信してください" }, 200, request, env);
+    }
+
     // 稼働確認
     if (request.method === "GET" && path === "/") {
       return htmlResponse("creative-process Worker は稼働中です。");
@@ -1256,4 +1519,10 @@ export {
   SEC_SEISAKU,
   SEC_SOUDAN,
   SEC_KAITEI,
+  // 【V1-5.6】改訂／転用の分離・種別フォルダ（棚）
+  SEC_TENYO,
+  SEC_KAITEI_LEGACY,
+  DRIVE_TYPE_SHELVES,
+  DRIVE_FOLDER_TO_BRAND,
+  NUMBERED_FOLDER_RE,
 };
