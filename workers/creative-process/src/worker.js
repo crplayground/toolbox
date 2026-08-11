@@ -81,7 +81,7 @@ const SEC_SOUDAN = [
 //   改訂＝同じものを直す（親フォルダURL必須・その中にフォルダを作る）
 //   転用＝既存データをもとに別のものを作る（新規と同じ置き場・元URLは記録のみ）
 const SEC_KAITEI = [
-  ["sourceUrls", "改訂データが格納されている親フォルダのURL"],
+  ["sourceUrls", "改訂するデータの親フォルダのURL"],
   ["reviseManuscript", "制作内容"],
 ];
 const SEC_TENYO = [
@@ -671,11 +671,12 @@ async function postToSlack(data, notionUrl, firstRequest, env) {
 //                 ※種別フォルダ＝「01_イベント・キャンペーン」〜「10_その他（基本的に使用しない）」。
 //                   制作物の種別（単一選択）で振り分ける。棚が見つからなければ作る。
 //                 ※転用の「転用元のデータ」URLは記録のみ。置き場所には使わない（元と並列に置く）。
-//   改訂       … 「改訂データが格納されている親フォルダのURL」（必須）が指すフォルダの中に作る。
-//                 貼られた場所がどこであっても従う＝位置非依存（02_案件管理の外でもよい）。
-//                 ただし貼られたのが番号付き案件フォルダの中の番号付きフォルダなら1段引き上げる
-//                 （＝入れ子は2階層で止める）。親がたどれない場合はフォルダを作らず、
-//                 Notion本文に「⚠️作成できなかった」旨を1行残す。
+//   改訂       … 「改訂するデータの親フォルダのURL」（必須）が指すフォルダの中に作る。
+//                 【V1-5.7】親は 02_案件管理 の事業フォルダ（または相談）配下に限る。
+//                 外を指している・アクセスできない場合は /submit の事前チェックが400で弾き、
+//                 Notionページ自体を作らない（＝依頼種別「転用」への切り替えを促す）。
+//                 貼られたのが番号付き案件フォルダの中の番号付きフォルダなら1段引き上げる
+//                 （＝入れ子は2階層で止める）。
 //   相談       … 02_案件管理/相談/[対象事業・部署の略称]_no00005_タイトル（フラット）
 //
 // 起票番号（no00001）のルール：
@@ -684,9 +685,10 @@ async function postToSlack(data, notionUrl, firstRequest, env) {
 //     「起票番号」の最大値を取って +1 する（＝Notionが唯一の正本という方針に合わせる）。
 //   - 常に5桁ゼロ埋め。文字列のまま比較しても数値順になる。
 //   - Notionページを消すと欠番になる（最大値方式のため）。運用上の実害はない。
-//   - 改訂はフォームに「対象事業・部署」が無い。親フォルダから事業フォルダをさかのぼって
-//     特定できたときだけ採番し、Notionの「対象事業・部署」にも書き戻す。
-//     特定できないとき（02_案件管理の外など）は番号なし＝フォルダ名はタイトルのみ。
+//   - 改訂はフォームに「対象事業・部署」が無い。親フォルダから事業フォルダをさかのぼって特定し、
+//     採番のうえ Notion の「起票番号」「対象事業・部署」にも書き戻す。
+//     相談フォルダ配下の案件はフォルダ名の [略称]_ から事業を引く。
+//     【V1-5.7】特定できない親（02_案件管理の外）は事前チェックで送信ごと弾くため、ここには来ない。
 //
 // 失敗したときの方針：
 //   Drive処理は「任意・失敗しても致命にしない」。フォルダが作れなくても
@@ -718,6 +720,9 @@ const DRIVE_BRAND_FOLDERS = {
   "MT-館内｜館内備品等に関する制作物": "1y63-N3ihy2OqOnZS7P1R4HzE_sH8v0ii",
   "その他｜AI推進・BD・食企画・経営企画等に関する制作物": "1qA1BqUdsxqwSqddQf66fLFTf4taWzj16",
 };
+
+// 「02_案件管理」のルート。改訂の親フォルダはこの配下に限る（V1-5.7）。診断でも使う。
+const DRIVE_KANRI_FOLDER_ID = "1T3J-bOCpWrCKDlOwb3-wFIImg6mgNuFz";
 
 // 「相談」の置き場。02_案件管理 直下（2026-08-06作成）。
 const DRIVE_SOUDAN_FOLDER_ID = "1_YbqkpMimOFM5_zMF91YqQqw2jH38zvu";
@@ -1000,16 +1005,36 @@ async function resolveKaiteiParent(sourceUrl, token) {
   return node; // { id, name, parents }
 }
 
+// 略称（[IWAI-婚礼] の中身）→ 対象事業・部署の正式名。相談フォルダ配下の案件の事業推定に使う。
+function brandFromShortName(short) {
+  const s = String(short || "").trim();
+  if (!s) return "";
+  for (const brand of Object.keys(DRIVE_BRAND_FOLDERS)) {
+    if (brandShortName(brand) === s) return brand;
+  }
+  return "";
+}
+
 // 【V1-5.6】フォルダから親をさかのぼって「対象事業・部署」を推定する（改訂の採番用）。
-// 02_案件管理の外を指している場合は空文字（＝番号なしで運用する）。
+// 事業フォルダ配下なら、そのフォルダIDから逆引きする。
+// 相談フォルダ配下なら、起点フォルダ名の [略称]_ から逆引きする（相談発の案件の改訂）。
+// 02_案件管理の外を指している場合は空文字（V1-5.7＝呼び出し側が送信自体を400で弾く）。
 async function inferBrandFromFolder(node, token) {
   let cur = node;
   for (let i = 0; i < 6; i++) {
     if (!cur) return "";
     if (DRIVE_FOLDER_TO_BRAND[cur.id]) return DRIVE_FOLDER_TO_BRAND[cur.id];
+    if (cur.id === DRIVE_SOUDAN_FOLDER_ID) {
+      const m = /^\[([^\]]+)\]_/.exec(String(node.name || ""));
+      return brandFromShortName(m ? m[1] : "");
+    }
     const up = (cur.parents || [])[0];
     if (!up) return "";
     if (DRIVE_FOLDER_TO_BRAND[up]) return DRIVE_FOLDER_TO_BRAND[up];
+    if (up === DRIVE_SOUDAN_FOLDER_ID) {
+      const m = /^\[([^\]]+)\]_/.exec(String(node.name || ""));
+      return brandFromShortName(m ? m[1] : "");
+    }
     try {
       cur = await getDriveFile(up, token);
     } catch {
@@ -1074,15 +1099,23 @@ async function createDriveFolderForRequest(data, seqLabel, env) {
     const token = await getDriveAccessToken(env);
     const safeTitle = sanitizeFolderName(data.title);
 
-    // 改訂：貼られた親フォルダの中に作る（位置非依存・brand不要）
+    // 改訂：貼られた親フォルダの中に作る。
+    // 【V1-5.7】親の解決と事業の推定は /submit の事前チェックで済んでいる
+    // （02_案件管理の外は送信自体を400で弾く）。ここでは結果を受け取って作るだけ。
     if (category === "改訂") {
-      const parent = await resolveKaiteiParent(data.sourceUrls, token);
-      if (!parent) {
-        out.reason = "改訂元の親フォルダにアクセスできませんでした（URLの誤り・権限不足の可能性）";
-        return out;
+      let parentId = String(data._kaiteiParentId || "").trim();
+      out.inferredBrand = String(data._kaiteiBrand || "").trim();
+      if (!parentId) {
+        // 事前チェックを通らない経路（想定外）への保険。ここで解決を試みる。
+        const parent = await resolveKaiteiParent(data.sourceUrls, token);
+        if (!parent) {
+          out.reason = "改訂元の親フォルダにアクセスできませんでした（URLの誤り・権限不足の可能性）";
+          return out;
+        }
+        parentId = parent.id;
+        out.inferredBrand = await inferBrandFromFolder(parent, token);
       }
-      // 親から事業を推定できたときだけ採番する
-      out.inferredBrand = await inferBrandFromFolder(parent, token);
+      // 事業が分かるので採番する（失敗しても作成は止めない＝番号なしで作る）
       if (out.inferredBrand) {
         try {
           out.seqLabel = formatSeq(await nextSeqNumber(env, out.inferredBrand));
@@ -1091,7 +1124,7 @@ async function createDriveFolderForRequest(data, seqLabel, env) {
         }
       }
       const name = out.seqLabel ? out.seqLabel + "_" + safeTitle : safeTitle;
-      out.url = await createProjectFolderTree(name, parent.id, token);
+      out.url = await createProjectFolderTree(name, parentId, token);
       out.created = true;
       return out;
     }
@@ -1288,6 +1321,46 @@ export default {
       data.requesterName = actor.name;
       data.requesterEmail = actor.email;
 
+      // 【V1-5.7】改訂は「親フォルダが 02_案件管理 の事業フォルダ（または相談）配下にあること」を
+      // 送信の成立条件にする。満たさない場合はNotionページを作らずに400で返し、
+      // フォームが送信ボタン直下にエラーメッセージを表示する。
+      // （散在する過去データの改訂は受けない＝その場合は依頼種別「転用」を使う運用・2026-08-11決定）
+      if (data.category === "改訂") {
+        const KAITEI_NG_HINT = "存在しない場合は、依頼種別を「転用」にして送信してください。";
+        if (!extractDriveFolderId(data.sourceUrls)) {
+          return json({
+            error: "「改訂するデータの親フォルダのURL」が読み取れません。GoogleドライブのフォルダURLを貼り直してください。",
+            code: "KAITEI_PARENT",
+          }, 400, request, env);
+        }
+        let kaiteiParent = null;
+        let kaiteiBrand = "";
+        try {
+          const token = await getDriveAccessToken(env);
+          kaiteiParent = await resolveKaiteiParent(data.sourceUrls, token);
+          if (kaiteiParent) kaiteiBrand = await inferBrandFromFolder(kaiteiParent, token);
+        } catch (e) {
+          return json({
+            error: "親フォルダの確認に失敗しました。時間をおいてもう一度お試しください。（" + String(e.message || e) + "）",
+            code: "KAITEI_PARENT",
+          }, 503, request, env);
+        }
+        if (!kaiteiParent) {
+          return json({
+            error: "「改訂するデータの親フォルダのURL」のフォルダにアクセスできません。「CRAZY CREATIVE/02_案件管理」の中のフォルダURLを貼ってください。" + KAITEI_NG_HINT,
+            code: "KAITEI_PARENT",
+          }, 400, request, env);
+        }
+        if (!kaiteiBrand) {
+          return json({
+            error: "指定された親フォルダが「CRAZY CREATIVE/02_案件管理」の中にありません。02_案件管理の中にある改訂元のフォルダURLを貼ってください。" + KAITEI_NG_HINT,
+            code: "KAITEI_PARENT",
+          }, 400, request, env);
+        }
+        data._kaiteiParentId = kaiteiParent.id;
+        data._kaiteiBrand = kaiteiBrand;
+      }
+
       // 【フェーズ3】初依頼者かどうかを既知リストと照合
       let firstRequest = false;
       try {
@@ -1440,7 +1513,7 @@ export default {
       }
 
       try {
-        const parent = await getDriveFile("1T3J-bOCpWrCKDlOwb3-wFIImg6mgNuFz", token);
+        const parent = await getDriveFile(DRIVE_KANRI_FOLDER_ID, token);
         note("④ 02_案件管理 の読み取り", true, parent.name);
       } catch (e) {
         const msg = String(e.message || e);
@@ -1525,4 +1598,7 @@ export {
   DRIVE_TYPE_SHELVES,
   DRIVE_FOLDER_TO_BRAND,
   NUMBERED_FOLDER_RE,
+  // 【V1-5.7】改訂の親フォルダを02_案件管理内に限定
+  DRIVE_KANRI_FOLDER_ID,
+  brandFromShortName,
 };

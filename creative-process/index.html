@@ -967,10 +967,11 @@
                 <div class="field-textarea"><textarea class="ctl" name="prototype" placeholder="Canva・Figma・KeynoteなどのURL"></textarea></div>
               </div>
 
-              <!-- 改訂＝親フォルダURL（必須）／転用＝転用元のデータ（任意）。ラベルはJSで切り替える -->
+              <!-- 改訂＝親フォルダURL（必須・02_案件管理内のみ。判定はWorkerが行い、範囲外は送信時に400で弾かれる）
+                   ／転用＝転用元のデータ（任意）。ラベル・リンクはJSで切り替える -->
               <div class="input f-sourceurls" data-types="改訂,転用">
                 <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl" id="srcUrlsLabel">転用元のデータ</span><span class="badge-required hidden" id="srcUrlsBadge">必須</span></div>
+                  <div class="subhead-row"><span class="fl" id="srcUrlsLabel">転用元のデータ</span><span class="badge-required hidden" id="srcUrlsBadge">必須</span><a class="btn-linktext hidden" id="srcUrlsExplore" href="https://drive.google.com/drive/folders/1T3J-bOCpWrCKDlOwb3-wFIImg6mgNuFz" target="_blank" rel="noopener">親フォルダを探す</a></div>
                   <div class="caption" id="srcUrlsCaption">元データの所在が不明の場合、現物の写真やスクリーンショットを下の「参考資料・画像を添付」に添えてください。</div>
                 </div>
                 <div id="srcUrls">
@@ -1164,16 +1165,18 @@
       }
     }
     // 元データ欄のラベル・必須表示を種別で切り替える（改訂＝必須／転用＝任意）
-    var srcLabel = $("srcUrlsLabel"), srcBadge = $("srcUrlsBadge"), srcCap = $("srcUrlsCaption");
+    var srcLabel = $("srcUrlsLabel"), srcBadge = $("srcUrlsBadge"), srcCap = $("srcUrlsCaption"), srcExp = $("srcUrlsExplore");
     if (srcLabel && srcBadge && srcCap){
       if (current === "改訂"){
-        srcLabel.textContent = "改訂データが格納されている親フォルダのURL";
-        srcCap.textContent = "同じフォルダにデータ格納用のフォルダが作成されます。";
+        srcLabel.textContent = "改訂するデータの親フォルダのURL";
+        srcCap.textContent = "「CRAZY CREATIVE/02_案件管理」から改訂元のフォルダURLを記入してください。存在しない場合は、依頼種別を「転用」にしてください。";
         show(srcBadge, true);
+        show(srcExp, true);
       } else {
         srcLabel.textContent = "転用元のデータ";
         srcCap.textContent = "元データの所在が不明の場合、現物の写真やスクリーンショットを下の「参考資料・画像を添付」に添えてください。";
         show(srcBadge, false);
+        show(srcExp, false);
       }
     }
     clearErr();
@@ -1222,7 +1225,7 @@
       if (!val("title")) miss.push("依頼タイトルを入力してください。");
       if (current !== "改訂" && !val("brand")) miss.push("対象事業・部署を選択してください。");
       if ((current === "新規" || current === "転用") && collectProdTypes().length === 0) miss.push("制作物の種別を選択してください。");
-      if (current === "改訂" && collectSrcUrls().length === 0) miss.push("改訂データが格納されている親フォルダのURLを入力してください。");
+      if (current === "改訂" && collectSrcUrls().length === 0) miss.push("改訂するデータの親フォルダのURLを入力してください。");
       if (current === "相談" && !val("consultDetail")) miss.push("相談内容を入力してください。");
     }
     return miss;

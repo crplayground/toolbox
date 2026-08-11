@@ -40,6 +40,8 @@ import {
   DRIVE_TYPE_SHELVES,
   DRIVE_FOLDER_TO_BRAND,
   NUMBERED_FOLDER_RE,
+  DRIVE_KANRI_FOLDER_ID,
+  brandFromShortName,
 } from "../src/worker.js";
 
 let pass = 0, fail = 0;
@@ -63,7 +65,7 @@ t("与件整理の先頭は依頼背景・課題感", SEC_YOKEN[0][0] === "purpo
 t("与件整理から issue（現状の課題）を撤去", !SEC_YOKEN.some(([k]) => k === "issue"));
 t("制作内容の先頭は広報チームの企画確認状況", SEC_SEISAKU[0][0] === "prStatus" && SEC_SEISAKU[0][1] === "広報チームの企画確認状況");
 t("制作内容から reference（参考・インスピレーション）を撤去", !SEC_SEISAKU.some(([k]) => k === "reference"));
-t("改訂の見出しはFigma第3次改修の設問名", SEC_KAITEI[0][1] === "改訂データが格納されている親フォルダのURL");
+t("改訂の見出しはFigma第4次改修の設問名", SEC_KAITEI[0][1] === "改訂するデータの親フォルダのURL");
 t("転用の見出しはFigma第3次改修の設問名", SEC_TENYO[0][1] === "転用元のデータ");
 // 2026-08-01 見出しの改称（フォームの設問名に合わせる）
 t("prototype の見出しは「プロトタイプ」", SEC_SEISAKU.some(([k, l]) => k === "prototype" && l === "プロトタイプ"));
@@ -320,6 +322,17 @@ t("[IWAI-婚礼]_no00005_… も番号付きフォルダ（相談発）", NUMBER
 t("番号のない旧フォルダは対象外", !NUMBERED_FOLDER_RE.test("営業資料A") && !NUMBERED_FOLDER_RE.test("2025_周年ロゴ"));
 t("no123（5桁未満）は対象外", !NUMBERED_FOLDER_RE.test("no123_x"));
 
+section("14c. V1-5.7 改訂の親フォルダ制限・略称の逆引き");
+t("02_案件管理のルートIDを定数で持つ", /^[A-Za-z0-9_-]{20,}$/.test(DRIVE_KANRI_FOLDER_ID));
+t("ルートIDは事業フォルダ・相談と重複しない",
+  !Object.values(DRIVE_BRAND_FOLDERS).includes(DRIVE_KANRI_FOLDER_ID) && DRIVE_KANRI_FOLDER_ID !== DRIVE_SOUDAN_FOLDER_ID);
+t("略称→正式名の逆引き（IWAI-婚礼）", brandFromShortName("IWAI-婚礼") === "IWAI-婚礼｜婚礼に関する制作物");
+t("略称→正式名の逆引き（MT-the-Terrace）", brandFromShortName("MT-the-Terrace") === "MT-the-Terrace｜the Terraceに関する制作物");
+t("未知の略称は空", brandFromShortName("存在しない部署") === "" && brandFromShortName("") === "");
+t("18略称すべてが往復できる", Object.keys(DRIVE_BRAND_FOLDERS)
+  .filter((b) => b !== "CRAZY｜全社周年・自社WEBサイト等に関する制作物")
+  .every((b) => brandFromShortName(brandShortName(b)) === b));
+
 section("15. V1-5 起票番号のNotion書き込み");
 const propsSeq = buildNotionProperties({ title: "テスト", category: "新規", brand: "IWAI-婚礼｜婚礼に関する制作物", seqLabel: "no00007" });
 t("起票番号をrich_textで書く", propsSeq["起票番号"].rich_text[0].text.content === "no00007");
@@ -352,6 +365,11 @@ t("新規・転用は種別フォルダ（棚）に振り分ける", src.indexOf
 t("転用の元URLは置き場所に使わない（改訂と旧種別のみ親解決）", !/category === "転用"[\s\S]{0,300}?resolveKaiteiParent/.test(src));
 t("改訂でフォルダを作れなかったら本文に注記を残す", src.indexOf("appendNotionNote") !== -1);
 t("棚は名前検索で解決し、無ければ正式名で作る", /resolveTypeShelf[\s\S]{0,900}?createDriveFolder\(canonical/.test(src));
+t("改訂は送信前に親フォルダを検証する（V1-5.7事前チェック）", src.indexOf('code: "KAITEI_PARENT"') !== -1);
+t("02_案件管理の外は400で弾く", /02_案件管理」の中にありません[\s\S]{0,200}?400/.test(src));
+t("エラー文言で「転用」への切り替えを案内する", src.indexOf("依頼種別を「転用」にして") !== -1);
+t("事前チェックはNotionページ作成より前に行う", src.indexOf('code: "KAITEI_PARENT"') < src.indexOf("createNotionPage(data, uploads, env)"));
+t("相談フォルダ配下は略称から事業を引く", /inferBrandFromFolder[\s\S]{0,1200}?brandFromShortName/.test(src));
 t("診断エンドポイント /drive/health がある", src.indexOf('"/drive/health"') !== -1);
 t("診断は秘密鍵の中身を返さない（長さと有無のみ）", !/診断[\s\S]{0,3000}?pem\s*\}/.test(src) && src.indexOf("詳細: pem") === -1);
 t("診断はテストフォルダを後片付けする", /_接続テスト[\s\S]{0,1200}?trashed: true/.test(src));
