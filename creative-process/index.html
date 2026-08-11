@@ -423,6 +423,14 @@
   }
   @media(hover:hover){ .input-add:hover{background:var(--color-input-hover);} }
 
+  /* 画像のドラッグ&ドロップ中の強調（2026-08-11）。
+     Figmaにdragover状態の定義が無いため、入力系フォーカス表現（淡青2px＝A系）を流用する。
+     Figmaに定義が起こされたらそちらを正として差し替えること。 */
+  .f-images.drop-hover .input-add{
+    background:var(--color-input-hover);
+    box-shadow:0 0 0 2px var(--color-input-focus);
+  }
+
   /* input/add-login（Googleログイン） */
   .input-add-login{
     display:flex;align-items:center;gap:var(--spacing-gap-icon-group);
@@ -1530,21 +1538,74 @@
     });
   }
 
-  imgInput.addEventListener("change", function(){
+  // ファイル選択・ドラッグ&ドロップの両方から呼ぶ共通処理（2026-08-11にD&D対応で切り出し）。
+  // 画像以外のファイルはここで除外する（file inputのaccept属性はドロップには効かないため）。
+  function addImageFiles(fileList){
     clearErr();
-    var files = Array.prototype.slice.call(imgInput.files);
-    var room  = MAX_IMAGES - imageData.length;
+    var all   = Array.prototype.slice.call(fileList || []);
+    var files = all.filter(function(f){ return f && f.type && f.type.indexOf("image/") === 0; });
+    if (!files.length){
+      if (all.length) showErr("画像ファイル（JPEG・PNGなど）のみ添付できます。");
+      return;
+    }
+    var room = MAX_IMAGES - imageData.length;
     if (room <= 0){
       showErr("画像は最大" + MAX_IMAGES + "枚までです。これ以上は追加されませんでした。");
-      imgInput.value = "";
       return;
     }
     files = files.slice(0, room);
     Promise.all(files.map(compressImage)).then(function(results){
       results.forEach(function(d){ if (d) imageData.push(d); });
       renderImgPreview();
-      imgInput.value = "";
     });
+  }
+
+  imgInput.addEventListener("change", function(){
+    addImageFiles(imgInput.files);
+    imgInput.value = "";
+  });
+
+  // ---- 画像のドラッグ&ドロップ（2026-08-11） ----
+  // ページのどこに落としても「参考資料・画像を添付」へ合流させる。
+  // あわせてブラウザ既定の「落としたファイルをページとして開き、入力内容が消える」事故を防ぐ
+  // （dragover / drop の preventDefault がその役割）。
+  var imgZone = document.querySelector(".f-images");
+  var dragDepth = 0;
+
+  function isFileDrag(e){
+    var ts = e.dataTransfer && e.dataTransfer.types;
+    return !!ts && Array.prototype.indexOf.call(ts, "Files") !== -1;
+  }
+  // 依頼種別を選ぶ前は添付欄が非表示＝ドロップも受け付けない
+  function imgZoneActive(){
+    return !!imgZone && imgZone.offsetParent !== null;
+  }
+  function setDropHover(on){
+    if (imgZone) imgZone.classList.toggle("drop-hover", on && imgZoneActive());
+  }
+
+  document.addEventListener("dragenter", function(e){
+    if (!isFileDrag(e)) return;
+    dragDepth++;
+    setDropHover(true);
+  });
+  document.addEventListener("dragleave", function(e){
+    if (!isFileDrag(e)) return;
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) setDropHover(false);
+  });
+  document.addEventListener("dragover", function(e){
+    if (!isFileDrag(e)) return;
+    e.preventDefault(); // これが無いと drop が発火せず、ブラウザがファイルを開いてしまう
+    if (e.dataTransfer) e.dataTransfer.dropEffect = imgZoneActive() ? "copy" : "none";
+  });
+  document.addEventListener("drop", function(e){
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepth = 0;
+    setDropHover(false);
+    if (!imgZoneActive()) return;
+    addImageFiles(e.dataTransfer.files);
   });
 
   // ===== モーダル ==================================================
