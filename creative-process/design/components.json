@@ -1244,8 +1244,26 @@
     },
     "emoji": {
       "figmaSectionId": "86:1815",
-      "role": "完了画面・送信アニメーションの絵文字。emoji/Laughing はGIFアニメーション（原寸1.7MB）",
-      "inUse": "creative-process/emoji-laughing.gif（無ければUnicode😆にフォールバック）",
+      "role": "完了画面・送信アニメーションの絵文字。Noto Animated Emoji（Google Fonts CDN）を16種からランダム表示",
+      "source": "https://fonts.gstatic.com/s/e/notoemoji/latest/<codepoint>/512.webp（フォールバック=512.gif→Unicode絵文字）",
+      "codepoints": [
+        "1f606",
+        "1f60e",
+        "1f929",
+        "1f60d",
+        "1f4a1",
+        "1faa9",
+        "1f48e",
+        "1f31f",
+        "1f44f",
+        "1f389",
+        "1f6ce_fe0f",
+        "1fa99",
+        "1f3af",
+        "1fa87",
+        "1f52e",
+        "1f6a9"
+      ],
       "size": {
         "done": 64,
         "animation": 104

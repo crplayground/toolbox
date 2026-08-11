@@ -772,9 +772,9 @@
     <div class="section hidden" id="doneArea">
       <div class="input-section">
         <div class="box done-hero">
-          <!-- 絵文字はFigma配置のGIFアニメーション（emoji/Laughing）。
-               リポジトリ直下の emoji-laughing.gif を参照し、無い場合は😆にフォールバック -->
-          <div class="ic"><img class="emoji-gif" src="emoji-laughing.gif" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false;"><span hidden>😆</span></div>
+          <!-- 絵文字＝Noto Animated Emoji（Google Fonts CDN）。16種からランダムに1つをJSが選び、
+               WebP→GIF→Unicode絵文字の順でフォールバックする（setEmoji） -->
+          <div class="ic"><img class="emoji-gif" alt="" hidden><span>😆</span></div>
           <div class="done-title">
             <h2>＼ プランニングシートを作成しました! ／</h2>
             <p>あと1ステップで、依頼を起票できます!</p>
@@ -1151,7 +1151,7 @@
 <!-- ===== 送信アニメーション（Figma submit-animation 86:2083。送信成功→完了画面の間に流れる） ===== -->
 <div class="sa-overlay hidden" id="saOverlay" aria-hidden="true">
   <div class="sa-contents">
-    <div class="sa-emoji"><img class="emoji-gif" src="emoji-laughing.gif" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false;"><span hidden>😆</span></div>
+    <div class="sa-emoji"><img class="emoji-gif" alt="" hidden><span>😆</span></div>
     <div class="sa-mask sa-head"><span>＼プランニングシートを作成しました!／</span></div>
     <div class="sa-mask sa-sub"><span>あと1ステップで、依頼を起票できます!</span></div>
   </div>
@@ -1654,12 +1654,43 @@
     window.scrollTo({ top: 0, behavior: scrollBehavior() });
   });
 
+  // ===== 絵文字（Noto Animated Emoji・Google Fonts CDN） ===========
+  // Figmaのemojiセクション16種と同じ素材の配信元URL。選ばれた1種だけを読み込む。
+  // 送信ボタンを押した時点で抽選して読み込みを始めるため、アニメーション表示時にはロード済み。
+  // WebP（軽量・全モダンブラウザ対応）→ GIF → Unicode絵文字 の順でフォールバック。
+  // 動きを抑える設定の環境ではアニメーションを読み込まず、Unicode絵文字を表示する。
+  var EMOJIS = [
+    ["1f606","😆"], ["1f60e","😎"], ["1f929","🤩"], ["1f60d","😍"],
+    ["1f4a1","💡"], ["1faa9","🪩"], ["1f48e","💎"], ["1f31f","🌟"],
+    ["1f44f","👏"], ["1f389","🎉"], ["1f6ce_fe0f","🛎️"], ["1fa99","🪙"],
+    ["1f3af","🎯"], ["1fa87","🪇"], ["1f52e","🔮"], ["1f6a9","🚩"]
+  ];
+  var EMOJI_BASE = "https://fonts.gstatic.com/s/e/notoemoji/latest/";
+  function setEmoji(){
+    var pick = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+    document.querySelectorAll(".emoji-gif").forEach(function(img){
+      var fb = img.nextElementSibling;               // フォールバック用の<span>
+      if (fb) fb.textContent = pick[1];
+      if (prefersReducedMotion()){ img.hidden = true; if (fb) fb.hidden = false; return; }
+      img.hidden = false; if (fb) fb.hidden = true;
+      img.onerror = function(){
+        if (img.src.indexOf(".webp") !== -1){        // WebP不可 → GIFへ
+          img.src = EMOJI_BASE + pick[0] + "/512.gif";
+        } else {                                     // GIFも不可 → Unicode絵文字へ
+          img.hidden = true; if (fb) fb.hidden = false;
+        }
+      };
+      img.src = EMOJI_BASE + pick[0] + "/512.webp";
+    });
+  }
+
   // ===== 送信 ======================================================
   function setSending(on){
     sending = on;
     submitBtn.disabled = on;
     submitBtn.setAttribute("aria-busy", String(on));
     submitBtn.querySelector(".btn-label").textContent = on ? "送信中…" : "送信する";
+    if (on) setEmoji();   // 送信待ちの間に絵文字を抽選・先読みしておく
     if (!on) updateSubmitState();
   }
 
@@ -1819,10 +1850,12 @@
       else if (a === "err"){ showErr("Googleログインが必要です。上の「依頼者」欄からログインしてください。"); }
       else if (a === "anim"){
         $("doneNotion").href = "https://www.notion.so/";
+        setEmoji();
         playSubmitAnimation(showDone);
       }
       else if (a === "done"){
         $("doneNotion").href = "https://www.notion.so/";
+        setEmoji();
         showDone();
       }
     });

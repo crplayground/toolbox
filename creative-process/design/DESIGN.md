@@ -328,9 +328,10 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
   `icon/link` はFigmaのMCPエクスポートから取得したパスをマスク化してコードに埋め込み済み。他アイコンと同じくG-Driveの `icon/` にもマスターを置くこと（未書き出しならFigmaからSVGエクスポートする）。
 - `icon/add` は**コードでは描画しない**。「＋日程を追加する」などの先頭の「＋」はFigma上も文字だから（§5-4-1）。
 - 表示サイズは置き場所ごとに違う（§5-4-2）。素材が24pxだからといって24pxで置かない。
-- **絵文字（emoji/Laughing）はGIFアニメーションが正**（2026-08-11変更）。Figmaに配置されたGIF（原寸1.7MB）を
-  リポジトリの `creative-process/emoji-laughing.gif` に置き、完了画面64px・送信アニメーション104pxで表示する。
-  ファイルが無い場合はUnicodeの😆にフォールバック。単一HTML完結の例外（画像は外部リソース可・§1-6）。
+- **絵文字はNoto Animated Emoji（Google Fonts CDN）が正**（2026-08-11確定）。Figmaのemojiセクション16種と同じ素材を
+  `fonts.gstatic.com` から直接読み込む（既にフォントで依存しているCDNなので新しい依存先は増えない）。
+  送信ごとに16種からランダムに1種を選び、完了画面64px・送信アニメーション104pxに同じものを表示。
+  WebP（100〜300KB程度）→GIF→Unicode絵文字の順でフォールバック。リポジトリにファイルは置かない。
 - **ファビコンは🌟**（SVGデータURIのテキスト絵文字）。✅は別ツールで使うためこのツールでは使わない。
 
 ---
@@ -373,7 +374,7 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 
 | 日付 | 内容 |
 |---|---|
-| 2026-08-11 | 追補：①STEP1ログイン欄キャプション・依頼種別4カードのサブテキストをFigmaの最新文言へ追従 ②`btn/linktext` の下線を2px→**1px**（Figma underbar h-px 実測） ③送信中スピナーを24px→**16px**・地色を `gradation/sunbeam-h-hover` に（Figma btn/primary loading 64:783 実測） ④`icon/link` をG-Drive `icon/link.svg`（Illustrator書き出し）のパスに同期 ⑤絵文字をGIFアニメーション化（`emoji-laughing.gif`・😆フォールバック付き） ⑥ファビコン🌟を追加 |
+| 2026-08-11 | 追補：①STEP1ログイン欄キャプション・依頼種別4カードのサブテキストをFigmaの最新文言へ追従 ②`btn/linktext` の下線を2px→**1px**（Figma underbar h-px 実測） ③送信中スピナーを24px→**16px**・地色を `gradation/sunbeam-h-hover` に（Figma btn/primary loading 64:783 実測） ④`icon/link` をG-Drive `icon/link.svg`（Illustrator書き出し）のパスに同期 ⑤絵文字をNoto Animated Emoji（CDN直リンク・16種ランダム・😆フォールバック付き）に変更 ⑥ファビコン🌟を追加 |
 | 2026-08-11 | Figma第3次改修のUI反映。①制作物の種別を `card/check`→`card/radio`（＋`btn/radio-btn`）に置換 ②STEP2依頼種別カードを4枚構成の寸法（gap16・角丸8・padding 16/24）に変更 ③完了画面を全面刷新（絵文字ヒーロー・箇条書きの共有手順・`btn/tertiary-blue/leftcon`「NotionのURLをコピー」＋`btn/tertiary/leftcon`「Notionで編集」の全幅縦積み） ④送信アニメーション新設（`submit-animation`） ⑤`icon/link` 新設・`icon/extend` を12pxに縮小 ⑥`btn/tertiary` のラベルを label-M 12px に修正 ⑦納期・サイズ目安表からKV・アイキャッチ行を削除し文言をFigmaへ追従 |
 | 2026-08-01 | 新規作成。Figmaのコンポーネントページ新設にあわせ、トークン・コンポーネント・状態定義を全面的に整理 |
 | 2026-08-01 | フォーカスリングの2系統・アイコンの表示サイズ・`input/add` の扱い・`card/check` の選択表現とそろえ方・モーダルの影の当て方を追記 |
