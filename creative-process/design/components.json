@@ -270,7 +270,16 @@
         "form-modify 50:1277",
         "form-consult 50:1524",
         "error-message 64:689"
-      ]
+      ],
+      "loading": {
+        "figmaNodeId": "64:783",
+        "spinner": {
+          "size": 16,
+          "note": "icon/loadingは16px。2026-08-11に24px→16pxへ修正"
+        },
+        "background": "gradation/sunbeam-h-hover",
+        "note": "送信中はhoverと同じ明るいグラデーション（Figma実測）"
+      }
     },
     "btn/secondary": {
       "figmaNodeId": "41:409",
@@ -494,7 +503,13 @@
         "サイズ目安表をみる（41:593・幅108）",
         "▲ ページTOPに戻る（41:525 / 50:1410 / 50:1527 / 64:692・幅148）",
         "別の依頼を起票する（完了画面）"
-      ]
+      ],
+      "underbar": {
+        "height": 1,
+        "color": "color/btn/secondary/default",
+        "gap": "spacing/semantic/gap-underbar",
+        "note": "2026-08-11に2px→1pxへ変更（Figma実測）。実装は text-decoration-thickness:1px"
+      }
     },
     "btn/checkbox": {
       "figmaNodeId": "38:889",
@@ -1229,8 +1244,8 @@
     },
     "emoji": {
       "figmaSectionId": "86:1815",
-      "role": "完了画面・送信アニメーションの絵文字。Figmaには16種の候補があるが、現行デザインは emoji/Laughing（😆）を使用",
-      "inUse": "😆（Unicode絵文字をそのまま描画。画像は埋め込まない）",
+      "role": "完了画面・送信アニメーションの絵文字。emoji/Laughing はGIFアニメーション（原寸1.7MB）",
+      "inUse": "creative-process/emoji-laughing.gif（無ければUnicode😆にフォールバック）",
       "size": {
         "done": 64,
         "animation": 104
