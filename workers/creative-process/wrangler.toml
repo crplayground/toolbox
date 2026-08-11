@@ -24,7 +24,7 @@ NOTION_VERSION = "2022-06-28"
 # 空のままだと /submit が「サーバー設定が未完了です」を返す（＝ログイン必須が常に有効）。
 GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleusercontent.com"
 
-# --- 機密（NOTION_TOKEN / NOTION_DB_ID / GOOGLE_CLIENT_SECRET / SLACK_WEBHOOK_URL）は toml に書かない ---
+# --- 機密（NOTION_TOKEN / NOTION_DB_ID / GOOGLE_CLIENT_SECRET）は toml に書かない ---
 # 必ず `npx wrangler secret put <名前>` で登録する（SETUP.md 手順3）。
 #
 # 【GOOGLE_CLIENT_SECRET】ログイン方式を「認可コードフロー」に変えたため必須になった。
@@ -32,12 +32,13 @@ GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleuse
 #   未登録の間は /auth/exchange が「サーバー設定が未完了です」を返し、ログインできない。
 #   登録: cd workers/creative-process && npx wrangler secret put GOOGLE_CLIENT_SECRET
 #
-# 【フェーズ3】SLACK_WEBHOOK_URL はT0（前提タスク）で登録する。
-#   未登録の間はSlack投稿がスキップされ、初依頼者の「既知マーク」も付かない
-#   （＝登録後の最初の送信からきちんと通知される設計）。
-#
 # 【フェーズ3で不要になったもの】
 #   FORM_URL / SHARE_URL_PROP（vars）… 共有URL廃止に伴い削除済み
+#
+# 【2026-08-11 白紙化で不要になったもの】
+#   SLACK_WEBHOOK_URL（Secret）… Slack自動投稿の白紙化により廃止（コードも撤去済み）。
+#   Secretが残っていても無害だが、`npx wrangler secret delete SLACK_WEBHOOK_URL` で掃除できる
+#   （2026-07-25に削除済みのはずなので通常は何も残っていない）
 #   CREATIVE_EDITOR_EMAILS（Secret）… 再編集機構の撤去で未使用。
 #     登録済みなら `npx wrangler secret delete CREATIVE_EDITOR_EMAILS` で消してよい（残っていても無害）
 

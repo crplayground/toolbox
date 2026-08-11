@@ -13,16 +13,12 @@ import {
   asImageList,
   asScheduleList,
   asProductTypeList,
-  normEmail,
-  guestKey,
   redirectTargetFor,
   buildGuideHtml,
   buildNotionProperties,
   buildNotionSectionBlocks,
   buildNotionBlocks,
   buildImageBlocks,
-  buildSlackText,
-  buildSlackBlocks,
   brandShortName,
   formatSeq,
   parseSeq,
@@ -31,7 +27,6 @@ import {
   DRIVE_BRAND_FOLDERS,
   DRIVE_SOUDAN_FOLDER_ID,
   DRIVE_SUBFOLDERS,
-  CATEGORY_EMOJI,
   SEC_YOKEN,
   SEC_SEISAKU,
   SEC_SOUDAN,
@@ -97,13 +92,6 @@ t("productTypes: 配列を受ける", asProductTypeList(["スライド"," KV・�
 t("productTypes: カンマ文字列を受ける", asProductTypeList("スライド, バナー・SNS画像").length === 2);
 t("productTypes: 空は空配列", asProductTypeList(undefined).length === 0);
 
-// ---- 4. 既知依頼者リスト（フェーズ3新設） ----
-section("4. guestKey / normEmail（初依頼者判定の鍵）");
-t("小文字化・trimで正規化", normEmail("  Taro@CRAZY.co.jp ") === "taro@crazy.co.jp");
-t("guestキーの形式", guestKey("Taro@crazy.co.jp") === "guest:taro@crazy.co.jp");
-t("空メールは空キー（通知抑止側に倒す）", guestKey("") === "");
-t("null安全", guestKey(null) === "");
-
 // ---- 5. /v/ リダイレクト（移行措置） ----
 section("5. redirectTargetFor（旧共有URL→Notion誘導）");
 t("notionUrlありは そのURLを返す", redirectTargetFor({ notionUrl: "https://www.notion.so/abc" }) === "https://www.notion.so/abc");
@@ -114,7 +102,7 @@ t("recordなしは空", redirectTargetFor(null) === "");
 t("notionUrl欠落は空", redirectTargetFor({ data: {} }) === "");
 const guide = buildGuideHtml();
 t("案内ページ：Notion移行の説明を含む", guide.indexOf("Notionに移行しました") !== -1);
-t("案内ページ：受付chへ誘導する", guide.indexOf("#83_creative_クリ室依頼受付") !== -1);
+t("案内ページ：問い合わせ先（クリエイティブ室）を案内する", guide.indexOf("クリエイティブ室") !== -1);
 
 // ---- 6. Notionプロパティ ----
 section("6. buildNotionProperties");
@@ -180,65 +168,21 @@ t("画像IDが引き継がれる", blocksImg.some(b => b.type === "image" && b.i
 t("失敗枚数が本文に記録される", JSON.stringify(blocksImg).indexOf("失敗：1枚") !== -1);
 t("画像は本文の末尾（セクションの後）", blocksImg[blocksImg.length - 2].type === "image" || blocksImg[blocksImg.length - 1].type === "paragraph");
 
-// ---- 8. Slack投稿文（初依頼者付記・フェーズ3新設） ----
-section("8. buildSlackText");
-const slackData = {
-  category: "新規", title: "夏フェア", requesterDept: "MKT・広報",
-  requesterName: "太郎", requesterEmail: "Taro@crazy.co.jp", images: [JPEG],
-};
-const txtKnown = buildSlackText(slackData, "https://www.notion.so/abc", false);
-t("Notionリンクを含む", txtKnown.indexOf("https://www.notion.so/abc") !== -1);
-t("共有ページの行が無い（廃止確認）", txtKnown.indexOf("共有ページ") === -1);
-t("既知依頼者には🆕を付けない", txtKnown.indexOf("🆕") === -1);
-t("画像はNotion掲載と案内", txtKnown.indexOf("Notionページに掲載") !== -1);
-const txtFirst = buildSlackText(slackData, "https://www.notion.so/abc", true);
-t("初依頼者は🆕付記", txtFirst.indexOf("🆕") !== -1);
-t("招待先メールを明記（正規化済み）", txtFirst.indexOf("taro@crazy.co.jp") !== -1);
-t("招待手順（共有→今はスキップ）を含む", txtFirst.indexOf("今はスキップ") !== -1);
-t("カテゴリ絵文字を含む（新規=🎨）", txtKnown.indexOf(CATEGORY_EMOJI["新規"]) === 0);
-
-// ---- 8b. Slack Block Kit整形（フェーズ4先行分・2026-07-25新設） ----
-section("8b. buildSlackBlocks（Block Kit整形）");
-const blocksKnown = buildSlackBlocks(slackData, "https://www.notion.so/abc", false);
-t("先頭はheaderブロック", blocksKnown[0].type === "header");
-t("headerに依頼タイトルを含む", blocksKnown[0].text.text.indexOf("夏フェア") !== -1);
-t("headerにカテゴリ絵文字（新規=🎨）", blocksKnown[0].text.text.indexOf("🎨") === 0);
-t("headerはplain_text（Block Kit仕様）", blocksKnown[0].text.type === "plain_text");
-const fieldSec = blocksKnown.find(b => b.type === "section" && Array.isArray(b.fields));
-t("概要フィールドのsectionがある", !!fieldSec);
-t("依頼カテゴリのフィールドを含む", fieldSec.fields.some(f => f.text.indexOf("依頼種別") !== -1));
-t("依頼者名＋部署を1フィールドに統合", fieldSec.fields.some(f => f.text.indexOf("太郎（MKT・広報）") !== -1));
-t("添付画像のフィールドを含む", fieldSec.fields.some(f => f.text.indexOf("添付画像") !== -1));
-t("空の項目はフィールドに出さない（納期なし）", !fieldSec.fields.some(f => f.text.indexOf("希望納期") !== -1));
-t("フィールドは最大10件以内", fieldSec.fields.length <= 10);
-const btnBlock = blocksKnown.find(b => b.type === "actions");
-t("Notionリンクボタンがある", !!btnBlock && btnBlock.elements[0].type === "button");
-t("ボタンのURLがnotionUrl", btnBlock.elements[0].url === "https://www.notion.so/abc");
-t("既知依頼者に🆕ブロックが無い", JSON.stringify(blocksKnown).indexOf("🆕") === -1);
-const blocksFirst = buildSlackBlocks(slackData, "https://www.notion.so/abc", true);
-t("初依頼者は🆕sectionが付く", JSON.stringify(blocksFirst).indexOf("🆕") !== -1);
-t("🆕sectionに正規化メールを含む", JSON.stringify(blocksFirst).indexOf("taro@crazy.co.jp") !== -1);
-t("🆕の前にdividerが入る", blocksFirst.some(b => b.type === "divider"));
-const blocksNoUrl = buildSlackBlocks(slackData, "", false);
-t("notionUrl無しならボタンを出さない", !blocksNoUrl.some(b => b.type === "actions"));
-const blocksLongTitle = buildSlackBlocks({ ...slackData, title: "あ".repeat(200) }, "https://www.notion.so/abc", false);
-t("headerは150字以内に切り詰め", blocksLongTitle[0].text.text.length <= 150);
-const blocksMin = buildSlackBlocks({ category: "相談", title: "相談だけ" }, "https://www.notion.so/abc", false);
-t("相談カテゴリの絵文字は💬", blocksMin[0].text.text.indexOf("💬") === 0);
-t("最小データでもfieldsが1件以上（Block Kit仕様）", blocksMin.find(b => b.fields).fields.length >= 1);
-
 // ---- 9. ソース検査：フェーズ2機構の撤去確認（T2） ----
 section("9. ソース検査（廃止機構が残っていないこと）");
 const __dir = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dir, "../src/worker.js"), "utf8");
 ["buildShareHtml", "buildNotionUpdateBlocks", "updateNotionPageProps", "appendNotionBlocks",
  "saveFormRecord", "canEdit", "editorEmailSet", "bearerToken", "buildEditUrl", "diffLabels",
- "CREATIVE_EDITOR_EMAILS", "FORM_URL"].forEach((name) => {
+ "CREATIVE_EDITOR_EMAILS", "FORM_URL",
+ // 2026-08-11 Slack自動投稿の白紙化（コードごと撤去）
+ "buildSlackText", "buildSlackBlocks", "postToSlack", "SLACK_WEBHOOK_URL",
+ "isKnownGuest", "markGuestKnown", "guestKey", "normEmail", "CATEGORY_EMOJI", "firstRequest"].forEach((name) => {
   t("撤去済み: " + name, src.indexOf(name) === -1);
 });
 t('KVへの html:<id> 読み書きが無い', src.indexOf('"html:"') === -1);
 t('form:<id> は読み出し専用（putしない）', src.indexOf('put("form:') === -1 && src.indexOf('"form:"') !== -1);
-t("guest:<email> 照合が実装されている", src.indexOf('"guest:"') !== -1);
+t('guest:<email> の読み書きが無い（Slack白紙化で撤去）', src.indexOf('"guest:"') === -1);
 // 2026-08-01 Googleログイン：認可コードフロー
 t("/auth/exchange エンドポイントがある", src.indexOf('"/auth/exchange"') !== -1);
 t("トークン交換の宛先が Google の token エンドポイント", src.indexOf("https://oauth2.googleapis.com/token") !== -1);
@@ -248,8 +192,6 @@ t("交換したIDトークンも署名検証している", /exchangeCodeForIdTok
 t("Google のエラー本文をそのまま返さない", src.indexOf("out.error_description") === -1);
 t("File Upload APIを使用", src.indexOf("/v1/file_uploads") !== -1);
 t("editId送信には410で案内", src.indexOf("EDIT_REMOVED") !== -1);
-t("Slack投稿にblocksを送信（Block Kit・フェーズ4先行分）", src.indexOf("blocks: buildSlackBlocks") !== -1);
-t("Slack投稿にfallback textも送信（通知用）", src.indexOf("text: buildSlackText") !== -1);
 
 // ---- 10. V1-5 Drive自動フォルダ作成 ----
 section("10. V1-5 起票番号（formatSeq / parseSeq）");
@@ -407,8 +349,6 @@ t("採番も同期のまま（ページのプロパティに入れるため）",
 t("冪等キーの保存は応答前（waitUntilより前）", src.indexOf('put("idem:') !== -1
   && src.indexOf('put("idem:') < src.indexOf("ctx.waitUntil("));
 t("Driveフォルダ作成はバックグラウンド内", /finishSubmitInBackground[\s\S]*?createDriveFolderForRequest/.test(src));
-t("Slack投稿と既知マークもバックグラウンド内（順序：投稿成功→既知マーク）",
-  /finishSubmitInBackground[\s\S]*?postToSlack[\s\S]*?markGuestKnown/.test(src));
 t("後続処理は互いに独立して続行（Promise.allSettled）", src.indexOf("Promise.allSettled") !== -1);
 t("画像の丸ごと失敗も本文に⚠️注記を残す", src.indexOf("参考画像の掲載に失敗") !== -1);
 t("応答にdeferredの目印を持つ（後続処理は結果に含まれない）", src.indexOf("deferred: true") !== -1);

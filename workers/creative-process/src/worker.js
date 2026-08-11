@@ -2,9 +2,9 @@
 // creative-process Worker（制作依頼ツール／フェーズ3: Notion一本化）
 // ------------------------------------------------------------
 // 役割：依頼フォーム（静的HTML）から送られた1件の依頼を、サーバー側で一括処理する。
-//   ① Notion DB にページを作成（プロパティ＋本文全文＋参考画像）＝唯一の正本
-//   ② Slack 受付ch（#83_creative_クリ室依頼受付）へ Incoming Webhook で投稿
-//      （初依頼者なら「🆕要ゲスト招待」を付記。フェーズ4先行分としてBlock Kit整形済み）
+//   ・Notion DB にページを作成（プロパティ＋本文全文＋参考画像）＝唯一の正本
+//   ・Drive の 02_案件管理 配下に案件フォルダを自動作成（V1-5）
+//   ※Slack自動投稿は白紙化により撤去済み（2026-08-11）。受付chへの共有は依頼者の手動投稿で行う。
 //
 // フェーズ3（Notion一本化・2026-07）：
 //   - 共有URL（/v/<id>）の発行を廃止。依頼の正本は Notion ページただ1つ。
@@ -12,10 +12,6 @@
 //     内容の修正は Notion ページ上で直接行う（履歴は Notion のページ履歴が担う）。
 //   - 参考画像は Notion File Upload API でページ本文に埋め込む（共有HTML廃止の代替）。
 //     アップロードに失敗した分は本文に「⚠️失敗N枚」と記録し、送信自体は成功させる。
-//   - 初依頼者検知：依頼者メールを KV の既知リスト guest:<email> と照合し、
-//     未知なら Slack 投稿に「🆕要ゲスト招待」を付記する。
-//     既知マークは「Slack投稿が実際に成功したときだけ」付ける（通知の取りこぼし防止。
-//     見落としても Notion 標準の「アクセスのリクエスト」承認が二層目の安全網になる）。
 //   - 移行措置：旧 /v/<id> は form:<id>（フェーズ2の残置データ・TTLで自然消滅）が
 //     残っていれば notionUrl へ302リダイレクト。無ければ案内ページを表示する。
 //
@@ -26,8 +22,8 @@
 //   クライアントが送ってきた requesterName / requesterEmail は一切信用しない。
 //
 // エンドポイント：
-//   POST /submit    … フォーム送信。{ ok, notionUrl, notionPageId, firstRequest, seqLabel, imagesQueued, deferred } を返す
-//                      （V1-5.8＝画像・Drive・Slackの結果は応答に含まれない。応答後に処理される）
+//   POST /submit    … フォーム送信。{ ok, notionUrl, notionPageId, seqLabel, imagesQueued, deferred } を返す
+//                      （V1-5.8＝画像・Driveの結果は応答に含まれない。応答後に処理される）
 //   GET  /v/<id>    … 【移行措置】Notionページへ302リダイレクト（記録が無い旧依頼は案内ページ）
 //   GET  /form/<id> … 【廃止】410 を返す（開きっぱなしの旧編集画面への案内用）
 //   GET  /          … 稼働確認
@@ -38,8 +34,6 @@
 //   GOOGLE_CLIENT_ID  （必須）GoogleのOAuthクライアントID。IDトークンの aud 検証に使用
 //   GOOGLE_CLIENT_SECRET（必須）同クライアントのシークレット。認可コード→IDトークンの交換に使用
 //                      ※Secretsにのみ置く。フォームHTMLやリポジトリには絶対に書かない
-//   SLACK_WEBHOOK_URL （任意）受付chのIncoming Webhook。未設定ならSlack投稿はスキップ
-//                      ※未設定の間は初依頼者の「既知マーク」も付けない（通知が飛ばないため）
 //   ALLOWED_ORIGIN    （任意）許可するフォームのオリジン。カンマ区切り可。未設定なら全許可
 //   NOTION_VERSION    （任意）Notion APIバージョン。未設定なら "2022-06-28"
 //   GOOGLE_SA_EMAIL   （任意・V1-5）Driveサービスアカウントのメールアドレス
@@ -55,7 +49,7 @@
 //   /submit の応答は「Notionページ作成の直後」に返す。時間のかかる後続処理は
 //   ctx.waitUntil で応答後（バックグラウンド）に回す＝依頼者の待ち時間を数秒短縮する。
 //   - 応答後に回すもの：①参考画像のアップロード＋本文への追記（並列化済み）
-//                       ②Driveフォルダ作成＋「データ格納先」の書き戻し ③Slack投稿＋既知マーク
+//                       ②Driveフォルダ作成＋「データ格納先」の書き戻し
 //   - 同期のまま残すもの：ログイン検証／冪等チェック／改訂の親フォルダ事前チェック（400で弾く）／
 //                       起票番号の採番（ページのプロパティに入れるため）／Notionページ作成
 //   - ページは「画像なし」で先に作り、画像はアップロード完了後に本文へ追記する。
@@ -64,7 +58,7 @@
 //
 // KVキー（binding=REQUESTS）：
 //   idem:<key>     冪等キー（二重送信防止・7日保持）
-//   guest:<email>  既知依頼者リスト（恒久保存・フェーズ3新設）
+//   guest:<email>  旧・既知依頼者リスト（Slack自動投稿の白紙化〈2026-08-11〉で不使用。残置データは無害）
 //   form:<id> / html:<id>  フェーズ2以前の残置データ（新規保存はしない。TTLで自然消滅）
 // ============================================================
 
@@ -310,34 +304,6 @@ async function exchangeCodeForIdToken(code, env) {
   return out.id_token;
 }
 
-// ---- 既知依頼者リスト（フェーズ3・ゲスト運用） -------------------
-// KV guest:<email> に「一度でも依頼したことがある人」を記録する。
-// 未知の人＝初依頼者。Slack投稿に「🆕要ゲスト招待」を付記して宮川へ知らせる。
-// 招待そのものは Notion に招待APIが無いため手動（DB単位・1人生涯1回で収束）。
-
-function normEmail(v) {
-  return String(v == null ? "" : v).trim().toLowerCase();
-}
-function guestKey(email) {
-  const e = normEmail(email);
-  return e ? "guest:" + e : "";
-}
-async function isKnownGuest(env, email) {
-  const k = guestKey(email);
-  if (!k) return true; // メール不明は「通知不要」扱い（通常は起こらない）
-  return (await env.REQUESTS.get(k)) !== null;
-}
-async function markGuestKnown(env, email, name) {
-  const k = guestKey(email);
-  if (!k) return;
-  // 恒久保存（TTLなし）。値は運用確認用のメモ程度
-  await env.REQUESTS.put(k, JSON.stringify({
-    email: normEmail(email),
-    name: name || "",
-    firstSeenAt: Date.now(),
-  }));
-}
-
 // ---- 移行措置（フェーズ3）：旧 /v/<id> の行き先 ------------------
 // フェーズ2までに保存された form:<id>（フォームJSON）が残っていれば notionUrl を取り出す。
 // 新規保存はしない（読み出し専用・TTL満了で自然消滅）。
@@ -366,8 +332,7 @@ function buildGuideHtml() {
     "</style></head><body><div class=\"wrap\">" +
     "<h1>🗂 共有ページはNotionに移行しました</h1>" +
     "<p>制作依頼の内容は、現在は Notion の「クリエイティブプロジェクト」データベースにのみ保存されています。このURLでの共有ページは公開を終了しました。</p>" +
-    "<p>依頼の内容は、Slack の受付チャンネル <b>#83_creative_クリ室依頼受付</b> の該当投稿にある Notion リンクから確認できます。</p>" +
-    "<p class=\"note\">見つからない場合は、クリエイティブ室（宮川）までお知らせください。</p>" +
+    "<p class=\"note\">依頼の内容の確認は、クリエイティブ室（宮川）までお問い合わせください。</p>" +
     "</div></body></html>"
   );
 }
@@ -564,113 +529,6 @@ async function createNotionPage(data, imageUploads, env) {
   }
   const pageUrl = body.url || ("https://www.notion.so/" + String(body.id || "").replace(/-/g, ""));
   return { pageId: body.id, notionUrl: pageUrl };
-}
-
-// ---- Slack 投稿（任意） ----------------------------------------
-// 【フェーズ4先行分（2026-07-25）】投稿をBlock Kitで整形（Webhookのままで実装可能な範囲）。
-//   - buildSlackBlocks … 本体の見た目（ヘッダー・概要フィールド・Notionボタン・🆕招待案内）
-//   - buildSlackText   … 通知バナー・プッシュ通知用のfallbackテキスト（blocks非対応環境の保険）
-// firstRequest=true なら「🆕初依頼者・要ゲスト招待」を付記する（フェーズ3）。
-// ※スレッド化・自動メンション・投稿URLのNotion記録はBotトークンが必要（フェーズ4本体）。
-
-// 依頼カテゴリ→絵文字（ひと目で種別が分かるように）
-const CATEGORY_EMOJI = { "新規": "🎨", "改訂": "♻️", "転用": "🔁", "改訂・流用": "♻️", "相談": "💬" };
-
-function buildSlackText(data, notionUrl, firstRequest) {
-  const productTypes = asProductTypeList(data.productTypes);
-  const imgCount = asImageList(data.images).length;
-  const category = data.category || "種別未設定";
-  const emoji = CATEGORY_EMOJI[category] || "📩";
-  const lines = [
-    emoji + " *制作依頼を受け付けました*［" + category + "］",
-    "依頼タイトル: " + (data.title || "（無題）"),
-    data.brand ? "対象事業/部署: " + data.brand : null,
-    data.requesterDept ? "所属部署: " + data.requesterDept : null,
-    productTypes.length ? "制作物の種別: " + productTypes.join("、") : null,
-    data.requesterName ? "依頼者: " + data.requesterName : null,
-    imgCount ? "添付画像: " + imgCount + "枚（Notionページに掲載）" : null,
-    notionUrl ? "Notion: " + notionUrl : null,
-  ].filter(Boolean);
-  if (firstRequest) {
-    lines.push(
-      "🆕 初依頼の方です。" + (data.requesterName || "依頼者") + " さん（" + normEmail(data.requesterEmail) + "）を" +
-      "「クリエイティブプロジェクト」DBにゲスト招待してください（DB右上「共有」→メールを入力→「今はスキップ」）。招待は1人1回だけでOKです。"
-    );
-  }
-  return lines.join("\n");
-}
-
-// Block Kit本体。Incoming Webhookは blocks に対応している（インタラクティブ要素は
-// 使えないが、URLを開くだけの「リンクボタン」は動作する）。
-function buildSlackBlocks(data, notionUrl, firstRequest) {
-  const productTypes = asProductTypeList(data.productTypes);
-  const imgCount = asImageList(data.images).length;
-  const category = data.category || "種別未設定";
-  const emoji = CATEGORY_EMOJI[category] || "📩";
-  const title = data.title || "（無題）";
-
-  const blocks = [];
-
-  // ① ヘッダー（plain_text限定・最大150字）
-  blocks.push({
-    type: "header",
-    text: { type: "plain_text", text: (emoji + " " + title).slice(0, 150), emoji: true },
-  });
-
-  // ② 概要フィールド（2列で並ぶ。空の項目は出さない・最大10件）
-  const fields = [
-    { type: "mrkdwn", text: "*依頼種別*\n" + category },
-    data.requesterName
-      ? { type: "mrkdwn", text: "*依頼者*\n" + data.requesterName + (data.requesterDept ? "（" + data.requesterDept + "）" : "") }
-      : null,
-    data.brand ? { type: "mrkdwn", text: "*対象事業・部署*\n" + data.brand } : null,
-    productTypes.length ? { type: "mrkdwn", text: "*制作物の種別*\n" + productTypes.join("、").slice(0, 1900) } : null,
-    imgCount ? { type: "mrkdwn", text: "*添付画像*\n" + imgCount + "枚（Notionページに掲載）" } : null,
-  ].filter(Boolean).slice(0, 10);
-  blocks.push({ type: "section", fields });
-
-  // ③ Notionページへのリンクボタン（依頼の正本へ最短導線）
-  if (notionUrl) {
-    blocks.push({
-      type: "actions",
-      elements: [{
-        type: "button",
-        text: { type: "plain_text", text: "🗂 Notionで依頼内容を見る", emoji: true },
-        url: notionUrl,
-        style: "primary",
-      }],
-    });
-  }
-
-  // ④ 初依頼者の招待案内（フェーズ3の🆕検知をBlock Kitで表示）
-  if (firstRequest) {
-    blocks.push({ type: "divider" });
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text:
-          "🆕 *初依頼の方です。* " + (data.requesterName || "依頼者") + " さん（`" + normEmail(data.requesterEmail) + "`）を" +
-          "「クリエイティブプロジェクト」DBにゲスト招待してください（DB右上「共有」→メールを入力→「今はスキップ」）。招待は1人1回だけでOKです。",
-      },
-    });
-  }
-
-  return blocks;
-}
-
-async function postToSlack(data, notionUrl, firstRequest, env) {
-  const hook = (env.SLACK_WEBHOOK_URL || "").trim();
-  if (!hook) return { posted: false, reason: "SLACK_WEBHOOK_URL未設定" };
-  const res = await fetch(hook, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      text: buildSlackText(data, notionUrl, firstRequest), // 通知用fallback
-      blocks: buildSlackBlocks(data, notionUrl, firstRequest),
-    }),
-  });
-  return { posted: res.ok, reason: res.ok ? "" : "Slack投稿HTTP " + res.status };
 }
 
 // ============================================================
@@ -1267,10 +1125,9 @@ async function appendImageBlocksToNotion(pageId, imageUploads, env) {
 // /submit の応答後に ctx.waitUntil で実行する後続処理のまとまり。
 //   ① 参考画像：並列アップロード → 本文へ追記（失敗したら本文に⚠️注記）
 //   ② Drive：フォルダ作成 → 「データ格納先」書き戻し（改訂の採番・事業もここで書く）
-//   ③ Slack：投稿 → 成功した初依頼者にだけ既知マーク
-// ①②③は互いに依存しないため並走させる。どれが失敗しても他は続行する
+// ①②は互いに依存しないため並走させる。どれが失敗しても他は続行する
 // （Promise.allSettled）。依頼そのもの（Notionページ）は応答時点で成立済み。
-async function finishSubmitInBackground(data, images, notion, seqLabel, firstRequest, env) {
+async function finishSubmitInBackground(data, images, notion, seqLabel, env) {
   const imagesJob = (async () => {
     if (!images.length) return;
     try {
@@ -1311,21 +1168,7 @@ async function finishSubmitInBackground(data, images, notion, seqLabel, firstReq
     }
   })();
 
-  const slackJob = (async () => {
-    let slack = { posted: false, reason: "" };
-    try {
-      slack = await postToSlack(data, notion.notionUrl, firstRequest, env);
-    } catch (e) {
-      slack = { posted: false, reason: String(e.message || e) };
-    }
-    // 既知マークは「初依頼者の通知が実際に投稿できたとき」だけ付ける。
-    // （Webhook未設定・投稿失敗のときは付けず、次回の送信で再通知させる）
-    if (firstRequest && slack.posted) {
-      try { await markGuestKnown(env, data.requesterEmail, data.requesterName); } catch {}
-    }
-  })();
-
-  await Promise.allSettled([imagesJob, driveJob, slackJob]);
+  await Promise.allSettled([imagesJob, driveJob]);
 }
 
 // ---- ルーター ---------------------------------------------------
@@ -1462,14 +1305,6 @@ export default {
         data._kaiteiBrand = kaiteiBrand;
       }
 
-      // 【フェーズ3】初依頼者かどうかを既知リストと照合
-      let firstRequest = false;
-      try {
-        firstRequest = !(await isKnownGuest(env, actor.email));
-      } catch {
-        firstRequest = false; // 照合に失敗しても送信は止めない（安全網＝アクセスリクエスト承認）
-      }
-
       // ① 参考画像の検証だけ同期で行う（アップロードは応答後＝V1-5.8）
       const images = asImageList(data.images);
 
@@ -1498,24 +1333,23 @@ export default {
       }
 
       // 【V1-5.8】応答はここで確定する。フォームが使うのは notionUrl のみ。
-      //   画像・Drive・Slackは応答後に処理するため、このレスポンス（と冪等キーの保存値）には
+      //   画像・Driveは応答後に処理するため、このレスポンス（と冪等キーの保存値）には
       //   最終結果が入らない。deferred:true がその目印。
       const result = {
         ok: true,
         notionUrl: notion.notionUrl,
         notionPageId: notion.pageId,
-        firstRequest,
         seqLabel,
         imagesQueued: images.length,
-        deferred: true, // 画像アップロード・Driveフォルダ作成・Slack投稿は応答後に実行
+        deferred: true, // 画像アップロード・Driveフォルダ作成は応答後に実行
       };
       if (idem) {
         await env.REQUESTS.put("idem:" + idem, JSON.stringify(result), { expirationTtl: 60 * 60 * 24 * 7 });
       }
 
-      // ②-c〜③【V1-5.8】時間のかかる後続処理（画像・Drive・Slack）は応答後に回す。
+      // ②-c【V1-5.8】時間のかかる後続処理（画像・Drive）は応答後に回す。
       //    ctx.waitUntil に渡すことで、レスポンス返却後もWorkerが処理を続行できる。
-      ctx.waitUntil(finishSubmitInBackground(data, images, notion, seqLabel, firstRequest, env));
+      ctx.waitUntil(finishSubmitInBackground(data, images, notion, seqLabel, env));
 
       return json(result, 200, request, env);
     }
@@ -1624,8 +1458,6 @@ export {
   asImageList,
   asScheduleList,
   asProductTypeList,
-  normEmail,
-  guestKey,
   redirectTargetFor,
   buildGuideHtml,
   buildNotionProperties,
@@ -1633,8 +1465,6 @@ export {
   buildNotionBlocks,
   // 【V1-5.8】起票高速化（画像ブロックの切り出し＝応答後の本文追記で共用）
   buildImageBlocks,
-  buildSlackText,
-  buildSlackBlocks,
   // 【V1-5】Drive自動フォルダ作成
   brandShortName,
   formatSeq,
@@ -1647,7 +1477,6 @@ export {
   DRIVE_BRAND_FOLDERS,
   DRIVE_SOUDAN_FOLDER_ID,
   DRIVE_SUBFOLDERS,
-  CATEGORY_EMOJI,
   SEC_YOKEN,
   SEC_SEISAKU,
   SEC_SOUDAN,
