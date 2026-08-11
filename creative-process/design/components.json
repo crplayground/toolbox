@@ -1,8 +1,8 @@
 {
   "$meta": {
     "name": "CREATIVE PROCESS components",
-    "version": "2.0.0",
-    "updatedAt": "2026-08-01",
+    "version": "2.1.0",
+    "updatedAt": "2026-08-11",
     "source": {
       "type": "figma",
       "fileKey": "paEvn9ugpEQoYRPBWF3fc6",
@@ -18,7 +18,18 @@
     "focusRing": {
       "$note": "Figmaのfocusバリアントを1pxずつ実測して転記した値。DESIGN.md §5-2-1 と対応する。",
       "input": {
-        "appliesTo": ["input/text", "input/textarea", "input/select", "input/calendar", "input/add", "input/login", "card/check", "card/anchorlink", "btn/checkbox"],
+        "appliesTo": [
+          "input/text",
+          "input/textarea",
+          "input/select",
+          "input/calendar",
+          "input/add",
+          "input/login",
+          "card/check",
+          "card/radio",
+          "card/anchorlink",
+          "btn/checkbox"
+        ],
         "color": "color/input/focus",
         "spread": 2,
         "blur": 0,
@@ -28,14 +39,24 @@
         "note": "入力欄は default では枠なしだが、focus では1pxのグレー枠（color/input/border）が加わる。リングはその外側に隙間なく重なる"
       },
       "button": {
-        "appliesTo": ["btn/primary", "btn/secondary", "btn/tertiary", "btn/tertiary/leftcon", "btn/close-circle", "btn/linktext"],
+        "appliesTo": [
+          "btn/primary",
+          "btn/secondary",
+          "btn/tertiary",
+          "btn/tertiary/leftcon",
+          "btn/close-circle",
+          "btn/linktext",
+          "btn/tertiary-blue/leftcon"
+        ],
         "color": "color/btn/primary/focus（tertiary系は color/btn/tertiary/focus、secondary系は color/btn/secondary/focus。値はいずれも #0872b6）",
         "width": 1,
         "offset": 2,
         "css": "outline: 1px solid var(--color-btn-*-focus); outline-offset: 2px"
       },
       "fallback": {
-        "appliesTo": ["Figmaにfocusバリアントがない要素（スケジュール行の×・完了画面の2ボタン・本文中のリンク）"],
+        "appliesTo": [
+          "Figmaにfocusバリアントがない要素（スケジュール行の×・完了画面の2ボタン・本文中のリンク）"
+        ],
         "color": "color/text/accent",
         "width": 2,
         "offset": 2,
@@ -51,23 +72,99 @@
       "loading": "処理中"
     }
   },
-
   "screens": {
-    "form":          { "figmaNodeId": "11:1715", "size": [1280, 1271], "desc": "初期表示。STEP1とSTEP2のみ、STEP3は非表示、送信ボタンはdisable、依頼者は未ログイン状態" },
-    "form-new":      { "figmaNodeId": "1:482",   "size": [1280, 4890], "desc": "依頼種別＝新規。依頼者はログイン済み状態" },
-    "form-modify":   { "figmaNodeId": "11:1981", "size": [1280, 2986], "desc": "依頼種別＝改訂・流用" },
-    "form-consult":  { "figmaNodeId": "11:2264", "size": [1280, 2063], "desc": "依頼種別＝相談" },
-    "error-message": { "figmaNodeId": "64:720",  "size": [1280, 992],  "desc": "送信できないときのエラー表示。相談フォームを例に、送信ボタンの直下へメッセージを出す" },
-    "submit":        { "figmaNodeId": "11:1368", "size": [1280, 992],  "desc": "送信完了画面" },
-    "popup-nouki":   { "figmaNodeId": "52:2121", "modalNodeId": "52:2124", "size": [784, 1015], "desc": "納期目安表モーダル" },
-    "popup-size":    { "figmaNodeId": "52:2198", "modalNodeId": "52:2342", "size": [784, 1225], "desc": "サイズ目安表モーダル" }
+    "form": {
+      "figmaNodeId": "11:1715",
+      "size": [
+        1280,
+        1255
+      ],
+      "desc": "初期表示。STEP1とSTEP2のみ、STEP3は非表示、送信ボタンはdisable、依頼者は未ログイン状態。※STEP2は旧3カードのまま残っているが、正は各form-*の4カード"
+    },
+    "form-new": {
+      "figmaNodeId": "1:482",
+      "size": [
+        1280,
+        4847
+      ],
+      "desc": "依頼種別＝新規。依頼者はログイン済み状態"
+    },
+    "form-modify": {
+      "figmaNodeId": "11:1981",
+      "size": [
+        1280,
+        2288
+      ],
+      "desc": "依頼種別＝改訂。タイトル→スケジュール→親フォルダURL→制作内容→添付"
+    },
+    "form-reuse": {
+      "figmaNodeId": "86:992",
+      "size": [
+        1280,
+        2931
+      ],
+      "desc": "依頼種別＝転用。制作物の種別は8択（イベント・キャンペーン／その他を出さない）"
+    },
+    "form-consult": {
+      "figmaNodeId": "11:2264",
+      "size": [
+        1280,
+        2047
+      ],
+      "desc": "依頼種別＝相談。タイトルは「相談タイトル」"
+    },
+    "error-message": {
+      "figmaNodeId": "64:720",
+      "size": [
+        1280,
+        992
+      ],
+      "desc": "送信できないときのエラー表示。相談フォームを例に、送信ボタンの直下へメッセージを出す"
+    },
+    "submit": {
+      "figmaNodeId": "86:1919",
+      "size": [
+        1280,
+        1064
+      ],
+      "desc": "送信完了画面（第3次改修で全面刷新＝絵文字ヒーロー＋Slack共有手順＋全幅ボタン2つ）"
+    },
+    "submit-animation": {
+      "figmaNodeId": "86:1966",
+      "componentSetNodeId": "86:2083",
+      "size": [
+        1280,
+        992
+      ],
+      "desc": "送信成功時のアニメーション。start→emoji-action→finishの3バリアント。サンビームのグラデーションが下から立ち上がり、絵文字と白文字タイトルが現れる"
+    },
+    "popup-nouki": {
+      "figmaNodeId": "52:2121",
+      "modalNodeId": "52:2124",
+      "size": [
+        784,
+        902
+      ],
+      "desc": "納期目安表モーダル（第3次改修でKV・アイキャッチ行を削除＝9項目）"
+    },
+    "popup-size": {
+      "figmaNodeId": "66:1077",
+      "modalNodeId": "66:1428",
+      "size": [
+        784,
+        1144
+      ],
+      "desc": "サイズ目安表モーダル（第3次改修でKV・アイキャッチ行を削除＝8項目）"
+    }
   },
-
   "layout": {
     "page": {
       "figmaNodeId": "11:1716",
       "width": 1280,
-      "padding": ["spacing/semantic/padding-page-y", "spacing/semantic/padding-page-x"],
+      "padding": [
+        "spacing/semantic/padding-page-y",
+        "spacing/semantic/padding-page-x"
+      ],
       "background": "color/bg/default",
       "columnWidth": 960,
       "verticalGap": "spacing/semantic/gap-head-offset"
@@ -96,27 +193,65 @@
     },
     "submitSection": {
       "desc": "送信ボタン／エラーメッセージ／送信後の案内文",
-      "order": ["btn/primary", "error-message（エラー時のみ）", "案内文"],
+      "order": [
+        "btn/primary",
+        "error-message（エラー時のみ）",
+        "案内文"
+      ],
       "gap": 32,
       "captionStyle": "Japanese/body",
       "captionAlign": "center",
       "figmaNodeId": "64:688"
     }
   },
-
   "components": {
     "btn/primary": {
       "figmaNodeId": "41:408",
       "role": "送信ボタン。1画面に1つ",
-      "size": { "figma": [128, 64], "inUse": [960, 64], "height": 64, "widthRule": "親幅いっぱい" },
+      "size": {
+        "figma": [
+          128,
+          64
+        ],
+        "inUse": [
+          960,
+          64
+        ],
+        "height": 64,
+        "widthRule": "親幅いっぱい"
+      },
       "radius": "radius/button",
-      "padding": ["spacing/semantic/padding-button-y", "spacing/semantic/padding-button-x"],
+      "padding": [
+        "spacing/semantic/padding-button-y",
+        "spacing/semantic/padding-button-x"
+      ],
       "textStyle": "Japanese/label-L",
       "states": {
-        "default": { "figmaNodeId": "41:406", "background": "gradation/sunbeam-default", "color": "color/btn/primary/text" },
-        "hover":   { "figmaNodeId": "41:414", "background": "gradation/sunbeam-h-hover", "color": "color/btn/primary/text" },
-        "focus":   { "figmaNodeId": "41:416", "background": "gradation/sunbeam-default", "color": "color/btn/primary/text", "ring": "color/btn/primary/focus", "ringWidth": 1, "ringOffset": 1, "ringRadius": "radius/button-focus" },
-        "disable": { "figmaNodeId": "41:494", "background": "color/btn/primary/disable", "color": "color/btn/primary/text", "cursor": "not-allowed" },
+        "default": {
+          "figmaNodeId": "41:406",
+          "background": "gradation/sunbeam-default",
+          "color": "color/btn/primary/text"
+        },
+        "hover": {
+          "figmaNodeId": "41:414",
+          "background": "gradation/sunbeam-h-hover",
+          "color": "color/btn/primary/text"
+        },
+        "focus": {
+          "figmaNodeId": "41:416",
+          "background": "gradation/sunbeam-default",
+          "color": "color/btn/primary/text",
+          "ring": "color/btn/primary/focus",
+          "ringWidth": 1,
+          "ringOffset": 1,
+          "ringRadius": "radius/button-focus"
+        },
+        "disable": {
+          "figmaNodeId": "41:494",
+          "background": "color/btn/primary/disable",
+          "color": "color/btn/primary/text",
+          "cursor": "not-allowed"
+        },
         "loading": {
           "figmaNodeId": "64:783",
           "background": "gradation/sunbeam-default",
@@ -129,70 +264,230 @@
           "interaction": "disabled 相当（二重送信を防ぐ）。aria-busy=\"true\" を付ける"
         }
       },
-      "usage": ["form 50:1000（disable）", "form-new 46:828", "form-modify 50:1277", "form-consult 50:1524", "error-message 64:689"]
+      "usage": [
+        "form 50:1000（disable）",
+        "form-new 46:828",
+        "form-modify 50:1277",
+        "form-consult 50:1524",
+        "error-message 64:689"
+      ]
     },
-
     "btn/secondary": {
       "figmaNodeId": "41:409",
       "role": "青ベタの主要アクション。現状フォーム内での配置はない",
-      "size": { "figma": [128, 64], "height": 64 },
+      "size": {
+        "figma": [
+          128,
+          64
+        ],
+        "height": 64
+      },
       "radius": "radius/button",
-      "padding": ["spacing/semantic/padding-button-y", "spacing/semantic/padding-button-x"],
+      "padding": [
+        "spacing/semantic/padding-button-y",
+        "spacing/semantic/padding-button-x"
+      ],
       "textStyle": "Japanese/label-L",
       "states": {
-        "default": { "figmaNodeId": "41:407", "background": "color/btn/secondary/default", "color": "color/text/white" },
-        "hover":   { "figmaNodeId": "41:412", "background": "color/btn/secondary/hover", "color": "color/btn/secondary/text" },
-        "focus":   { "figmaNodeId": "41:418", "ring": "color/btn/secondary/focus", "ringWidth": 1, "ringOffset": 1 },
-        "disable": { "figmaNodeId": "41:492", "background": "color/btn/primary/disable", "color": "color/text/white" }
+        "default": {
+          "figmaNodeId": "41:407",
+          "background": "color/btn/secondary/default",
+          "color": "color/text/white"
+        },
+        "hover": {
+          "figmaNodeId": "41:412",
+          "background": "color/btn/secondary/hover",
+          "color": "color/btn/secondary/text"
+        },
+        "focus": {
+          "figmaNodeId": "41:418",
+          "ring": "color/btn/secondary/focus",
+          "ringWidth": 1,
+          "ringOffset": 1
+        },
+        "disable": {
+          "figmaNodeId": "41:492",
+          "background": "color/btn/primary/disable",
+          "color": "color/text/white"
+        }
       }
     },
-
     "btn/tertiary": {
       "figmaNodeId": "41:500",
       "role": "白地の副次ボタン。ログイン済み行の「別のアカウント」",
-      "size": { "figma": [96, 44], "inUse": [132, 44], "height": 44 },
-      "radius": "radius/button-s",
-      "padding": ["spacing/semantic/padding-button-y-s", "spacing/semantic/padding-button-x-s"],
-      "textStyle": "Japanese/label-L",
-      "states": {
-        "default": { "figmaNodeId": "41:501", "background": "color/btn/tertiary/white", "border": "color/btn/tertiary/border", "borderWidth": 1, "color": "color/btn/tertiary/text" },
-        "hover":   { "figmaNodeId": "41:503", "background": "color/btn/tertiary/hover",  "border": "color/btn/tertiary/border" },
-        "focus":   { "figmaNodeId": "41:505", "background": "color/btn/tertiary/white",  "ring": "color/btn/tertiary/focus", "ringWidth": 1, "ringOffset": 2, "ringRadius": "radius/button-s-focus" },
-        "disable": { "figmaNodeId": "41:508", "background": "color/btn/tertiary/white",  "border": "color/btn/tertiary/disable", "color": "color/btn/tertiary/disable" }
+      "size": {
+        "figma": [
+          96,
+          44
+        ],
+        "inUse": [
+          132,
+          44
+        ],
+        "height": 44
       },
-      "usage": ["46:807", "50:1158", "50:1444", "64:645"]
+      "radius": "radius/button-s",
+      "padding": [
+        "spacing/semantic/padding-button-y-s",
+        "spacing/semantic/padding-button-x-s"
+      ],
+      "textStyle": "Japanese/label-M",
+      "states": {
+        "default": {
+          "figmaNodeId": "41:501",
+          "background": "color/btn/tertiary/white",
+          "border": "color/btn/tertiary/border",
+          "borderWidth": 1,
+          "color": "color/btn/tertiary/text"
+        },
+        "hover": {
+          "figmaNodeId": "41:503",
+          "background": "color/btn/tertiary/hover",
+          "border": "color/btn/tertiary/border"
+        },
+        "focus": {
+          "figmaNodeId": "41:505",
+          "background": "color/btn/tertiary/white",
+          "ring": "color/btn/tertiary/focus",
+          "ringWidth": 1,
+          "ringOffset": 2,
+          "ringRadius": "radius/button-s-focus"
+        },
+        "disable": {
+          "figmaNodeId": "41:508",
+          "background": "color/btn/tertiary/white",
+          "border": "color/btn/tertiary/disable",
+          "color": "color/btn/tertiary/disable"
+        }
+      },
+      "usage": [
+        "46:807",
+        "50:1158",
+        "50:1444",
+        "64:645"
+      ],
+      "note": "ラベルは label-M 12px（2026-08-11実測で修正。旧実装はlabel-L 16pxで誤り）"
     },
-
     "btn/tertiary/leftcon": {
       "figmaNodeId": "50:1639",
-      "role": "左にアイコンを持つ白地ボタン",
+      "role": "完了画面の副導線「Notionで編集」。左にlogo/Notion 24px。全幅・高さ56px",
       "placedInScreens": false,
       "note": "現在どの画面にも置かれていない。「＋日程を追加する」は input/add を使う",
-      "size": { "figma": [144, 56], "inUse": [193.85, 64], "height": 64 },
+      "size": {
+        "figma": [
+          144,
+          56
+        ],
+        "inUse": [
+          193.85,
+          64
+        ],
+        "height": 64
+      },
       "radius": "radius/button-s",
-      "padding": ["spacing/semantic/padding-button-y-s", "spacing/semantic/padding-button-x-s"],
+      "padding": [
+        "spacing/semantic/padding-button-y-s",
+        "spacing/semantic/padding-button-x-s"
+      ],
       "iconGap": "spacing/semantic/gap-icon-group",
       "icon": "icon/add",
       "textStyle": "Japanese/label-L",
       "states": {
-        "default": { "figmaNodeId": "50:1640", "background": "color/btn/tertiary/white", "border": "color/btn/tertiary/border", "borderWidth": 1, "color": "color/btn/tertiary/text" },
-        "hover":   { "figmaNodeId": "50:1701", "background": "color/btn/tertiary/hover" },
-        "focus":   { "figmaNodeId": "52:1716", "ring": "color/btn/tertiary/focus", "ringWidth": 1, "ringOffset": 3, "ringRadius": "radius/button-s-focus" },
-        "disable": { "figmaNodeId": "52:1723", "border": "color/btn/tertiary/disable", "color": "color/btn/tertiary/disable" }
+        "default": {
+          "figmaNodeId": "50:1640",
+          "background": "color/btn/tertiary/white",
+          "border": "color/btn/tertiary/border",
+          "borderWidth": 1,
+          "color": "color/btn/tertiary/text"
+        },
+        "hover": {
+          "figmaNodeId": "50:1701",
+          "background": "color/btn/tertiary/hover"
+        },
+        "focus": {
+          "figmaNodeId": "52:1716",
+          "ring": "color/btn/tertiary/focus",
+          "ringWidth": 1,
+          "ringOffset": 3,
+          "ringRadius": "radius/button-s-focus"
+        },
+        "disable": {
+          "figmaNodeId": "52:1723",
+          "border": "color/btn/tertiary/disable",
+          "color": "color/btn/tertiary/disable"
+        }
       }
     },
-
+    "btn/tertiary-blue/leftcon": {
+      "figmaNodeId": "86:2322",
+      "role": "完了画面の主導線「NotionのURLをコピー」。左にicon/link 24px。全幅・高さ56px",
+      "size": {
+        "figma": [
+          144,
+          56
+        ],
+        "inUse": "全幅×56"
+      },
+      "radius": "radius/button-s",
+      "padding": [
+        "spacing/semantic/padding-button-y-s",
+        "spacing/semantic/padding-button-x-s"
+      ],
+      "iconGap": "spacing/semantic/gap-icon-group",
+      "textStyle": "Japanese/label-L",
+      "states": {
+        "default": {
+          "figmaNodeId": "86:2350",
+          "background": "color/btn/tertiary/white",
+          "border": "color/btn/tertiary-blue/border",
+          "borderWidth": 1,
+          "color": "color/btn/tertiary-blue/text"
+        },
+        "hover": {
+          "figmaNodeId": "86:2367",
+          "background": "color/btn/tertiary/hover"
+        },
+        "focus": {
+          "figmaNodeId": "86:2372",
+          "ring": "color/btn/tertiary/focus",
+          "ringWidth": 1,
+          "ringOffset": 2
+        },
+        "disable": {
+          "figmaNodeId": "86:2379"
+        }
+      },
+      "copiedState": "コピー後2.2秒は bg=color/bg/select・文字白・ラベル「コピーしました」（コード側で決めた仕様）"
+    },
     "btn/linktext": {
       "figmaNodeId": "38:909",
       "role": "下線つきテキストリンク",
-      "size": { "figma": [84, 18], "height": 18 },
+      "size": {
+        "figma": [
+          84,
+          18
+        ],
+        "height": 18
+      },
       "textStyle": "Japanese/label-M",
       "color": "color/text/accent",
       "underlineOffset": "spacing/semantic/gap-underbar",
       "states": {
-        "default": { "figmaNodeId": "38:888", "textDecoration": "underline", "thickness": 1 },
-        "hover":   { "figmaNodeId": "38:910", "textDecoration": "underline", "thickness": 2 },
-        "focus":   { "figmaNodeId": "41:393", "textDecoration": "underline", "outline": "color/text/accent" }
+        "default": {
+          "figmaNodeId": "38:888",
+          "textDecoration": "underline",
+          "thickness": 1
+        },
+        "hover": {
+          "figmaNodeId": "38:910",
+          "textDecoration": "underline",
+          "thickness": 2
+        },
+        "focus": {
+          "figmaNodeId": "41:393",
+          "textDecoration": "underline",
+          "outline": "color/text/accent"
+        }
       },
       "usage": [
         "納期目安表をみる（41:706 / 50:1250・幅96）",
@@ -201,50 +496,131 @@
         "別の依頼を起票する（完了画面）"
       ]
     },
-
     "btn/checkbox": {
       "figmaNodeId": "38:889",
       "role": "チェックボックスの四角。card/check の内部で使う",
-      "size": [24, 24],
+      "size": [
+        24,
+        24
+      ],
       "radius": "radius/checkbox",
       "states": {
-        "default":       { "figmaNodeId": "38:967", "background": "color/btn/selection-ctrl/white", "border": "color/btn/selection-ctrl/border", "borderWidth": 1 },
-        "hover":         { "figmaNodeId": "41:446", "background": "color/bg/hover", "border": "color/btn/selection-ctrl/border" },
-        "select":        { "figmaNodeId": "41:449", "background": "color/btn/selection-ctrl/default", "icon": "icon/check", "iconSize": 20, "iconColor": "color/icon/white", "border": "none" },
-        "focus-default": { "figmaNodeId": "41:466", "ring": "color/btn/selection-ctrl/focus", "ringWidth": 2 },
-        "focus-select":  { "figmaNodeId": "41:462", "background": "color/btn/selection-ctrl/default", "ring": "color/btn/selection-ctrl/focus", "ringWidth": 2 }
+        "default": {
+          "figmaNodeId": "38:967",
+          "background": "color/btn/selection-ctrl/white",
+          "border": "color/btn/selection-ctrl/border",
+          "borderWidth": 1
+        },
+        "hover": {
+          "figmaNodeId": "41:446",
+          "background": "color/bg/hover",
+          "border": "color/btn/selection-ctrl/border"
+        },
+        "select": {
+          "figmaNodeId": "41:449",
+          "background": "color/btn/selection-ctrl/default",
+          "icon": "icon/check",
+          "iconSize": 20,
+          "iconColor": "color/icon/white",
+          "border": "none"
+        },
+        "focus-default": {
+          "figmaNodeId": "41:466",
+          "ring": "color/btn/selection-ctrl/focus",
+          "ringWidth": 2
+        },
+        "focus-select": {
+          "figmaNodeId": "41:462",
+          "background": "color/btn/selection-ctrl/default",
+          "ring": "color/btn/selection-ctrl/focus",
+          "ringWidth": 2
+        }
       }
     },
-
     "btn/close-circle": {
       "figmaNodeId": "38:899",
       "role": "丸囲みの×。添付画像サムネイルの削除に使う",
-      "size": [24, 24],
+      "size": [
+        24,
+        24
+      ],
       "radius": "radius/full",
       "states": {
-        "default": { "figmaNodeId": "11:2810", "background": "color/btn/secondary/default", "icon": "icon/close", "iconSize": 16, "iconColor": "color/icon/white" },
-        "hover":   { "figmaNodeId": "38:900", "background": "color/btn/secondary/hover" },
-        "focus":   { "figmaNodeId": "41:483", "ring": "color/btn/secondary/focus", "ringWidth": 1, "ringOffset": 2 }
+        "default": {
+          "figmaNodeId": "11:2810",
+          "background": "color/btn/secondary/default",
+          "icon": "icon/close",
+          "iconSize": 16,
+          "iconColor": "color/icon/white"
+        },
+        "hover": {
+          "figmaNodeId": "38:900",
+          "background": "color/btn/secondary/hover"
+        },
+        "focus": {
+          "figmaNodeId": "41:483",
+          "ring": "color/btn/secondary/focus",
+          "ringWidth": 1,
+          "ringOffset": 2
+        }
       },
       "note": "スケジュール行の削除には使わない（そちらは丸なしの icon/close 単体）"
     },
-
     "card/anchorlink": {
       "figmaNodeId": "46:350",
       "role": "STEP2の依頼種別カード。3枚横並び",
-      "size": { "figma": [192, 91], "inUse": [275, 110] },
-      "layout": { "direction": "column", "align": "center", "gap": "spacing/semantic/gap-icon-group" },
+      "size": {
+        "figma": [
+          192,
+          91
+        ],
+        "inUse": [
+          275,
+          110
+        ]
+      },
+      "layout": {
+        "direction": "column",
+        "align": "center",
+        "gap": "spacing/semantic/gap-icon-group"
+      },
       "columnGap": 32,
       "radius": "radius/button",
-      "padding": ["spacing/semantic/padding-button-y", "spacing/semantic/padding-button-x"],
+      "padding": [
+        "spacing/semantic/padding-button-y",
+        "spacing/semantic/padding-button-x"
+      ],
       "titleStyle": "Japanese/label-L",
       "captionStyle": "Japanese/caption",
       "states": {
-        "default":      { "figmaNodeId": "46:349", "background": "color/bg/default", "color": "color/text/default" },
-        "hover":        { "figmaNodeId": "46:351", "background": "color/bg/hover",   "color": "color/text/default", "shadow": "shadow/card" },
-        "select":       { "figmaNodeId": "46:356", "background": "color/bg/select",  "color": "color/text/white" },
-        "focus-hover":  { "figmaNodeId": "46:364", "background": "color/bg/box",     "border": "color/text/accent", "borderWidth": 2 },
-        "focus-select": { "figmaNodeId": "46:369", "background": "color/bg/select",  "color": "color/text/white", "ring": "color/text/accent" }
+        "default": {
+          "figmaNodeId": "46:349",
+          "background": "color/bg/default",
+          "color": "color/text/default"
+        },
+        "hover": {
+          "figmaNodeId": "46:351",
+          "background": "color/bg/hover",
+          "color": "color/text/default",
+          "shadow": "shadow/card"
+        },
+        "select": {
+          "figmaNodeId": "46:356",
+          "background": "color/bg/select",
+          "color": "color/text/white"
+        },
+        "focus-hover": {
+          "figmaNodeId": "46:364",
+          "background": "color/bg/box",
+          "border": "color/text/accent",
+          "borderWidth": 2
+        },
+        "focus-select": {
+          "figmaNodeId": "46:369",
+          "background": "color/bg/select",
+          "color": "color/text/white",
+          "ring": "color/text/accent"
+        }
       },
       "behavior": {
         "element": "button",
@@ -252,101 +628,363 @@
         "onSelect": "STEP3ボックスを表示し、STEP3の先頭へスクロールする（motion/scroll）"
       }
     },
-
     "card/check": {
       "figmaNodeId": "41:893",
       "role": "制作物の種別のチェックカード。2列グリッド × 5行 ＝ 10択",
-      "size": { "figma": [400, 91], "inUse": [440, 91], "inUseNoCaption": [440, 72] },
-      "layout": { "direction": "row", "align": "center", "gap": "spacing/semantic/gap-subhead-offset" },
+      "size": {
+        "figma": [
+          400,
+          91
+        ],
+        "inUse": [
+          440,
+          91
+        ],
+        "inUseNoCaption": [
+          440,
+          72
+        ]
+      },
+      "layout": {
+        "direction": "row",
+        "align": "center",
+        "gap": "spacing/semantic/gap-subhead-offset"
+      },
       "gridGap": "spacing/semantic/gap-input-group",
       "radius": "radius/textarea",
-      "padding": ["spacing/semantic/padding-card-y", "spacing/semantic/padding-card-x"],
+      "padding": [
+        "spacing/semantic/padding-card-y",
+        "spacing/semantic/padding-card-x"
+      ],
       "checkbox": "btn/checkbox",
       "titleStyle": "Japanese/label-L",
       "captionStyle": "Japanese/caption",
       "states": {
-        "default":       { "figmaNodeId": "41:816", "background": "color/bg/default", "border": "none" },
-        "hover":         { "figmaNodeId": "41:894", "background": "color/bg/hover",   "border": "none", "shadow": "shadow/card" },
-        "select":        { "figmaNodeId": "41:901", "background": "color/bg/hover",   "border": "color/border/default", "borderWidth": 1, "checkbox": "select" },
-        "focus-default": { "figmaNodeId": "46:309", "background": "color/bg/default", "border": "color/border/default", "borderWidth": 1, "ring": "color/input/focus" },
-        "focus-select":  { "figmaNodeId": "46:316", "background": "color/bg/hover",   "border": "color/border/default", "borderWidth": 1, "ring": "color/input/focus", "checkbox": "select" }
+        "default": {
+          "figmaNodeId": "41:816",
+          "background": "color/bg/default",
+          "border": "none"
+        },
+        "hover": {
+          "figmaNodeId": "41:894",
+          "background": "color/bg/hover",
+          "border": "none",
+          "shadow": "shadow/card"
+        },
+        "select": {
+          "figmaNodeId": "41:901",
+          "background": "color/bg/hover",
+          "border": "color/border/default",
+          "borderWidth": 1,
+          "checkbox": "select"
+        },
+        "focus-default": {
+          "figmaNodeId": "46:309",
+          "background": "color/bg/default",
+          "border": "color/border/default",
+          "borderWidth": 1,
+          "ring": "color/input/focus"
+        },
+        "focus-select": {
+          "figmaNodeId": "46:316",
+          "background": "color/bg/hover",
+          "border": "color/border/default",
+          "borderWidth": 1,
+          "ring": "color/input/focus",
+          "checkbox": "select"
+        }
       },
       "variants": {
-        "withCaption": { "usedBy": "新規フォーム（高さ91・補助テキストあり）" },
-        "noCaption":   { "usedBy": "改訂・流用フォーム（高さ72・補助テキストを出さない）" }
+        "withCaption": {
+          "usedBy": "新規フォーム（高さ91・補助テキストあり）"
+        },
+        "noCaption": {
+          "usedBy": "改訂・流用フォーム（高さ72・補助テキストを出さない）"
+        }
+      },
+      "deprecated": "2026-08-11 UI改訂で card/radio に置き換え（V1-5.6の単一選択化にともなう）。Figma上の定義は残っている"
+    },
+    "card/radio": {
+      "figmaNodeId": "86:1432",
+      "role": "制作物の種別のラジオカード。2列グリッド。新規＝10択／転用＝8択。card/checkの後継",
+      "size": {
+        "figma": [
+          400,
+          91
+        ],
+        "inUse": [
+          440,
+          91
+        ]
+      },
+      "layout": {
+        "direction": "row",
+        "align": "center",
+        "gap": "spacing/semantic/gap-subhead-offset"
+      },
+      "gridGap": "spacing/semantic/gap-input-group",
+      "radius": "radius/textarea",
+      "padding": [
+        "spacing/semantic/padding-card-y",
+        "spacing/semantic/padding-card-x"
+      ],
+      "radioBtn": "btn/radio-btn",
+      "titleStyle": "Japanese/label-L",
+      "captionStyle": "Japanese/caption",
+      "states": {
+        "default": {
+          "figmaNodeId": "86:1433",
+          "background": "color/bg/default",
+          "border": "none"
+        },
+        "hover": {
+          "figmaNodeId": "86:1438",
+          "background": "color/bg/hover",
+          "border": "none",
+          "shadow": "shadow/card"
+        },
+        "select": {
+          "figmaNodeId": "86:1443",
+          "background": "color/bg/hover",
+          "border": "color/border/default",
+          "borderWidth": 1,
+          "radioBtn": "select"
+        },
+        "focus-default": {
+          "figmaNodeId": "86:1448",
+          "background": "color/bg/default",
+          "border": "color/border/default",
+          "borderWidth": 1,
+          "ring": "color/input/focus"
+        },
+        "focus-select": {
+          "figmaNodeId": "86:1454",
+          "background": "color/bg/hover",
+          "border": "color/border/default",
+          "borderWidth": 1,
+          "ring": "color/input/focus",
+          "radioBtn": "select"
+        }
       }
     },
-
+    "btn/radio-btn": {
+      "figmaNodeId": "86:677",
+      "role": "card/radio内のラジオボタン。24px円＋1px枠。選択で枠が青くなり16pxの青い内円が入る",
+      "size": {
+        "figma": [
+          24,
+          24
+        ]
+      },
+      "radius": "radius/full",
+      "innerDot": {
+        "size": 16,
+        "inset": 3,
+        "color": "color/btn/radio/default",
+        "note": "内円は選択時のみ表示"
+      },
+      "states": {
+        "default": {
+          "figmaNodeId": "86:663",
+          "background": "color/btn/radio/white",
+          "border": "color/btn/radio/border",
+          "borderWidth": 1
+        },
+        "hover": {
+          "figmaNodeId": "86:680",
+          "background": "color/btn/radio/hover",
+          "border": "color/btn/radio/border",
+          "note": "実装ではカード側のhover表現で代替し、ラジオ単体のhoverは付けない"
+        },
+        "select": {
+          "figmaNodeId": "86:678",
+          "background": "color/btn/radio/white",
+          "border": "color/btn/radio/default",
+          "borderWidth": 1,
+          "innerDot": true
+        },
+        "focus-default": {
+          "figmaNodeId": "86:683",
+          "note": "実装ではカード側にリングを出す（DESIGN.md §5-2-1 A）"
+        },
+        "focus-select": {
+          "figmaNodeId": "86:685",
+          "note": "同上"
+        }
+      }
+    },
     "input/text": {
       "figmaNodeId": "38:607",
       "role": "1行テキスト入力",
-      "size": { "figma": [400, 64], "height": 64, "widthRule": "親幅いっぱい" },
+      "size": {
+        "figma": [
+          400,
+          64
+        ],
+        "height": 64,
+        "widthRule": "親幅いっぱい"
+      },
       "radius": "radius/textarea",
       "padding": "spacing/semantic/padding-textarea",
       "textStyle": "Japanese/body",
       "placeholderColor": "color/text/sub",
       "states": {
-        "default": { "figmaNodeId": "38:578", "background": "color/input/default", "border": "none" },
-        "hover":   { "figmaNodeId": "38:608", "background": "color/bg/hover",      "border": "none" },
-        "focus":   { "figmaNodeId": "38:610", "background": "color/input/default", "border": "color/input/border", "borderWidth": 1 }
+        "default": {
+          "figmaNodeId": "38:578",
+          "background": "color/input/default",
+          "border": "none"
+        },
+        "hover": {
+          "figmaNodeId": "38:608",
+          "background": "color/bg/hover",
+          "border": "none"
+        },
+        "focus": {
+          "figmaNodeId": "38:610",
+          "background": "color/input/default",
+          "border": "color/input/border",
+          "borderWidth": 1
+        }
       }
     },
-
     "input/textarea": {
       "figmaNodeId": "38:612",
       "role": "複数行テキスト入力",
-      "size": { "figma": [400, 128], "minHeight": 128, "widthRule": "親幅いっぱい" },
+      "size": {
+        "figma": [
+          400,
+          128
+        ],
+        "minHeight": 128,
+        "widthRule": "親幅いっぱい"
+      },
       "radius": "radius/textarea",
       "padding": "spacing/semantic/padding-textarea",
       "textStyle": "Japanese/body",
       "placeholderColor": "color/text/sub",
-      "resizeHandle": { "icon": "icon/extend", "position": "右下", "color": "color/border/default", "size": 16, "note": "CSS resize:vertical と併用し、つまみをアイコンで見せる" },
+      "resizeHandle": {
+        "icon": "icon/extend",
+        "position": "右下",
+        "color": "color/border/default",
+        "size": 16,
+        "note": "CSS resize:vertical と併用し、つまみをアイコンで見せる"
+      },
       "states": {
-        "default": { "figmaNodeId": "38:722", "background": "color/input/default", "border": "none" },
-        "hover":   { "figmaNodeId": "38:728", "background": "color/bg/hover",      "border": "none" },
-        "focus":   { "figmaNodeId": "38:733", "background": "color/input/default", "border": "color/input/border", "borderWidth": 1 }
+        "default": {
+          "figmaNodeId": "38:722",
+          "background": "color/input/default",
+          "border": "none"
+        },
+        "hover": {
+          "figmaNodeId": "38:728",
+          "background": "color/bg/hover",
+          "border": "none"
+        },
+        "focus": {
+          "figmaNodeId": "38:733",
+          "background": "color/input/default",
+          "border": "color/input/border",
+          "borderWidth": 1
+        }
       }
     },
-
     "input/select": {
       "figmaNodeId": "38:627",
       "role": "プルダウン",
-      "size": { "figma": [400, 64], "height": 64, "widthRule": "親幅いっぱい" },
+      "size": {
+        "figma": [
+          400,
+          64
+        ],
+        "height": 64,
+        "widthRule": "親幅いっぱい"
+      },
       "radius": "radius/textarea",
       "padding": "spacing/semantic/padding-textarea",
       "textStyle": "Japanese/body",
       "placeholderColor": "color/text/sub",
-      "icon": { "name": "icon/trg-down", "color": "color/icon/blue", "position": "右", "size": 16 },
+      "icon": {
+        "name": "icon/trg-down",
+        "color": "color/icon/blue",
+        "position": "右",
+        "size": 16
+      },
       "states": {
-        "default": { "figmaNodeId": "38:580", "background": "color/input/default", "border": "none" },
-        "hover":   { "figmaNodeId": "38:628", "background": "color/bg/hover",      "border": "none" },
-        "focus":   { "figmaNodeId": "38:633", "background": "color/input/default", "border": "color/input/border", "borderWidth": 1, "iconDirection": "up" }
+        "default": {
+          "figmaNodeId": "38:580",
+          "background": "color/input/default",
+          "border": "none"
+        },
+        "hover": {
+          "figmaNodeId": "38:628",
+          "background": "color/bg/hover",
+          "border": "none"
+        },
+        "focus": {
+          "figmaNodeId": "38:633",
+          "background": "color/input/default",
+          "border": "color/input/border",
+          "borderWidth": 1,
+          "iconDirection": "up"
+        }
       }
     },
-
     "input/calendar": {
       "figmaNodeId": "38:638",
       "role": "日付入力",
-      "size": { "figma": [400, 64], "inUse": [193.85, 64], "height": 64 },
+      "size": {
+        "figma": [
+          400,
+          64
+        ],
+        "inUse": [
+          193.85,
+          64
+        ],
+        "height": 64
+      },
       "radius": "radius/textarea",
       "padding": "spacing/semantic/padding-textarea",
       "textStyle": "Japanese/body",
-      "icon": { "name": "icon/calendar", "color": "color/icon/blue", "position": "右", "size": 20 },
+      "icon": {
+        "name": "icon/calendar",
+        "color": "color/icon/blue",
+        "position": "右",
+        "size": 20
+      },
       "states": {
-        "default": { "figmaNodeId": "38:581", "background": "color/input/default", "border": "none" },
-        "hover":   { "figmaNodeId": "38:639", "background": "color/bg/hover" },
-        "focus":   { "figmaNodeId": "38:646", "background": "color/input/default", "border": "color/input/border", "borderWidth": 1 }
+        "default": {
+          "figmaNodeId": "38:581",
+          "background": "color/input/default",
+          "border": "none"
+        },
+        "hover": {
+          "figmaNodeId": "38:639",
+          "background": "color/bg/hover"
+        },
+        "focus": {
+          "figmaNodeId": "38:646",
+          "background": "color/input/default",
+          "border": "color/input/border",
+          "borderWidth": 1
+        }
       },
       "behavior": {
         "placeholder": "未入力のあいだ今日の日付をプレースホルダとして表示し、実値は空のままにする",
         "displayFormat": "入力後の表示形式（yyyy/mm/dd）はブラウザのロケール依存でCSSからは変えられない"
       }
     },
-
     "input/add": {
       "figmaNodeId": "38:653",
       "role": "追加アクション行。塗りは無く枠線だけ。ラベル中央寄せ",
-      "size": { "figma": [400, 64], "height": 64, "widthRule": "配置により親幅いっぱい／193.85px" },
+      "size": {
+        "figma": [
+          400,
+          64
+        ],
+        "height": 64,
+        "widthRule": "配置により親幅いっぱい／193.85px"
+      },
       "radius": "radius/textarea",
       "padding": "spacing/semantic/padding-textarea",
       "textStyle": "Japanese/body",
@@ -355,20 +993,47 @@
       "labelPrefix": "＋",
       "iconNote": "先頭の「＋」は独立したアイコンではなく文字の一部。icon/add は使わない",
       "states": {
-        "default": { "figmaNodeId": "38:582", "background": "transparent",        "border": "color/input/border", "borderWidth": 1, "color": "color/text/sub" },
-        "hover":   { "figmaNodeId": "38:654", "background": "color/input/hover",  "border": "color/input/border", "borderWidth": 1 },
-        "focus":   { "figmaNodeId": "38:656", "background": "transparent",        "border": "color/input/border", "borderWidth": 1, "ring": "color/input/focus" }
+        "default": {
+          "figmaNodeId": "38:582",
+          "background": "transparent",
+          "border": "color/input/border",
+          "borderWidth": 1,
+          "color": "color/text/sub"
+        },
+        "hover": {
+          "figmaNodeId": "38:654",
+          "background": "color/input/hover",
+          "border": "color/input/border",
+          "borderWidth": 1
+        },
+        "focus": {
+          "figmaNodeId": "38:656",
+          "background": "transparent",
+          "border": "color/input/border",
+          "borderWidth": 1,
+          "ring": "color/input/focus"
+        }
       },
       "usage": [
         "＋画像を添付する（38:805 / 50:1270 / 50:1522 / 64:687・親幅いっぱい）",
         "＋日程を追加する（41:679 / 50:1256・幅193.85）"
       ]
     },
-
     "input/login": {
       "figmaNodeId": "64:825",
       "role": "Googleログインボタン。左にGoogleのGマーク、ラベル左寄せ、背景は透明（親の白が透ける）",
-      "size": { "figma": [400, 56], "inUse": [896, 56], "height": 56, "widthRule": "親幅いっぱい" },
+      "size": {
+        "figma": [
+          400,
+          56
+        ],
+        "inUse": [
+          896,
+          56
+        ],
+        "height": 56,
+        "widthRule": "親幅いっぱい"
+      },
       "radius": "radius/textarea",
       "padding": "spacing/semantic/padding-textarea",
       "textStyle": "Japanese/label-L",
@@ -378,38 +1043,82 @@
       "icon": "logo/google-g",
       "label": "Googleでログインする",
       "states": {
-        "default": { "figmaNodeId": "64:826", "background": "transparent",       "border": "color/input/border", "borderWidth": 1 },
-        "hover":   { "figmaNodeId": "64:849", "background": "color/input/hover", "border": "color/input/border", "borderWidth": 1 },
-        "focus":   { "figmaNodeId": "64:861", "background": "transparent",       "border": "color/input/border", "borderWidth": 1, "ring": "color/input/focus" }
+        "default": {
+          "figmaNodeId": "64:826",
+          "background": "transparent",
+          "border": "color/input/border",
+          "borderWidth": 1
+        },
+        "hover": {
+          "figmaNodeId": "64:849",
+          "background": "color/input/hover",
+          "border": "color/input/border",
+          "borderWidth": 1
+        },
+        "focus": {
+          "figmaNodeId": "64:861",
+          "background": "transparent",
+          "border": "color/input/border",
+          "borderWidth": 1,
+          "ring": "color/input/focus"
+        }
       },
-      "usage": ["form 64:867（未ログイン時のSTEP1）"]
+      "usage": [
+        "form 64:867（未ログイン時のSTEP1）"
+      ]
     },
-
     "login-row-signed-in": {
       "figmaNodeId": "46:803",
       "role": "ログイン済みの依頼者行。ログイン中のGoogleアカウント情報を左に、右に「別のアカウント」ボタン",
-      "size": { "inUse": [896, 76], "height": 76 },
+      "size": {
+        "inUse": [
+          896,
+          76
+        ],
+        "height": 76
+      },
       "background": "color/input/default",
       "radius": "radius/textarea",
       "padding": "spacing/semantic/padding-textarea",
       "textStyle": "Japanese/body",
       "textColor": "color/text/sub",
-      "action": { "component": "btn/tertiary", "label": "別のアカウント", "position": "右端", "size": [132, 44] },
+      "action": {
+        "component": "btn/tertiary",
+        "label": "別のアカウント",
+        "position": "右端",
+        "size": [
+          132,
+          44
+        ]
+      },
       "figmaLabel": "Googleログイン情報を表示する",
       "labelIsPlaceholder": true,
       "note": "Figmaのテキストはダミー。実装では検証済みトークンの氏名とメールアドレスを表示する（DESIGN.md 参照）",
-      "usage": ["46:803（新規）", "50:1156（改訂・流用）", "50:1442（相談）", "64:643（エラー表示）"]
+      "usage": [
+        "46:803（新規）",
+        "50:1156（改訂・流用）",
+        "50:1442（相談）",
+        "64:643（エラー表示）"
+      ]
     },
-
     "error-message": {
       "figmaNodeId": "64:724",
       "role": "送信できないときのメッセージ。送信ボタンの直下に出す",
-      "size": { "inUse": [960, 64], "widthRule": "送信ボタンと同じ幅" },
+      "size": {
+        "inUse": [
+          960,
+          64
+        ],
+        "widthRule": "送信ボタンと同じ幅"
+      },
       "background": "color/warning/bg",
       "color": "color/warning/text",
       "textStyle": "Japanese/label-L",
       "radius": "radius/textarea",
-      "padding": ["spacing/semantic/padding-card-y", "spacing/semantic/padding-card-x"],
+      "padding": [
+        "spacing/semantic/padding-card-y",
+        "spacing/semantic/padding-card-x"
+      ],
       "align": "left",
       "exampleText": "Googleログインが必要です。上の「依頼者」欄からログインしてください。",
       "behavior": {
@@ -418,64 +1127,126 @@
         "multiple": "複数のエラーがあるときは1つの枠内に改行で並べる"
       }
     },
-
     "badge/required": {
       "figmaNodeId": "6:1088",
       "role": "必須バッジ",
-      "size": [40, 20],
+      "size": [
+        40,
+        20
+      ],
       "label": "必須",
       "background": "color/warning/bg",
       "color": "color/warning/text",
       "textStyle": "Japanese/label-M",
       "radius": "radius/full",
-      "padding": ["spacing/semantic/padding-badge-y", "spacing/semantic/padding-badge-x"]
+      "padding": [
+        "spacing/semantic/padding-badge-y",
+        "spacing/semantic/padding-badge-x"
+      ]
     },
-
     "logo/Notion": {
       "figmaNodeId": "11:1629",
-      "size": [24, 24],
+      "size": [
+        24,
+        24
+      ],
       "asset": "G-Drive 04_ツールボックス/creative-process/icon/syymbol_notion.svg",
       "note": "多色（白＋黒）のため currentColor 化しない"
     },
     "logo/google-g": {
       "figmaNodeId": "64:807",
-      "size": [24, 24],
+      "size": [
+        24,
+        24
+      ],
       "asset": "G-Drive 04_ツールボックス/creative-process/icon/syymbol_google.png",
-      "assetSize": [2820, 2820],
+      "assetSize": [
+        2820,
+        2820
+      ],
       "assetBytes": 137714,
       "note": "多色（4色）のため currentColor 化しない。原寸2820pxは表示サイズ24pxに対して過大なので、埋め込み時は96×96へ縮小してからdata URI化する（原寸はG-Driveにマスターとして残す）"
     },
     "logo/url": {
       "figmaNodeId": "50:1655",
-      "size": [24, 24],
+      "size": [
+        24,
+        24
+      ],
       "asset": null,
       "status": "not-exported",
       "note": "書き出さない方針。完了画面のコピーボタンは絵文字 🔗 を使う"
     },
-
     "icons": {
       "$rule": "すべて 24×24 / viewBox 0 0 24 24。インラインSVG化し fill=\"currentColor\" を付けて色をCSSで制御する（Illustrator書き出しのため fill 属性を持たない）。",
-      "icon/add":      { "figmaNodeId": "38:179",  "asset": "creative-process/icon/add.svg",      "bytes": 427, "usedInCode": false, "note": "input/add の「＋」は文字なので、コードではこのアイコンを描画しない" },
-      "icon/calendar": { "figmaNodeId": "11:1234", "asset": "creative-process/icon/calendar.svg", "bytes": 566 },
-      "icon/check":    { "figmaNodeId": "38:409",  "asset": "creative-process/icon/check.svg",    "bytes": 417 },
-      "icon/close":    { "figmaNodeId": "11:1296", "asset": "creative-process/icon/close.svg",    "bytes": 504 },
-      "icon/extend":   { "figmaNodeId": "38:355",  "asset": "creative-process/icon/extend.svg",   "bytes": 511, "use": "textareaの右下リサイズハンドル" },
-      "icon/trg-down": { "figmaNodeId": "1:968",   "asset": "creative-process/icon/trg-down.svg", "bytes": 308, "use": "プルダウンの▼" },
-      "icon/loading":  {
+      "icon/add": {
+        "figmaNodeId": "38:179",
+        "asset": "creative-process/icon/add.svg",
+        "bytes": 427,
+        "usedInCode": false,
+        "note": "input/add の「＋」は文字なので、コードではこのアイコンを描画しない"
+      },
+      "icon/calendar": {
+        "figmaNodeId": "11:1234",
+        "asset": "creative-process/icon/calendar.svg",
+        "bytes": 566
+      },
+      "icon/check": {
+        "figmaNodeId": "38:409",
+        "asset": "creative-process/icon/check.svg",
+        "bytes": 417
+      },
+      "icon/close": {
+        "figmaNodeId": "11:1296",
+        "asset": "creative-process/icon/close.svg",
+        "bytes": 504
+      },
+      "icon/extend": {
+        "figmaNodeId": "38:355",
+        "asset": "creative-process/icon/extend.svg",
+        "bytes": 511,
+        "use": "textareaの右下リサイズハンドル"
+      },
+      "icon/trg-down": {
+        "figmaNodeId": "1:968",
+        "asset": "creative-process/icon/trg-down.svg",
+        "bytes": 308,
+        "use": "プルダウンの▼"
+      },
+      "icon/loading": {
         "figmaNodeId": "64:774",
         "asset": null,
         "status": "not-exported",
-        "variants": { "0": "64:773", "25": "64:772", "50": "64:771", "75": "64:770" },
+        "variants": {
+          "0": "64:773",
+          "25": "64:772",
+          "50": "64:771",
+          "75": "64:770"
+        },
         "use": "送信中スピナー",
         "note": "Figmaは0/25/50/75の4コマ。実装ではコマ送りではなく1コマをCSSで連続回転させる（motion/loading-spin）"
       }
+    },
+    "emoji": {
+      "figmaSectionId": "86:1815",
+      "role": "完了画面・送信アニメーションの絵文字。Figmaには16種の候補があるが、現行デザインは emoji/Laughing（😆）を使用",
+      "inUse": "😆（Unicode絵文字をそのまま描画。画像は埋め込まない）",
+      "size": {
+        "done": 64,
+        "animation": 104
+      }
     }
   },
-
   "screenParts": {
     "modal": {
-      "figmaNodeId": ["52:2124", "52:2342"],
-      "scrimNodeId": ["52:2122", "52:2341"],
+      "figmaNodeId": [
+        "52:2124",
+        "52:2342"
+      ],
+      "scrimNodeId": [
+        "52:2122",
+        "52:2341"
+      ],
       "width": 784,
       "background": "color/bg/box",
       "radius": "radius/section",
@@ -484,8 +1255,17 @@
       "shadow": "shadow/modal",
       "shadowNote": "影は白いパネルにだけ掛ける。外側のラッパーに掛けると閉じるボタンにも影がついてしまう",
       "divider": false,
-      "scrim": { "color": "color/bg/scrim", "alpha": 0.7 },
-      "closeButton": { "component": "btn/close-circle", "size": 24, "position": "パネル内の右上", "offset": 16, "shadow": false },
+      "scrim": {
+        "color": "color/bg/scrim",
+        "alpha": 0.7
+      },
+      "closeButton": {
+        "component": "btn/close-circle",
+        "size": 24,
+        "position": "パネル内の右上",
+        "offset": 16,
+        "shadow": false
+      },
       "titleStyle": "Japanese/head-3",
       "leadStyle": "Japanese/body",
       "leadColor": "color/text/sub",
@@ -507,8 +1287,20 @@
     },
     "done-actions": {
       "desc": "「URLをコピー」と「Notionページを開く」の2ボタン横並び",
-      "copyButton": { "background": "color/bg/hover", "border": "color/border/default", "radius": "radius/button-s", "icon": "🔗", "label": "URLをコピー" },
-      "openButton": { "background": "color/bg/box",   "border": "color/border/default", "radius": "radius/button-s", "icon": "logo/Notion", "label": "Notionページを開く" }
+      "copyButton": {
+        "background": "color/bg/hover",
+        "border": "color/border/default",
+        "radius": "radius/button-s",
+        "icon": "🔗",
+        "label": "URLをコピー"
+      },
+      "openButton": {
+        "background": "color/bg/box",
+        "border": "color/border/default",
+        "radius": "radius/button-s",
+        "icon": "logo/Notion",
+        "label": "Notionページを開く"
+      }
     },
     "image-preview": {
       "desc": "添付済み画像のサムネイル一覧",

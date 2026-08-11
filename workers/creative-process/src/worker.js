@@ -1347,7 +1347,7 @@ export default {
         }
         if (!kaiteiParent) {
           return json({
-            error: "「改訂するデータの親フォルダのURL」のフォルダにアクセスできません。「CRAZY CREATIVE/02_案件管理」の中のフォルダURLを貼ってください。" + KAITEI_NG_HINT,
+            error: "「CRAZY CREATIVE/02_案件管理」の中のフォルダURLを貼ってください。" + KAITEI_NG_HINT,
             code: "KAITEI_PARENT",
           }, 400, request, env);
         }

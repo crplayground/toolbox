@@ -8,7 +8,7 @@
 **扱う範囲**：色・タイポグラフィ・余白・角丸・影・コンポーネント・レイアウト・モーションといった**見た目のこと**。
 **扱わない範囲**：設問構成・画面フロー・Worker／Notionのデータ設計は [`../SPEC.md`](../SPEC.md)、インフラ・セキュリティ・運用は Google Drive の `creative-process/開発/BRIEF.md`。
 
-- 最終更新: 2026-08-01
+- 最終更新: 2026-08-11（Figma第3次改修のUI反映）
 - 対象コード: `creative-process/index.html`
 - 関連ファイル: [`tokens.json`](./tokens.json)（トークン定義）／[`components.json`](./components.json)（コンポーネント定義）
 
@@ -28,27 +28,31 @@
 ## 2. Figmaの構成
 
 ### ページ `design`（`0:1`）— 画面
-セクション `CREATIVE PROCESS`（`27:3284`）配下に8フレーム。**これがすべて最新の正**。
+セクション `CREATIVE PROCESS`（`27:3284`）配下に10フレーム（第3次改修・2026-08-11反映）。**これがすべて最新の正**。
 
 | ノード | 名前 | 何を描いているか |
 |---|---|---|
-| `11:1715` | form | 初期表示。STEP1・2のみ、STEP3は非表示、送信ボタンは無効、依頼者は未ログイン |
+| `11:1715` | form | 初期表示。STEP1・2のみ、STEP3は非表示、送信ボタンは無効、依頼者は未ログイン ※STEP2だけ旧3カードのまま。正は各form-\*の4カード |
 | `1:482` | form-new | 依頼種別＝新規。依頼者はログイン済み |
-| `11:1981` | form-modify | 依頼種別＝改訂・流用 |
-| `11:2264` | form-consult | 依頼種別＝相談 |
+| `11:1981` | form-modify | 依頼種別＝改訂（タイトル→スケジュール→親フォルダURL→制作内容→添付） |
+| `86:992` | form-reuse | 依頼種別＝転用（制作物の種別は8択） |
+| `11:2264` | form-consult | 依頼種別＝相談（タイトルは「相談タイトル」） |
 | `64:720` | error-message | 送信できないときのエラー表示 |
-| `11:1368` | submit | 送信完了画面 |
-| `52:2121` | popup 1 | 納期目安表モーダル |
-| `52:2198` | popup 2 | サイズ目安表モーダル |
+| `86:1919` | submit | 送信完了画面（絵文字ヒーロー＋Slack共有手順＋全幅ボタン2つ） |
+| `86:1966` | submit-animation | 送信成功時のアニメーション（コンポーネント `86:2083`＝start / emoji-action / finish） |
+| `52:2121` | popup 1 | 納期目安表モーダル（9項目・KV行なし） |
+| `66:1077` | popup 2 | サイズ目安表モーダル（8項目・KV行なし） |
 
 ### ページ ` component`（`38:174`）— デザインシステム
 | セクション | 中身 |
 |---|---|
-| btn | checkbox / close-circle / linktext / primary / secondary / tertiary / tertiary-leftcon |
-| card | check / anchorlink |
+| btn | checkbox / close-circle / **radio-btn** / linktext / primary / secondary / tertiary / tertiary-leftcon / **tertiary-blue-leftcon** |
+| card | check（廃止・radio に置換）/ **radio** / anchorlink |
 | input | text / textarea / select / calendar / add / login |
-| icono | add / calendar / check / close / extend / trg-down / loading |
+| icono | add / calendar / check / close / extend / trg-down / **link** / loading |
 | chip, logo | badge/required / logo-Notion / logo-url / logo-google-g |
+| emoji | Laughing ほか16種（現行デザインで使うのは Laughing 😆 のみ） |
+| submit-animation | start / emoji-action / finish（送信アニメーションのキーフレーム） |
 
 各コンポーネントに default・hover・focus・select・disable・loading の状態が定義されている。**hover や focus を自分で考えず、必ずここを見る。**
 
@@ -121,12 +125,16 @@ body（背景 color/bg/default）
 | loading | `aria-busy="true"` ＋ `disabled` |
 
 ### 5-2. 選択状態の見せ方が2種類ある
-- **依頼種別カード**（`card/anchorlink`）＝ **青ベタ塗り＋白文字**。3択から1つを選ぶので、選んだものを強く見せる。
-- **制作物の種別**（`card/check`）＝ **淡青の地＋1pxグレー枠＋チェックON**。複数選べるので、塗りつぶしではなくチェックマークで裏づける。
+- **依頼種別カード**（`card/anchorlink`）＝ **青ベタ塗り＋白文字**。4択から1つを選ぶので、選んだものを強く見せる。
+- **制作物の種別**（`card/radio`）＝ **淡青の地＋1pxグレー枠＋ラジオON（青い内円）**。同系の選択肢から1つを選ぶが、依頼種別ほど強く見せない。
 
 この違いは意図的なもの。**どちらかに揃えない。**
 
-`card/check` はチェックボックスと文字を **縦中央でそろえる**（`align-items: center`／間隔16px）。
+> 2026-08-11のUI改訂で `card/check`（チェックボックス）→ `card/radio`（ラジオボタン）に置き換えた。
+> V1-5.6で単一選択になったため、コントロールの見た目も「1つを選ぶ」ものに揃えた（Figma第3次改修）。
+> ラジオは **24px円＋1px枠**。選択時は枠が `color/btn/radio/default` になり、**16pxの内円**（枠から3px内側）が入る。
+
+`card/radio` はラジオボタンと文字を **縦中央でそろえる**（`align-items: center`／間隔16px）。
 補助テキストの有無で寄りが変わってしまうため、上そろえにしない。
 
 ### 5-2-1. フォーカスリング
@@ -157,7 +165,7 @@ box-shadow: 0 0 0 2px var(--color-input-focus);
 > ⚠️ 入力欄（`.ctl`）は **default では枠なし**だが、Figmaの focus バリアントでは **1px のグレー枠（`--color-input-border`）が加わる**。
 > リングとは別に `:focus` で枠を足す。この枠を淡青で置き換えてはいけない。
 
-**対象**：入力欄すべて（text / textarea / select / date）・`input/add`・`input/login`・依頼種別カード・制作物の種別カード（内部のチェックボックスにフォーカスが入ったらカードにリングを出す）
+**対象**：入力欄すべて（text / textarea / select / date）・`input/add`・`input/login`・依頼種別カード・制作物の種別カード（内部のラジオボタンにフォーカスが入ったらカードにリングを出す）
 
 #### B. ボタン系 ─ 少し離して細い青の線が回る
 
@@ -225,10 +233,13 @@ outline-offset: 2px;
 |---|---|---|
 | プルダウンの右端 | `icon/trg-down` | **16px** |
 | 日付欄の右端 | `icon/calendar` | **20px** |
-| チェックボックスの中 | `icon/check` | **20px**（24pxの枠の内側2px） |
 | モーダルの閉じるボタン | `icon/close` | **16px**（24pxの円の中） |
-| textareaの右下つまみ | `icon/extend` | 16px |
+| textareaの右下つまみ | `icon/extend` | **12px**（右下から4px。第3次改修で16px→12pxに縮小） |
 | ログインボタン | `logo/google-g` | 24px |
+| 完了画面「NotionのURLをコピー」 | `icon/link` | **24px**（第3次改修で新設。色は currentColor＝tertiary-blue の青） |
+| 完了画面「Notionで編集」 | `logo/Notion` | 24px |
+
+> `icon/check`（チェックボックス用20px）は card/check の廃止にともない未使用になった。マスク定義はコードに残っている。
 
 ### 5-4-3. 入力欄の高さと文字の縦位置
 
@@ -268,6 +279,7 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 
 | 用途 | 値 | 決めた理由 |
 |---|---|---|
+| 送信アニメーション（`submit-animation`） | グラデーション立ち上がり **0.45s**（clip-pathを下から開く）→ 絵文字ポップ **0.5s**（0.35s遅延・バウンス係数 cubic-bezier(.34,1.4,.64,1)）→ タイトル・サブタイトルのスライドアップ **各0.45s**（0.5s / 0.65s遅延）→ **2.2s後にフェードアウト0.4s** で完了画面が現れる | Figmaはstart / emoji-action / finishの3コマだけで時間が決まっていない。覆い切った直後（0.5s）に背面を完了画面へ差し替え、読める時間（約1.7秒）だけ全画面表示を保ってから引く。`prefers-reduced-motion` ではアニメーションを流さず即座に完了画面へ |
 | 送信中スピナーの回転 | **1秒で1回転・linear・無限ループ** | Figmaは0/25/50/75の4コマだけで速度が決まっていない。速すぎると焦りを煽り、遅すぎると止まって見える。1秒/回転はOSの標準的なスピナーと同程度で、4コマ表現とも整合する（1コマ0.25秒）。コマ送りではなくCSSの連続回転で実装する |
 | 背景色・枠線・影の変化 | 150ms・ease-out | クリック感を損なわない範囲でいちばん短い値 |
 | STEP3へのスクロール | `scroll-behavior: smooth` | どこへ飛んだか分かるようにする |
@@ -295,7 +307,7 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 | 依頼種別カード | 3列 | **1列**（縦積み・gap 16px） |
 | 制作物の種別 | 2列 | **1列** |
 | スケジュール行 | 日付＋内容＋× の横並び | **日付と内容を縦積み**にし、削除ボタンは行の右上に置く |
-| 完了画面の2ボタン | 横並び | **縦積み**（各ボタンは幅いっぱい） |
+| 完了画面の2ボタン | 全幅で縦積み（第3次改修でデスクトップも縦積みに変更） | 同じ（変化なし） |
 | モーダル | 幅784px固定 | 幅は画面 − 32px、高さは最大 90vh でスクロール |
 
 縮退は**CSS変数を上書きする方式**で行う。個別のセレクタに直接 px を書かない（Figma側の値が変わったときに追従できなくなるため）。
@@ -312,7 +324,8 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 - 多色のロゴ（`syymbol_notion.svg`／`syymbol_google.png`）は `currentColor` 化しない。そのまま埋め込む。
 - `syymbol_google.png` は原寸2820×2820px・約138KB。表示は24pxなので、**96×96pxへ縮小してからdata URI化する**（原寸はGoogle Driveにマスターとして残す）。
 - `icon/extend` は **textareaの右下のリサイズハンドル**として使う。`resize: vertical` と併用し、つまみの見た目だけアイコンで置き換える。
-- `logo/url` は書き出さない。完了画面のコピーボタンは絵文字 `🔗` を使う。
+- `logo/url` は書き出さない。完了画面のコピーボタンは `icon/link`（`86:2304`）を使う（第3次改修で絵文字🔗から変更）。
+  `icon/link` はFigmaのMCPエクスポートから取得したパスをマスク化してコードに埋め込み済み。他アイコンと同じくG-Driveの `icon/` にもマスターを置くこと（未書き出しならFigmaからSVGエクスポートする）。
 - `icon/add` は**コードでは描画しない**。「＋日程を追加する」などの先頭の「＋」はFigma上も文字だから（§5-4-1）。
 - 表示サイズは置き場所ごとに違う（§5-4-2）。素材が24pxだからといって24pxで置かない。
 
@@ -356,5 +369,6 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 
 | 日付 | 内容 |
 |---|---|
+| 2026-08-11 | Figma第3次改修のUI反映。①制作物の種別を `card/check`→`card/radio`（＋`btn/radio-btn`）に置換 ②STEP2依頼種別カードを4枚構成の寸法（gap16・角丸8・padding 16/24）に変更 ③完了画面を全面刷新（絵文字ヒーロー・箇条書きの共有手順・`btn/tertiary-blue/leftcon`「NotionのURLをコピー」＋`btn/tertiary/leftcon`「Notionで編集」の全幅縦積み） ④送信アニメーション新設（`submit-animation`） ⑤`icon/link` 新設・`icon/extend` を12pxに縮小 ⑥`btn/tertiary` のラベルを label-M 12px に修正 ⑦納期・サイズ目安表からKV・アイキャッチ行を削除し文言をFigmaへ追従 |
 | 2026-08-01 | 新規作成。Figmaのコンポーネントページ新設にあわせ、トークン・コンポーネント・状態定義を全面的に整理 |
 | 2026-08-01 | フォーカスリングの2系統・アイコンの表示サイズ・`input/add` の扱い・`card/check` の選択表現とそろえ方・モーダルの影の当て方を追記 |

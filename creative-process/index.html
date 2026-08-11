@@ -61,6 +61,12 @@
     --color-btn-selection-ctrl-white:#ffffff;
     --color-btn-selection-ctrl-border:#9f9f9f;
     --color-btn-selection-ctrl-focus:#d9e9f6;
+    --color-btn-radio-default:#0872b6;
+    --color-btn-radio-white:#ffffff;
+    --color-btn-radio-border:#9f9f9f;
+    --color-btn-radio-hover:#d9e9f6;
+    --color-btn-tertiary-blue-border:#0872b6;
+    --color-btn-tertiary-blue-text:#0872b6;
 
     /* ── gradation（Figmaのローカル色スタイル） ─────────────── */
     --gradation-sunbeam-default:linear-gradient(90deg,#EB8237 0%,#EE8D3F 60%,#F4A771 100%);
@@ -134,6 +140,8 @@
     --icon-close: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M5.2%2C19.8c-.3%2C0-.5%2C0-.7-.3-.4-.4-.4-1%2C0-1.4l13.5-13.5c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-13.5%2C13.5c-.2.2-.5.3-.7.3Z%22/%3E%3Cpath d=%22M18.8%2C19.8c-.3%2C0-.5%2C0-.7-.3L4.5%2C6c-.4-.4-.4-1%2C0-1.4s1-.4%2C1.4%2C0l13.5%2C13.5c.4.4.4%2C1%2C0%2C1.4s-.5.3-.7.3Z%22/%3E%3C/svg%3E");
     --icon-extend: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M5.2%2C19.8c-.3%2C0-.5%2C0-.7-.3-.4-.4-.4-1%2C0-1.4l13.5-13.5c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-13.5%2C13.5c-.2.2-.5.3-.7.3Z%22/%3E%3Cpath d=%22M13.8%2C21.5c-.3%2C0-.5%2C0-.7-.3-.4-.4-.4-1%2C0-1.4l6.8-6.8c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-6.8%2C6.8c-.2.2-.5.3-.7.3Z%22/%3E%3C/svg%3E");
     --icon-trg-down: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12%2C20L1.6%2C5h20.8l-10.4%2C15Z%22/%3E%3C/svg%3E");
+    /* icon/link（86:2304・Figmaエクスポート。完了画面「NotionのURLをコピー」用） */
+    --icon-link: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M4.9294 9.17159C5.31995 8.78129 5.95302 8.78114 6.34347 9.17159C6.73376 9.56205 6.73371 10.1952 6.34347 10.5857L5.63643 11.2927C3.68381 13.2453 3.68381 16.4114 5.63643 18.364C7.58901 20.3163 10.7542 20.3163 12.7067 18.364L13.4138 17.6569C13.8043 17.2664 14.4383 17.2664 14.8288 17.6569C15.219 18.0474 15.219 18.6805 14.8288 19.071L14.1218 19.778C11.3881 22.5117 6.95507 22.5117 4.2214 19.778C1.48809 17.0444 1.48801 12.6122 4.2214 9.87862L4.9294 9.17159ZM14.1218 8.46456C14.5123 8.07422 15.1454 8.0741 15.5358 8.46456C15.9261 8.85504 15.9261 9.48814 15.5358 9.87862L9.87862 15.5358C9.48814 15.9261 8.85504 15.9261 8.46456 15.5358C8.0741 15.1454 8.07422 14.5123 8.46456 14.1218L14.1218 8.46456ZM9.87862 4.2214C12.6122 1.48801 17.0444 1.48809 19.778 4.2214C22.5117 6.95507 22.5117 11.3881 19.778 14.1218L19.071 14.8288C18.6805 15.219 18.0474 15.219 17.6569 14.8288C17.2664 14.4383 17.2664 13.8043 17.6569 13.4138L18.364 12.7067C20.3163 10.7542 20.3163 7.58901 18.364 5.63643C16.4114 3.68381 13.2453 3.68381 11.2927 5.63643L10.5857 6.34347C10.1952 6.73371 9.56205 6.73376 9.17159 6.34347C8.78114 5.95302 8.78129 5.31995 9.17159 4.9294L9.87862 4.2214Z%22/%3E%3C/svg%3E");
 
     /* Googleの「G」マーク（多色のためマスクにせず画像として使う）。
        原寸2820pxをG-Driveにマスターとして残し、ここは96pxへ縮小したもの。 */
@@ -184,7 +192,7 @@
   .input-add-login:focus-visible,
   .file-native:focus-visible + .input-add,
   .type-card:focus-visible,
-  .check-card:has(input:focus-visible){
+  .radio-card:has(input:focus-visible){
     /* 見た目のリングは box-shadow。透明のoutlineは強制配色モードでの保険 */
     outline:2px solid transparent;
     outline-offset:0;
@@ -214,6 +222,7 @@
     -webkit-mask-size:contain;mask-size:contain;
   }
   .i-close{-webkit-mask-image:var(--icon-close);mask-image:var(--icon-close)}
+  .i-link{-webkit-mask-image:var(--icon-link);mask-image:var(--icon-link)}
 
   /* ==========================================================================
      レイアウト骨格
@@ -301,8 +310,9 @@
   textarea.ctl{display:block;resize:vertical;min-height:128px;line-height:2;}
   /* textareaの右下つまみは icon/extend で見せる（DESIGN.md §5） */
   .field-textarea{position:relative;}
+  /* つまみは12px・右下から4px（Figma第3次改修で16px→12pxに縮小） */
   .field-textarea::after{
-    content:"";position:absolute;right:5px;bottom:5px;width:16px;height:16px;pointer-events:none;
+    content:"";position:absolute;right:4px;bottom:4px;width:12px;height:12px;pointer-events:none;
     background-color:var(--color-border-default);
     -webkit-mask:var(--icon-extend) center/contain no-repeat;mask:var(--icon-extend) center/contain no-repeat;
   }
@@ -363,16 +373,38 @@
   }
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  /* btn/tertiary */
+  /* btn/tertiary（ラベルは label-M 12px。Figma 41:501 の実測どおり＝高さ44px） */
   .btn-tertiary{
     flex:none;background:var(--color-btn-tertiary-white);
     border:1px solid var(--color-btn-tertiary-border);border-radius:var(--radius-button-s);
     padding:var(--spacing-padding-button-y-s) var(--spacing-padding-button-x-s);
-    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-m);line-height:1;
     color:var(--color-btn-tertiary-text);cursor:pointer;
     transition:background-color var(--motion-ui-transition) ease-out;
   }
   @media(hover:hover){ .btn-tertiary:hover{background:var(--color-btn-tertiary-hover);} }
+
+  /* btn/tertiary/leftcon・btn/tertiary-blue/leftcon（完了画面の全幅ボタン・Figma 50:1639 / 86:2322）
+     高さ56px＝16(padding) + 24(アイコン) + 16(padding) */
+  .btn-leftcon{
+    display:flex;align-items:center;justify-content:center;gap:var(--spacing-gap-icon-group);
+    width:100%;min-height:56px;
+    background:var(--color-btn-tertiary-white);
+    border:1px solid var(--color-btn-tertiary-border);border-radius:var(--radius-button-s);
+    padding:var(--spacing-padding-button-y-s) var(--spacing-padding-button-x-s);
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;
+    color:var(--color-btn-tertiary-text);cursor:pointer;text-decoration:none;
+    transition:background-color var(--motion-ui-transition) ease-out;
+  }
+  @media(hover:hover){ .btn-leftcon:hover{background:var(--color-btn-tertiary-hover);} }
+  .btn-leftcon:focus-visible{outline:1px solid var(--color-btn-tertiary-focus);outline-offset:2px;}
+  .btn-leftcon .i{width:24px;height:24px;}
+  .btn-leftcon-blue{
+    border-color:var(--color-btn-tertiary-blue-border);
+    color:var(--color-btn-tertiary-blue-text);
+  }
+  /* コピー完了の一時表示（コード側で決めた仕様。2.2秒で元に戻る） */
+  .btn-leftcon-blue.copied{background:var(--color-bg-select);border-color:var(--color-bg-select);color:var(--color-text-white);}
 
 
   /* input/add（追加アクション行）
@@ -406,15 +438,15 @@
   @media(hover:hover){ .input-add-login:hover{background:var(--color-input-hover);} }
   .input-add-login:disabled{opacity:.6;cursor:progress}
 
-  /* ログイン済みの依頼者行 */
+  /* ログイン済みの依頼者行（Figma 46:803。氏名とメールの間隔は gap-subhead-group 8px） */
   .login-row{
     display:flex;align-items:center;gap:var(--spacing-gap-content);
     background:var(--color-input-default);border-radius:var(--radius-textarea);
-    padding:var(--spacing-padding-textarea);min-height:76px;
+    padding:var(--spacing-padding-textarea);
   }
-  .login-row .who{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .login-row .who{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-group);}
   .login-row .who b{
-    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1.4;
+    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;
     color:var(--color-text-default);
   }
   .login-row .who span{
@@ -426,14 +458,15 @@
      card/anchorlink（STEP2 依頼種別）
      選択＝青ベタ＋白文字。3択から1つ選ぶので強く見せる（DESIGN.md §5-2）
      ========================================================================== */
-  .options-cards{display:flex;gap:var(--spacing-gap-content);align-items:stretch;}
+  /* 4カード化（Figma第3次改修 1:512）にあわせ、間隔16px・角丸8px・padding 16/24 に変更 */
+  .options-cards{display:flex;gap:var(--spacing-gap-input-group);align-items:stretch;}
   .type-card{
     flex:1 0 0;min-width:0;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:var(--spacing-gap-icon-group);
-    background:var(--color-bg-default);border:2px solid transparent;
-    border-radius:var(--radius-button);
-    padding:var(--spacing-padding-button-y) var(--spacing-padding-button-x);
+    background:var(--color-bg-default);border:none;
+    border-radius:var(--radius-button-s);
+    padding:var(--spacing-padding-button-y-s) var(--spacing-padding-button-x-s);
     cursor:pointer;text-align:center;
     transition:background-color var(--motion-ui-transition) ease-out,box-shadow var(--motion-ui-transition) ease-out;
   }
@@ -451,12 +484,13 @@
   .type-card[aria-pressed="true"]{background:var(--color-bg-select);color:var(--color-text-white);}
 
   /* ==========================================================================
-     card/check（制作物の種別）
-     選択＝白背景＋1pxグレー枠＋チェックON。複数選べるのでチェックで示す
+     card/radio（制作物の種別）＝Figma 86:1432 ＋ btn/radio-btn 86:677
+     V1-5.6で単一選択になったため、チェックボックスからラジオボタンに置き換えた（Figma第3次改修）。
+     選択＝淡青の地＋1pxグレー枠＋ラジオON（青い内円）
      ========================================================================== */
   .checks{display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-gap-input-group);align-items:stretch;}
-  .check-card{
-    /* チェックボックスと文字は縦中央でそろえる（補助テキストの有無で寄りが変わらないように） */
+  .radio-card{
+    /* ラジオボタンと文字は縦中央でそろえる（補助テキストの有無で寄りが変わらないように） */
     display:flex;align-items:center;gap:var(--spacing-gap-subhead-offset);
     background:var(--color-bg-default);border:1px solid transparent;
     border-radius:var(--radius-textarea);
@@ -464,29 +498,29 @@
     cursor:pointer;
     transition:background-color var(--motion-ui-transition) ease-out,border-color var(--motion-ui-transition) ease-out,box-shadow var(--motion-ui-transition) ease-out;
   }
-  @media(hover:hover){ .check-card:not(:has(input:checked)):hover{background:var(--color-bg-hover);box-shadow:var(--shadow-card);} }
-  /* 選択済み＝淡青の地＋1pxの枠（背景で選択を示し、チェックマークで裏づける） */
-  .check-card:has(input:checked){background:var(--color-bg-hover);border-color:var(--color-border-default);}
-  .check-card:has(input:focus-visible){border-color:var(--color-border-default);}
-  .check-card input{position:absolute;opacity:0;width:0;height:0;}
-  .check-box{
-    flex:none;position:relative;width:24px;height:24px;border-radius:var(--radius-checkbox);
-    background:var(--color-btn-selection-ctrl-white);
-    border:1px solid var(--color-btn-selection-ctrl-border);
-    transition:background-color var(--motion-ui-transition) ease-out;
+  @media(hover:hover){ .radio-card:not(:has(input:checked)):hover{background:var(--color-bg-hover);box-shadow:var(--shadow-card);} }
+  /* 選択済み＝淡青の地＋1pxの枠（背景で選択を示し、ラジオの内円で裏づける） */
+  .radio-card:has(input:checked){background:var(--color-bg-hover);border-color:var(--color-border-default);}
+  .radio-card:has(input:focus-visible){border-color:var(--color-border-default);}
+  .radio-card input{position:absolute;opacity:0;width:0;height:0;}
+  /* btn/radio-btn：24px円＝1px枠。内円16px（枠から3px内側）は選択時のみ青で塗る */
+  .radio-btn{
+    flex:none;position:relative;width:24px;height:24px;border-radius:var(--radius-full);
+    background:var(--color-btn-radio-white);
+    border:1px solid var(--color-btn-radio-border);
+    transition:border-color var(--motion-ui-transition) ease-out;
   }
-  .check-box::after{
-    content:"";position:absolute;inset:2px;background-color:var(--color-icon-white);opacity:0;
-    -webkit-mask:var(--icon-check) center/contain no-repeat;mask:var(--icon-check) center/contain no-repeat;
+  .radio-btn::after{
+    content:"";position:absolute;inset:3px;border-radius:var(--radius-full);
+    background-color:var(--color-btn-radio-default);opacity:0;
+    transition:opacity var(--motion-ui-transition) ease-out;
   }
-  .check-card input:checked + .check-box{
-    background:var(--color-btn-selection-ctrl-default);border-color:var(--color-btn-selection-ctrl-default);
-  }
-  .check-card input:checked + .check-box::after{opacity:1;}
-  .check-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-group);
+  .radio-card input:checked + .radio-btn{border-color:var(--color-btn-radio-default);}
+  .radio-card input:checked + .radio-btn::after{opacity:1;}
+  .radio-labels{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-group);
     color:var(--color-text-default);}
-  .check-text .name{font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;}
-  .check-text .sub{font-weight:var(--typo-weight-caption);font-size:var(--typo-size-caption);line-height:1.6;}
+  .radio-labels .name{font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;}
+  .radio-labels .sub{font-weight:var(--typo-weight-caption);font-size:var(--typo-size-caption);line-height:1.6;}
   /* 転用では「イベント・キャンペーン」「その他」を出さない（V1-5.6） */
   .checks.hide-only-new .only-new{display:none;}
 
@@ -552,27 +586,55 @@
     color:var(--color-text-accent);}
   .done-title p{margin:0;font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-4);line-height:1.2;
     color:var(--color-text-default);}
-  .done-lead{font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-4);line-height:1.6;
+  .done-lead{font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-4);line-height:1.2;
     color:var(--color-text-default);}
   .done-lead a{color:var(--color-text-accent);text-decoration:underline;text-underline-offset:var(--spacing-gap-underbar);}
   .done-mentions{margin:0;padding-inline-start:1.4em;font-weight:var(--typo-weight-body);
     font-size:var(--typo-size-body);line-height:2;color:var(--color-text-default);}
-  .done-btns{display:flex;gap:var(--spacing-gap-input-group);align-items:stretch;}
-  .done-btns button,.done-btns a{
-    flex:1 0 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--spacing-gap-icon-group);
-    border:1px solid var(--color-border-default);border-radius:var(--radius-button-s);
-    padding:var(--spacing-padding-textarea);cursor:pointer;text-decoration:none;
-    font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1.4;
-    color:var(--color-text-default);
-    transition:background-color var(--motion-ui-transition) ease-out;
-  }
-  .done-btns .copy{background:var(--color-bg-hover);}
-  .done-btns .open{background:var(--color-bg-box);}
-  @media(hover:hover){ .done-btns .copy:hover,.done-btns .open:hover{background:var(--color-bg-hover);} }
-  .done-btns .copy.copied{background:var(--color-bg-select);border-color:var(--color-bg-select);color:var(--color-text-white);}
-  .notion-mark{flex:none;width:23px;height:23px;}
+  /* 完了画面のボタン2つは全幅で縦積み（Figma第3次改修 86:1937。横並びから変更） */
+  .done-btns{display:flex;flex-direction:column;gap:var(--spacing-gap-input-group);align-items:stretch;}
+  .notion-mark{flex:none;width:24px;height:24px;}
   .annotation{margin:0;text-align:center;font-weight:var(--typo-weight-body);font-size:var(--typo-size-body);
     line-height:2;color:var(--color-text-default);}
+
+  /* ==========================================================================
+     送信アニメーション（Figma submit-animation 86:2083 start→finish）
+     送信成功時、サンビームのグラデーションが下から立ち上がり、絵文字と
+     白文字のタイトルが現れてから完了画面へフェードで切り替わる。
+     タイミングはFigmaに数値定義がないためコード側で決めた値（DESIGN.md §6）。
+     ========================================================================== */
+  .sa-overlay{
+    position:fixed;inset:0;z-index:300;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--gradation-sunbeam-default);
+    clip-path:inset(100% 0 0 0);
+    animation:saRise .45s cubic-bezier(.2,.8,.3,1) forwards,
+              saFade .4s ease-out 2.2s forwards;
+  }
+  @keyframes saRise{to{clip-path:inset(0 0 0 0)}}
+  @keyframes saFade{to{opacity:0;visibility:hidden}}
+  .sa-contents{display:flex;flex-direction:column;align-items:center;gap:var(--spacing-gap-content);}
+  .sa-emoji{
+    font-size:104px;line-height:1;
+    animation:saPop .5s cubic-bezier(.34,1.4,.64,1) .35s both;
+  }
+  @keyframes saPop{
+    0%{opacity:0;transform:translateY(40px) scale(.23)}
+    100%{opacity:1;transform:none}
+  }
+  .sa-mask{overflow:hidden;}
+  .sa-mask span{display:block;transform:translateY(110%);}
+  .sa-head span{
+    font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-1);line-height:1.2;
+    color:var(--color-btn-primary-text);text-align:center;
+    animation:saSlideUp .45s cubic-bezier(.2,.8,.3,1) .5s forwards;
+  }
+  .sa-sub span{
+    font-weight:var(--typo-weight-head-j);font-size:var(--typo-size-head-3);line-height:1.2;
+    color:var(--color-btn-primary-text);text-align:center;
+    animation:saSlideUp .45s cubic-bezier(.2,.8,.3,1) .65s forwards;
+  }
+  @keyframes saSlideUp{to{transform:none}}
 
   /* ==========================================================================
      モーダル（納期目安表・サイズ目安表）
@@ -652,7 +714,9 @@
     .ms-row .ms-text{flex:1 0 100%;order:3;}
     .ms-del{position:absolute;top:0;right:0;}
     .ms-add{width:100%;}
-    .done-btns{flex-direction:column;}
+    .sa-emoji{font-size:64px;}
+    .sa-head span{font-size:var(--typo-size-head-2);}
+    .sa-sub span{font-size:var(--typo-size-head-4);}
     .modal-overlay{padding:16px;}
     .modal-shell{max-height:90vh;}
     .modal-close{right:12px;top:12px;width:36px;height:36px;}
@@ -668,6 +732,8 @@
   @media(prefers-reduced-motion:reduce){
     html{scroll-behavior:auto}
     .done-hero .ic,.modal{animation:none}
+    /* 送信アニメーションは丸ごと出さない（JS側でもスキップする） */
+    .sa-overlay{display:none !important}
     *{transition-duration:.01ms !important}
     .btn-primary[aria-busy="true"] .spinner{animation-duration:4s}
   }
@@ -701,10 +767,10 @@
     <div class="section hidden" id="doneArea">
       <div class="input-section">
         <div class="box done-hero">
-          <div class="ic">🌟</div>
+          <div class="ic">😆</div>
           <div class="done-title">
             <h2>＼ プランニングシートを作成しました! ／</h2>
-            <p>あと1ステップで、依頼を起票できます！</p>
+            <p>あと1ステップで、依頼を起票できます!</p>
           </div>
         </div>
 
@@ -718,14 +784,14 @@
                 <a href="https://crazyincworkspace.slack.com/" target="_blank" rel="noopener noreferrer">Slackチャンネル</a>
                 に貼り付け。</div>
               <ul class="done-mentions">
-                <li>ANV、PSC、MKT広告バナーの制作依頼・相談は、@笹原光 / Hikari Sasahara 宛に投稿してください。</li>
-                <li>それ以外は、@宮川雄気 / Miyakawa Yuki 宛に投稿してください。</li>
+                <li>ANV含む婚礼全般に関する制作依頼・相談は、<b>@笹原光 / Hikari Sasahara</b> 宛に投稿してください。</li>
+                <li>それ以外（食・CBX・採用）の制作依頼・相談は、<b>@宮川雄気 / Miyakawa Yuki</b> 宛に投稿してください。</li>
               </ul>
               <div class="caption">依頼内容の確認・修正はNotionから行えます。</div>
             </div>
             <div class="done-btns">
-              <button type="button" class="copy" id="copyUrlBtn"><span aria-hidden="true">🔗</span>URLをコピー</button>
-              <a class="open" id="doneNotion" href="#" target="_blank" rel="noopener"><svg class="notion-mark" aria-hidden="true" width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M3.20338 2.36282L14.2698 1.54544C15.6291 1.42884 15.9783 1.50744 16.8331 2.12883L20.3656 4.61738C20.9482 5.04537 21.1422 5.16197 21.1422 5.62796V19.2763C21.1422 20.1317 20.8316 20.6377 19.7443 20.7149L6.89331 21.4933C6.07732 21.5319 5.68873 21.4153 5.26134 20.8707L2.65999 17.4879C2.1934 16.8653 2 16.3994 2 15.8546V3.7228C2 3.02341 2.31059 2.44022 3.20338 2.36282Z" fill="white"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2698 1.54564L3.20338 2.36302C2.31059 2.44022 2 3.02361 2 3.7228V15.8546C2 16.3991 2.1934 16.8651 2.65999 17.4879L5.26134 20.8705C5.68873 21.4151 6.07732 21.5318 6.89331 21.4931L19.7445 20.7151C20.831 20.6377 21.1424 20.1317 21.1424 19.2765V5.62816C21.1424 5.18617 20.9678 5.05877 20.4538 4.68158L16.8331 2.12883C15.9785 1.50744 15.6291 1.42884 14.2698 1.54544V1.54564ZM7.1839 5.40476C6.13452 5.47536 5.89653 5.49136 5.30054 5.00677L3.78537 3.80159C3.63137 3.6456 3.70877 3.451 4.09676 3.4122L14.7352 2.63482C15.6285 2.55682 16.0937 2.86821 16.4431 3.14021L18.2677 4.46218C18.3457 4.50158 18.5397 4.73418 18.3063 4.73418L7.3199 5.39556L7.1839 5.40476ZM5.96052 19.1599V7.57352C5.96052 7.06753 6.11592 6.83413 6.58111 6.79494L19.1997 6.05615C19.6277 6.01755 19.8211 6.28955 19.8211 6.79474V18.3039C19.8211 18.8099 19.7431 19.2379 19.0445 19.2765L6.9693 19.9765C6.27072 20.0151 5.96072 19.7825 5.96072 19.1599H5.96052ZM17.8803 8.19471C17.9577 8.5447 17.8803 8.8947 17.5303 8.93469L16.9483 9.05009V17.6045C16.4429 17.8765 15.9777 18.0319 15.5889 18.0319C14.9676 18.0319 14.8124 17.8373 14.347 17.2545L10.541 11.2666V17.0599L11.745 17.3325C11.745 17.3325 11.745 18.0325 10.7736 18.0325L8.09568 18.1879C8.01768 18.0319 8.09568 17.6433 8.36708 17.5659L9.06646 17.3719V9.71208L8.09588 9.63348C8.01788 9.28349 8.21188 8.7781 8.75587 8.7389L11.6292 8.5455L15.5891 14.6108V9.24489L14.5798 9.12889C14.5018 8.7003 14.8124 8.38891 15.2003 8.35091L17.8803 8.19471Z" fill="black"/> </svg>Notionページを開く</a>
+              <button type="button" class="btn-leftcon btn-leftcon-blue" id="copyUrlBtn"><span class="i i-link" aria-hidden="true"></span><span class="lbl">NotionのURLをコピー</span></button>
+              <a class="btn-leftcon" id="doneNotion" href="#" target="_blank" rel="noopener"><svg class="notion-mark" aria-hidden="true" width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M3.20338 2.36282L14.2698 1.54544C15.6291 1.42884 15.9783 1.50744 16.8331 2.12883L20.3656 4.61738C20.9482 5.04537 21.1422 5.16197 21.1422 5.62796V19.2763C21.1422 20.1317 20.8316 20.6377 19.7443 20.7149L6.89331 21.4933C6.07732 21.5319 5.68873 21.4153 5.26134 20.8707L2.65999 17.4879C2.1934 16.8653 2 16.3994 2 15.8546V3.7228C2 3.02341 2.31059 2.44022 3.20338 2.36282Z" fill="white"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2698 1.54564L3.20338 2.36302C2.31059 2.44022 2 3.02361 2 3.7228V15.8546C2 16.3991 2.1934 16.8651 2.65999 17.4879L5.26134 20.8705C5.68873 21.4151 6.07732 21.5318 6.89331 21.4931L19.7445 20.7151C20.831 20.6377 21.1424 20.1317 21.1424 19.2765V5.62816C21.1424 5.18617 20.9678 5.05877 20.4538 4.68158L16.8331 2.12883C15.9785 1.50744 15.6291 1.42884 14.2698 1.54544V1.54564ZM7.1839 5.40476C6.13452 5.47536 5.89653 5.49136 5.30054 5.00677L3.78537 3.80159C3.63137 3.6456 3.70877 3.451 4.09676 3.4122L14.7352 2.63482C15.6285 2.55682 16.0937 2.86821 16.4431 3.14021L18.2677 4.46218C18.3457 4.50158 18.5397 4.73418 18.3063 4.73418L7.3199 5.39556L7.1839 5.40476ZM5.96052 19.1599V7.57352C5.96052 7.06753 6.11592 6.83413 6.58111 6.79494L19.1997 6.05615C19.6277 6.01755 19.8211 6.28955 19.8211 6.79474V18.3039C19.8211 18.8099 19.7431 19.2379 19.0445 19.2765L6.9693 19.9765C6.27072 20.0151 5.96072 19.7825 5.96072 19.1599H5.96052ZM17.8803 8.19471C17.9577 8.5447 17.8803 8.8947 17.5303 8.93469L16.9483 9.05009V17.6045C16.4429 17.8765 15.9777 18.0319 15.5889 18.0319C14.9676 18.0319 14.8124 17.8373 14.347 17.2545L10.541 11.2666V17.0599L11.745 17.3325C11.745 17.3325 11.745 18.0325 10.7736 18.0325L8.09568 18.1879C8.01768 18.0319 8.09568 17.6433 8.36708 17.5659L9.06646 17.3719V9.71208L8.09588 9.63348C8.01788 9.28349 8.21188 8.7781 8.75587 8.7389L11.6292 8.5455L15.5891 14.6108V9.24489L14.5798 9.12889C14.5018 8.7003 14.8124 8.38891 15.2003 8.35091L17.8803 8.19471Z" fill="black"/> </svg>Notionで編集</a>
             </div>
           </div>
         </div>
@@ -828,13 +894,13 @@
             <div class="box hidden" id="detailCard">
               <div class="section-header" style="order:0"><span class="en">STEP 3</span><span class="ja">依頼内容</span></div>
 
-              <!-- 依頼タイトル：全種別 -->
+              <!-- 依頼タイトル：全種別（相談では「相談タイトル」。ラベル・説明・記入例はJSで種別ごとに切り替える） -->
               <div class="input f-title" data-types="新規,改訂,転用,相談">
                 <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">依頼タイトル</span><span class="badge-required">必須</span></div>
-                  <div class="caption">今回の依頼・相談を分かりやすく一言で記入してください。</div>
+                  <div class="subhead-row"><span class="fl" id="titleLabel">依頼タイトル</span><span class="badge-required">必須</span></div>
+                  <div class="caption" id="titleCaption">今回の依頼内容を分かりやすく一言で記入してください。</div>
                 </div>
-                <input type="text" class="ctl" name="title" placeholder="例：6月◯◯フェア 集客バナー">
+                <input type="text" class="ctl" name="title" placeholder="例：6月◯◯フェア 集客バナー／◯◯卒向けサマーインターン">
               </div>
 
               <!-- 対象事業・部署：全種別（選択肢と並び順はNotion「対象事業・部署」に一致させる） -->
@@ -877,27 +943,27 @@
                   <div class="subhead-row"><span class="fl">制作物の種別</span><span class="badge-required">必須</span></div>
                 </div>
                 <div class="checks" id="prodTypes">
-                  <label class="check-card only-new"><input type="radio" name="prodType" value="イベント・キャンペーン"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">イベント・キャンペーン</span><span class="sub">KV・ロゴを含む複数の制作物が発生する企画はこちら</span></span></label>
-                  <label class="check-card"><input type="radio" name="prodType" value="スライド・ePDF"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">スライド・ePDF</span><span class="sub">営業資料・プレゼンスライド・デジタルパンフなど</span></span></label>
-                  <label class="check-card"><input type="radio" name="prodType" value="バナー・告知画像"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">バナー・告知画像</span><span class="sub">NEWS・マガジン・フィード投稿画像など</span></span></label>
-                  <label class="check-card"><input type="radio" name="prodType" value="LP・WEBサイト"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">LP・WEBサイト</span><span class="sub">ディレクション・サイト内パーツ制作など</span></span></label>
-                  <label class="check-card"><input type="radio" name="prodType" value="チラシ・ポスター・パネル"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">チラシ・ポスター・パネル</span><span class="sub">ペラ一枚の印刷物</span></span></label>
-                  <label class="check-card"><input type="radio" name="prodType" value="リーフレット・パンフレット"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">リーフレット・パンフレット</span><span class="sub">二つ折り・蛇腹折り・ホチキス留めなどの小冊子</span></span></label>
-                  <label class="check-card"><input type="radio" name="prodType" value="看板・サイン"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">看板・サイン</span><span class="sub">案内看板・表札・ポップ・サイネージなど</span></span></label>
-                  <label class="check-card"><input type="radio" name="prodType" value="ペーパーアイテム"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">ペーパーアイテム</span><span class="sub">メニュー表・手紙・ポストカードなど</span></span></label>
-                  <label class="check-card"><input type="radio" name="prodType" value="招待状・紙袋・ノベルティ"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">招待状・紙袋・ノベルティ</span><span class="sub">招待状・紙袋・書籍・ステッカーなどグッズ類</span></span></label>
-                  <label class="check-card only-new"><input type="radio" name="prodType" value="その他"><span class="check-box" aria-hidden="true"></span><span class="check-text"><span class="name">その他</span><span class="sub">足拭きマットなど迷ったらこちら</span></span></label>
+                  <label class="radio-card only-new"><input type="radio" name="prodType" value="イベント・キャンペーン"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">イベント・キャンペーン</span><span class="sub">KV・ロゴを含む複数の制作物が発生する企画はこちら</span></span></label>
+                  <label class="radio-card"><input type="radio" name="prodType" value="スライド・ePDF"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">スライド・ePDF</span><span class="sub">営業資料・プレゼンスライド・デジタルパンフなど</span></span></label>
+                  <label class="radio-card"><input type="radio" name="prodType" value="バナー・告知画像"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">バナー・告知画像</span><span class="sub">NEWS・マガジン・フィード投稿画像など</span></span></label>
+                  <label class="radio-card"><input type="radio" name="prodType" value="LP・WEBサイト"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">LP・WEBサイト</span><span class="sub">ディレクション・サイト内パーツ制作など</span></span></label>
+                  <label class="radio-card"><input type="radio" name="prodType" value="チラシ・ポスター・パネル"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">チラシ・ポスター・パネル</span><span class="sub">ペラ一枚の印刷物</span></span></label>
+                  <label class="radio-card"><input type="radio" name="prodType" value="リーフレット・パンフレット"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">リーフレット・パンフレット</span><span class="sub">二つ折り・蛇腹折り・ホチキス留めなどの小冊子</span></span></label>
+                  <label class="radio-card"><input type="radio" name="prodType" value="看板・サイン"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">看板・サイン</span><span class="sub">案内看板・表札・ポップ・サイネージなど</span></span></label>
+                  <label class="radio-card"><input type="radio" name="prodType" value="ペーパーアイテム"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">ペーパーアイテム</span><span class="sub">メニュー表・手紙・ポストカードなど</span></span></label>
+                  <label class="radio-card"><input type="radio" name="prodType" value="招待状・紙袋・ノベルティ"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">招待状・紙袋・ノベルティ</span><span class="sub">招待状・紙袋・書籍・ステッカーなどのグッズ類</span></span></label>
+                  <label class="radio-card only-new"><input type="radio" name="prodType" value="その他"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">その他</span><span class="sub">足拭きマットなど迷ったらこちら</span></span></label>
                 </div>
               </div>
 
               <!-- 与件整理：新規 -->
               <div class="input f-purpose" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">依頼背景・課題感</span></div></div>
-                <div class="field-textarea"><textarea class="ctl" name="purpose" placeholder="何を解決するための企画・制作物ですか？（例：既存資料が古く、今の客層に届いていない）"></textarea></div>
+                <div class="field-textarea"><textarea class="ctl" name="purpose" placeholder="何を解決するための制作物ですか？（例：既存資料が古く、今の客層に届いていない）"></textarea></div>
               </div>
               <div class="input f-target" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">ターゲット</span></div></div>
-                <div class="field-textarea"><textarea class="ctl" name="target" placeholder="誰に届ける企画・制作物ですか？その人の年齢層や性格、初対面か既存顧客か、本人が抱えている悩みや気づいていない本音など、ペルソナ像を教えてください"></textarea></div>
+                <div class="field-textarea"><textarea class="ctl" name="target" placeholder="誰に届ける制作物ですか？その人の年齢層や性格、初対面か既存顧客か、本人が抱えている悩みや気づいていない本音など、ペルソナ像を教えてください"></textarea></div>
               </div>
               <div class="input f-usedate" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">使用開始日</span></div></div>
@@ -909,7 +975,7 @@
               </div>
               <div class="input f-outcome" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">得たい成果</span></div></div>
-                <div class="field-textarea"><textarea class="ctl" name="outcome" placeholder="目指している数値目標や定性的な目標を教えてください（例：申し込み30件獲得・SNSで話題になるくらい可愛く）"></textarea></div>
+                <div class="field-textarea"><textarea class="ctl" name="outcome" placeholder="目指している数値目標や定性的な目標を教えてください（例：申し込み30件獲得／従来の結婚式像が変化）"></textarea></div>
               </div>
               <div class="input f-afterfeeling" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">読後感や体験後の感情</span></div></div>
@@ -964,7 +1030,7 @@
               <!-- プロトタイプ：新規 -->
               <div class="input f-prototype" data-types="新規">
                 <div class="subhead-group"><div class="subhead-row"><span class="fl">プロトタイプ</span></div></div>
-                <div class="field-textarea"><textarea class="ctl" name="prototype" placeholder="Canva・Figma・KeynoteなどのURL"></textarea></div>
+                <div class="field-textarea"><textarea class="ctl" name="prototype" placeholder="Canva・Figma・KeynoteなどのURLを記入、または「参考資料・画像を添付」に添付"></textarea></div>
               </div>
 
               <!-- 改訂＝親フォルダURL（必須・02_案件管理内のみ。判定はWorkerが行い、範囲外は送信時に400で弾かれる）
@@ -1007,7 +1073,7 @@
                   <div class="subhead-row"><span class="fl">プロジェクトに対する想い</span></div>
                   <div class="caption">定量・定性目標とは別にある個人的な想いや情熱を教えてください。</div>
                 </div>
-                <div class="field-textarea"><textarea class="ctl" name="intentSeisaku" placeholder="企画や制作物に対する意気込みや悩みなど、定量・定性目標とは別にある個人的な想いや情熱を教えてください"></textarea></div>
+                <div class="field-textarea"><textarea class="ctl" name="intentSeisaku" placeholder="意気込みや悩み、どういう状態になったら理想かなど"></textarea></div>
               </div>
             </div>
           </div>
@@ -1034,18 +1100,17 @@
     <div class="modal">
       <div class="modal-head">
         <div class="modal-title" id="ndTitle"><span>📅</span><span>納期目安表</span></div>
-        <p class="modal-lead">納品までにかかる期間の目安になります。依頼内容によって短縮可能なので、希望スケジュールを記入してご相談ください。 ※納期は依頼承諾後の制作着手からの目安です。依頼起票からではないのでご注意ください。</p>
+        <p class="modal-lead">納品までにかかる期間の目安になります。依頼内容によって短縮可能なので、希望スケジュールを記入してご相談ください。 ※納期にはチェック時間も含まれます。</p>
       </div>
       <div class="nd-list">
-        <div class="nd-item"><div class="nd-head"><span class="nd-name">KV・アイキャッチ</span><span class="nd-period">1週間〜2週間</span></div><div class="nd-note">展開物の作成は別途工数が必要になります。</div></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">スライド・ePDF</span><span class="nd-period">1週間〜2週間</span></div><div class="nd-note">ページ数や内容によって変わります。</div></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">バナー・告知画像</span><span class="nd-period">1週間</span></div><div class="nd-note">事前に作成枚数とサイズを教えてください。</div></div>
-        <div class="nd-item"><div class="nd-head"><span class="nd-name">LP・WEBサイト</span><span class="nd-period">LP 1ヶ月〜・Webサイト 3ヶ月〜（WF作成＋2週間）</span></div><div class="nd-note">開発・公開作業のディレクションも含みます。内容によって短縮も可能です。</div></div>
-        <div class="nd-item"><div class="nd-head"><span class="nd-name">チラシ・ポスター・パネル</span><span class="nd-period">1週間（ラフ作成＋1週間・印刷＋1週間）</span></div><div class="nd-note">加工・特殊印刷は納期が伸びます。印刷コストを上げることで納期短縮が可能。</div></div>
-        <div class="nd-item"><div class="nd-head"><span class="nd-name">リーフレット・パンフレット</span><span class="nd-period">1週間〜2週間（ラフ作成＋1週間・印刷＋1週間）</span></div><div class="nd-note">加工・特殊印刷は納期が伸びます。印刷コストを上げることで納期短縮が可能。</div></div>
+        <div class="nd-item"><div class="nd-head"><span class="nd-name">LP・WEBサイト</span><span class="nd-period">LP 3週間〜・Webサイト 3ヶ月〜（＋WF作成 1週間・コーディングは別）</span></div><div class="nd-note">開発・公開作業のディレクションも含みます。内容によって短縮も可能です。</div></div>
+        <div class="nd-item"><div class="nd-head"><span class="nd-name">チラシ・ポスター・パネル</span><span class="nd-period">1週間（＋印刷 1週間）</span></div><div class="nd-note">加工・特殊印刷は納期が伸びます。印刷コストを上げることで納期短縮が可能。</div></div>
+        <div class="nd-item"><div class="nd-head"><span class="nd-name">リーフレット・パンフレット</span><span class="nd-period">1週間〜2週間（＋印刷 1週間）</span></div><div class="nd-note">加工・特殊印刷は納期が伸びます。印刷コストを上げることで納期短縮が可能。</div></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">看板・サイン</span><span class="nd-period">1週間</span></div><div class="nd-note">看板の購入／取り付けは別途工数が必要になります。</div></div>
-        <div class="nd-item"><div class="nd-head"><span class="nd-name">ペーパーアイテム</span><span class="nd-period">1週間〜（印刷＋1週間）</span></div><div class="nd-note">メニュー表など先々の運用設計まで必要な場合は要相談。</div></div>
-        <div class="nd-item"><div class="nd-head"><span class="nd-name">招待状・紙袋・ノベルティ</span><span class="nd-period">2週間（色校正・海外製造＋2ヶ月半〜3ヶ月）</span></div><div class="nd-note">ステッカーは普通印刷より工数がかかります。大量部数や製版が必要なアイテムは3ヶ月以上前から動く必要があります。</div></div>
+        <div class="nd-item"><div class="nd-head"><span class="nd-name">ペーパーアイテム</span><span class="nd-period">1週間〜（＋印刷 1週間）</span></div><div class="nd-note">メニュー表など先々の運用設計まで必要な場合は要相談。</div></div>
+        <div class="nd-item"><div class="nd-head"><span class="nd-name">招待状・紙袋・ノベルティ</span><span class="nd-period">2週間（＋色校正・海外製造 2ヶ月半〜3ヶ月）</span></div><div class="nd-note">ステッカーは普通印刷より工数がかかります。大量部数や製版が必要なアイテムは3ヶ月以上前から動く必要があります。</div></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">その他</span><span class="nd-period">都度対応</span></div><div class="nd-note">発注先に事前に、データ入稿後の納期目安を事前に確認してあると安心です。</div></div>
       </div>
     </div>
@@ -1062,18 +1127,26 @@
         <p class="modal-lead">制作目的別の一般的なサイズ表です。依頼内容によって変更する可能性もありますが、アウトプットのイメージを擦り合わせるために活用してください。 ※横幅×縦幅で掲載しています。</p>
       </div>
       <div class="nd-list">
-        <div class="nd-item"><div class="nd-head"><span class="nd-name">KV・アイキャッチ</span></div><ul class="sz-list"><li>掲載メディア次第。以下項目を参照。</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">スライド・ePDF</span></div><ul class="sz-list"><li>モニターやスクリーン表示：1920×1080px</li><li>タブレット表示：1060×750px</li><li>紙資料：A4</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">バナー・告知画像</span></div><ul class="sz-list"><li>ストーリーズ：1080×1920px</li><li>自社NEWSバナー：1200×600px</li><li>フィード投稿：1080×1350px（スクエア型は縦横1080px）</li><li>PR TIMES見出し：1920×1280px</li><li>Peatix：920×450px</li><li>Googleフォーム見出し：1200×300px</li><li>自社HPポップアップ：1920×1080px</li><li>Notion ページヘッダー：1500×600px</li><li>Notion 共有プレビュー：1500×775px</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">LP・WEBサイト</span></div><ul class="sz-list"><li>作成内容次第。デザイナー側で調整。</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">チラシ・ポスター・パネル</span></div><ul class="sz-list"><li>告知・案内チラシ：A5・A4</li><li>パネル・ポスター：A3・B3・A2・B2・A1・B1・A0・B0</li><li>ポップ：A5・ハガキサイズ</li></ul></div>
-        <div class="nd-item"><div class="nd-head"><span class="nd-name">リーフレット・パンフレット</span></div><ul class="sz-list"><li>小冊子：B6, A5, B5, A4</li><li>蛇腹折・観音折：印刷会社によってサイズ規定ある。</li><li>また片面3ページが基本のため4ページを超えると加工コスト増。</li></ul></div>
+        <div class="nd-item"><div class="nd-head"><span class="nd-name">リーフレット・パンフレット</span></div><ul class="sz-list"><li>小冊子：B6, A5, B5, A4</li><li>蛇腹折・観音折：印刷会社によってサイズ規定ある。<br>また片面3ページが基本のため4ページを超えると加工コスト増。</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">看板・サイン</span></div><ul class="sz-list"><li>店内案内：A4〜A3</li><li>店頭大型看板：A1〜A0</li><li>什器系：PIECE OF SIGN等を検索してリサーチ。</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">ペーパーアイテム</span></div><ul class="sz-list"><li>名刺・ショップカード：91×55mm</li><li>作成内容次第。デザイナー側で調整。</li></ul></div>
         <div class="nd-item"><div class="nd-head"><span class="nd-name">招待状・紙袋・ノベルティ</span></div><ul class="sz-list"><li>作成内容次第。デザイナー側で調整。</li></ul></div>
       </div>
     </div>
     <button type="button" class="modal-close" id="szClose" aria-label="閉じる"><span class="i i-close"></span></button>
+  </div>
+</div>
+
+<!-- ===== 送信アニメーション（Figma submit-animation 86:2083。送信成功→完了画面の間に流れる） ===== -->
+<div class="sa-overlay hidden" id="saOverlay" aria-hidden="true">
+  <div class="sa-contents">
+    <div class="sa-emoji">😆</div>
+    <div class="sa-mask sa-head"><span>＼プランニングシートを作成しました!／</span></div>
+    <div class="sa-mask sa-sub"><span>あと1ステップで、依頼を起票できます!</span></div>
   </div>
 </div>
 
@@ -1139,6 +1212,18 @@
     });
   }
 
+  // ===== タイトル欄の種別ごとの文言（Figmaの各フォームの記載どおり） ==
+  var TITLE_CONF = {
+    "新規": { label: "依頼タイトル", cap: "今回の依頼内容を分かりやすく一言で記入してください。",
+              ph: "例：6月◯◯フェア 集客バナー／◯◯卒向けサマーインターン" },
+    "改訂": { label: "依頼タイトル", cap: "今回の依頼内容を分かりやすく一言で記入してください。",
+              ph: "例：営業資料 ver.2／ディナーメニュー表改訂" },
+    "転用": { label: "依頼タイトル", cap: "今回の依頼内容を分かりやすく一言で記入してください。",
+              ph: "例：8月◯◯フェア 集客バナー" },
+    "相談": { label: "相談タイトル", cap: "今回の相談内容を分かりやすく一言で記入してください。",
+              ph: "例：新規フェアに向けた事前擦り合わせ" }
+  };
+
   // ===== セレクトの未選択表示 ======================================
   function syncSelectEmpty(sel){ sel.classList.toggle("is-empty", !sel.value); }
   document.querySelectorAll("select").forEach(function(sel){
@@ -1163,6 +1248,14 @@
       if (current === "転用"){
         pt.querySelectorAll(".only-new input:checked").forEach(function(c){ c.checked = false; });
       }
+    }
+    // タイトル欄のラベル・説明・記入例を種別で切り替える（Figma第3次改修＝form-new/modify/reuse/consult）
+    var tc = TITLE_CONF[current];
+    if (tc){
+      $("titleLabel").textContent   = tc.label;
+      $("titleCaption").textContent = tc.cap;
+      var titleInput = form.querySelector('[name="title"]');
+      if (titleInput) titleInput.placeholder = tc.ph;
     }
     // 元データ欄のラベル・必須表示を種別で切り替える（改訂＝必須／転用＝任意）
     var srcLabel = $("srcUrlsLabel"), srcBadge = $("srcUrlsBadge"), srcCap = $("srcUrlsCaption"), srcExp = $("srcUrlsExplore");
@@ -1222,7 +1315,7 @@
     if (!$("requesterDept").value.trim()) miss.push("所属部署を選択してください。");
     if (!current) miss.push("依頼種別を選択してください。");
     else {
-      if (!val("title")) miss.push("依頼タイトルを入力してください。");
+      if (!val("title")) miss.push((current === "相談" ? "相談タイトル" : "依頼タイトル") + "を入力してください。");
       if (current !== "改訂" && !val("brand")) miss.push("対象事業・部署を選択してください。");
       if ((current === "新規" || current === "転用") && collectProdTypes().length === 0) miss.push("制作物の種別を選択してください。");
       if (current === "改訂" && collectSrcUrls().length === 0) miss.push("改訂するデータの親フォルダのURLを入力してください。");
@@ -1628,18 +1721,36 @@
         if (res.j && res.j.code === "AUTH") signOut();
         throw new Error((res.j && res.j.error) || "送信に失敗しました。時間をおいてもう一度お試しください。");
       }
-      show($("formArea"), false);
-      show($("footerForm"), false);
       $("doneNotion").href = res.j.notionUrl || "#";
-      show($("doneArea"), true);
-      show($("footerDone"), true);
-      window.scrollTo({ top: 0, behavior: scrollBehavior() });
+      playSubmitAnimation(showDone);
     })
     .catch(function(err){
       showErr(String(err.message || err));
       setSending(false);
     });
   });
+
+  // 完了画面へ切り替える（送信アニメーションの背面で行う）
+  function showDone(){
+    show($("formArea"), false);
+    show($("footerForm"), false);
+    show($("doneArea"), true);
+    show($("footerDone"), true);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  // ===== 送信アニメーション（Figma submit-animation 86:2083） =======
+  // グラデーションが下から立ち上がり→絵文字と白文字→フェードアウトで完了画面が現れる。
+  // 動きを抑える設定の環境ではアニメーションを流さず、すぐ完了画面に切り替える。
+  function playSubmitAnimation(onCovered){
+    var ov = $("saOverlay");
+    if (!ov || prefersReducedMotion()){ onCovered(); return; }
+    show(ov, true);
+    // 画面がグラデーションで覆われたタイミング（saRise完了後）で背面を完了画面に差し替える
+    setTimeout(onCovered, 500);
+    // saFade（2.2s開始 + 0.4s）が終わったらオーバーレイを片づける
+    setTimeout(function(){ show(ov, false); }, 2700);
+  }
 
   $("againBtn").addEventListener("click", function(){ location.reload(); });
 
@@ -1650,10 +1761,10 @@
     var url = $("doneNotion").getAttribute("href") || "";
     if (!url || url === "#") return;
     var done = function(){
-      copyUrlBtn.innerHTML = '<span aria-hidden="true">✓</span>コピーしました';
+      copyUrlBtn.querySelector(".lbl").textContent = "コピーしました";
       copyUrlBtn.classList.add("copied");
       setTimeout(function(){
-        copyUrlBtn.innerHTML = '<span aria-hidden="true">🔗</span>URLをコピー';
+        copyUrlBtn.querySelector(".lbl").textContent = "NotionのURLをコピー";
         copyUrlBtn.classList.remove("copied");
       }, 2200);
     };
@@ -1671,7 +1782,7 @@
     document.body.appendChild(ta);
     ta.select();
     try { document.execCommand("copy"); onDone(); }
-    catch(e){ showErr("コピーできませんでした。「Notionページを開く」からURLをコピーしてください。"); }
+    catch(e){ showErr("コピーできませんでした。「Notionで編集」からURLをコピーしてください。"); }
     document.body.removeChild(ta);
   }
 
@@ -1687,6 +1798,7 @@
       '<button type="button" data-a="logout">未ログインに戻す</button>' +
       '<button type="button" data-a="busy">送信中の表示</button>' +
       '<button type="button" data-a="err">エラー表示</button>' +
+      '<button type="button" data-a="anim">送信アニメ→完了</button>' +
       '<button type="button" data-a="done">完了画面</button>';
     document.body.appendChild(bar);
     bar.addEventListener("click", function(e){
@@ -1698,11 +1810,13 @@
       } else if (a === "logout"){ signOut(); }
       else if (a === "busy"){ setSending(true); setTimeout(function(){ setSending(false); }, 3000); }
       else if (a === "err"){ showErr("Googleログインが必要です。上の「依頼者」欄からログインしてください。"); }
-      else if (a === "done"){
-        show($("formArea"), false); show($("footerForm"), false);
+      else if (a === "anim"){
         $("doneNotion").href = "https://www.notion.so/";
-        show($("doneArea"), true); show($("footerDone"), true);
-        window.scrollTo({ top: 0, behavior: scrollBehavior() });
+        playSubmitAnimation(showDone);
+      }
+      else if (a === "done"){
+        $("doneNotion").href = "https://www.notion.so/";
+        showDone();
       }
     });
   }
