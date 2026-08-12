@@ -22,7 +22,7 @@
 //   クライアントが送ってきた requesterName / requesterEmail は一切信用しない。
 //
 // エンドポイント：
-//   POST /submit    … フォーム送信。{ ok, notionUrl, notionPageId, seqLabel, imagesQueued, deferred } を返す
+//   POST /submit    … フォーム送信。{ ok, notionUrl, notionPageId, imagesQueued, deferred } を返す
 //                      （V1-5.8＝画像・Driveの結果は応答に含まれない。応答後に処理される）
 //   GET  /v/<id>    … 【移行措置】Notionページへ302リダイレクト（記録が無い旧依頼は案内ページ）
 //   GET  /form/<id> … 【廃止】410 を返す（開きっぱなしの旧編集画面への案内用）
@@ -42,8 +42,17 @@
 //
 // V1-5（Drive自動フォルダ作成・2026-08）：
 //   依頼1件ごとに 02_案件管理 配下へ案件フォルダを作り、URLをNotionの
-//   「データ格納先」に書き戻す。番号は対象事業・部署ごとの連番（no00001形式）で、
-//   発番元はNotionの「起票番号」プロパティの最大値。詳細は下の該当セクションを参照。
+//   「データ格納先」に書き戻す。詳細は下の該当セクションを参照。
+//
+// V1-5.9（起票番号の廃止・2026-08-12）：
+//   フォルダ名から起票番号（no00001形式）を撤去し、採番機構（Notion「起票番号」
+//   プロパティへの発番・書き込み）ごと廃止した。理由＝棚（種別フォルダ）の導入で
+//   「種別で拾える」状態が実現し、番号の有無が過去データとの分断を生むデメリットの
+//   ほうが大きくなったため（決定ログ 2026-08-12）。
+//   - フォルダ名＝タイトルのみ。相談のみ [略称]_タイトル。
+//   - 同名フォルダの衝突は許容（頻度が低く、Notionの「データ格納先」URLで区別できる）。
+//   - 改訂の入れ子打ち止めは、番号の名前パターンに代わり KV（dfolder:<id>）で
+//     「ツールが作ったフォルダかどうか」を記録して判定する。
 //
 // V1-5.8（起票高速化・2026-08）：
 //   /submit の応答は「Notionページ作成の直後」に返す。時間のかかる後続処理は
@@ -51,13 +60,17 @@
 //   - 応答後に回すもの：①参考画像のアップロード＋本文への追記（並列化済み）
 //                       ②Driveフォルダ作成＋「データ格納先」の書き戻し
 //   - 同期のまま残すもの：ログイン検証／冪等チェック／改訂の親フォルダ事前チェック（400で弾く）／
-//                       起票番号の採番（ページのプロパティに入れるため）／Notionページ作成
+//                       Notionページ作成
 //   - ページは「画像なし」で先に作り、画像はアップロード完了後に本文へ追記する。
 //     副作用＝完了画面から即Notionを開くと参考画像が数秒〜十数秒遅れて現れる（許容済み・SPEC §注記）。
 //   - 冪等キーの結果保存も応答前に行う（後続処理の結果は含まれない）。
 //
 // KVキー（binding=REQUESTS）：
 //   idem:<key>     冪等キー（二重送信防止・7日保持）
+//   dfolder:<folderId>  【V1-5.9】ツールが作ったDriveフォルダの目印（無期限保持）。
+//                  値={"t":"project"|"kaitei"|"sub","up":"<親のfolderId>"}（projectはupなし）。
+//                  改訂の入れ子打ち止め（2階層で止める）の判定に使う。
+//                  KVに無いフォルダ＝ツール外（過去データ等）とみなし、引き上げない。
 //   guest:<email>  旧・既知依頼者リスト（Slack自動投稿の白紙化〈2026-08-11〉で不使用。残置データは無害）
 //   form:<id> / html:<id>  フェーズ2以前の残置データ（新規保存はしない。TTLで自然消滅）
 // ============================================================
@@ -367,9 +380,7 @@ function buildNotionProperties(data) {
   if (data.requesterDept) props["所属部署"] = { select: { name: data.requesterDept } };
   if (data.requesterName) props["依頼者"] = { rich_text: [{ text: { content: data.requesterName } }] };
   if (data.dataStorage) props["データ格納先"] = { url: data.dataStorage };
-  // 【V1-5】起票番号（対象事業・部署ごとの連番。例 "no00001"）。
-  //   Driveのフォルダ名と完全に同じ文字列を入れる＝目視で1対1に照合できる。
-  if (data.seqLabel) props["起票番号"] = { rich_text: [{ text: { content: data.seqLabel } }] };
+  // 【V1-5.9】起票番号は廃止（採番・プロパティ書き込みとも行わない・2026-08-12決定）
 
   return props;
 }
@@ -548,8 +559,8 @@ async function createNotionPage(data, imageUploads, env) {
 // 案件フォルダ（＋3点セットのサブフォルダ）を作り、そのURLを
 // Notion の「データ格納先」プロパティに書き戻す。
 //
-// 置き場所のルール（V1-5.6で改訂）：
-//   新規・転用 … 02_案件管理/<対象事業・部署>/<種別フォルダ>/no00001_タイトル
+// 置き場所のルール（V1-5.6で改訂・V1-5.9で命名変更）：
+//   新規・転用 … 02_案件管理/<対象事業・部署>/<種別フォルダ>/タイトル
 //                 ※種別フォルダ＝「01_イベント・キャンペーン」〜「10_その他（基本的に使用しない）」。
 //                   制作物の種別（単一選択）で振り分ける。棚が見つからなければ作る。
 //                 ※転用の「転用元のデータ」URLは記録のみ。置き場所には使わない（元と並列に置く）。
@@ -557,19 +568,18 @@ async function createNotionPage(data, imageUploads, env) {
 //                 【V1-5.7】親は 02_案件管理 の事業フォルダ（または相談）配下に限る。
 //                 外を指している・アクセスできない場合は /submit の事前チェックが400で弾き、
 //                 Notionページ自体を作らない（＝依頼種別「転用」への切り替えを促す）。
-//                 貼られたのが番号付き案件フォルダの中の番号付きフォルダなら1段引き上げる
-//                 （＝入れ子は2階層で止める）。
-//   相談       … 02_案件管理/相談/[対象事業・部署の略称]_no00005_タイトル（フラット）
+//                 貼られたのがツール製の改訂フォルダ（またはその3点セット）なら、KVの記録
+//                 （dfolder:<id>）をたどって案件フォルダまで引き上げる（＝入れ子は2階層で止める）。
+//   相談       … 02_案件管理/相談/[対象事業・部署の略称]_タイトル（フラット）
 //
-// 起票番号（no00001）のルール：
-//   - 対象事業・部署ごとの独立した連番。IWAIの00001とCGMの00001は別物。
-//   - 発番元は Notion。DBを「対象事業・部署＝そのブランド」で絞り、
-//     「起票番号」の最大値を取って +1 する（＝Notionが唯一の正本という方針に合わせる）。
-//   - 常に5桁ゼロ埋め。文字列のまま比較しても数値順になる。
-//   - Notionページを消すと欠番になる（最大値方式のため）。運用上の実害はない。
+// 命名のルール（V1-5.9・2026-08-12決定）：
+//   - フォルダ名＝タイトルのみ（起票番号は廃止。過去データと同じ棚に自然に混ざるようにする）。
+//   - 相談のみ [略称]_ を先頭に付ける＝フラット配置でどの事業か分かるようにし、
+//     相談発の案件の改訂で事業を逆引きできるようにする（案件化して棚へ移す際は略称を手で削る）。
+//   - 同名フォルダの衝突は許容する（Driveは同名フォルダを許す。頻度が低く、
+//     Notionの「データ格納先」URLで一意に区別できるため。運用で直す）。
 //   - 改訂はフォームに「対象事業・部署」が無い。親フォルダから事業フォルダをさかのぼって特定し、
-//     採番のうえ Notion の「起票番号」「対象事業・部署」にも書き戻す。
-//     相談フォルダ配下の案件はフォルダ名の [略称]_ から事業を引く。
+//     Notion の「対象事業・部署」に書き戻す。相談フォルダ配下の案件はフォルダ名の [略称]_ から引く。
 //     【V1-5.7】特定できない親（02_案件管理の外）は事前チェックで送信ごと弾くため、ここには来ない。
 //
 // 失敗したときの方針：
@@ -632,13 +642,14 @@ const DRIVE_TYPE_SHELVES = {
   "その他": "10_その他（基本的に使用しない）",
 };
 
-// 番号付き案件フォルダの名前パターン（no00001_… / [IWAI-婚礼]_no00005_…）
-const NUMBERED_FOLDER_RE = /^(\[[^\]]*\]_)?no\d{5,}_/;
+// 【V1-5.9】ツールが作ったフォルダの目印（KVキーの接頭辞）。
+// 起票番号の廃止で名前から「ツール製かどうか」を判定できなくなったため、
+// 作成時にフォルダIDをKVへ記録し、改訂の入れ子打ち止めはこの記録で判定する。
+const DFOLDER_KV_PREFIX = "dfolder:";
 
 // 案件フォルダの中に必ず作るサブフォルダ（順序＝作成順＝名前順）
 const DRIVE_SUBFOLDERS = ["01_支給素材", "02_作業データ", "03_納品データ"];
 
-const DRIVE_SEQ_PROP = "起票番号";
 const DRIVE_STORAGE_PROP = "データ格納先";
 const DRIVE_API = "https://www.googleapis.com/drive/v3/files";
 const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
@@ -652,18 +663,7 @@ function brandShortName(brand) {
   return (i > 0 ? s.slice(0, i) : s).trim();
 }
 
-// 5桁ゼロ埋め＋接頭辞 no（例: 1 → "no00001"）。
-// 5桁を超えたら桁を伸ばす（並び順は崩れるが、番号が壊れるよりはよい）。
-function formatSeq(n) {
-  const num = Math.max(1, Math.floor(Number(n) || 1));
-  return "no" + String(num).padStart(5, "0");
-}
-
-// "no00042" → 42。読めない文字列は 0（＝最大値の計算で無視される）。
-function parseSeq(v) {
-  const m = /^no(\d+)$/.exec(String(v || "").trim());
-  return m ? parseInt(m[1], 10) : 0;
-}
+// 【V1-5.9】formatSeq / parseSeq（起票番号の整形・解釈）は採番の廃止に伴い撤去した。
 
 // Driveのフォルダ名に使えない・使うと事故る文字を落とす。
 // スラッシュ系はパス区切りと誤解されるため全角ハイフンではなく半角ハイフンに寄せる。
@@ -846,11 +846,27 @@ async function resolveTypeShelf(brandFolderId, typeName, token) {
   return made.id;
 }
 
+// 【V1-5.9】ツールが作ったフォルダのKV記録を読む。無ければ null（＝ツール外のフォルダ）。
+// KVの読み取り失敗も null に倒す＝引き上げをやめるだけで、フォルダ作成自体は止めない。
+async function getDfolderMark(env, folderId) {
+  try {
+    const raw = await env.REQUESTS.get(DFOLDER_KV_PREFIX + folderId);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 // 【V1-5.6】改訂の親を決める（位置非依存）。
 // 貼られたURLのフォルダをそのまま親にする。ファイルURLならその入れ物から始める。
-// 「番号付き案件フォルダの中の番号付きフォルダ」を指していたら1段引き上げる（入れ子は2階層で止める）。
+// 【V1-5.9】起票番号の廃止で名前からツール製フォルダを判定できないため、
+// KVの記録（dfolder:<id>）をたどって引き上げる：
+//   - "sub"（3点セット）→ その親（改訂or案件フォルダ）へ
+//   - "kaitei"（ツール製の改訂フォルダ）→ その親（案件フォルダ）へ ＝入れ子は2階層で止める
+//   - "project"（ツール製の案件フォルダ）→ そのまま採用
+//   - 記録なし（過去データ等ツール外）→ そのまま採用（従来どおり引き上げない）
 // たどれない場合は null（呼び出し側はフォルダを作らず、Notion本文に注記を残す）。
-async function resolveKaiteiParent(sourceUrl, token) {
+async function resolveKaiteiParent(sourceUrl, token, env) {
   const startId = extractDriveFolderId(sourceUrl);
   if (!startId) return null;
 
@@ -870,18 +886,16 @@ async function resolveKaiteiParent(sourceUrl, token) {
     }
   }
 
-  // 番号付き in 番号付き なら、案件フォルダの根元まで引き上げる（最大3段の保険）
-  for (let i = 0; i < 3; i++) {
-    if (!NUMBERED_FOLDER_RE.test(String(node.name || ""))) break;
-    const up = (node.parents || [])[0];
-    if (!up) break;
+  // ツール製の改訂フォルダ・3点セットを指していたら、案件フォルダまで引き上げる（最大4段の保険）
+  for (let i = 0; i < 4; i++) {
+    const mark = await getDfolderMark(env, node.id);
+    if (!mark || mark.t === "project" || !mark.up) break;
     let parent;
     try {
-      parent = await getDriveFile(up, token);
+      parent = await getDriveFile(mark.up, token);
     } catch {
       break;
     }
-    if (!NUMBERED_FOLDER_RE.test(String(parent.name || ""))) break;
     node = parent;
   }
   return node; // { id, name, parents }
@@ -926,49 +940,38 @@ async function inferBrandFromFolder(node, token) {
   return "";
 }
 
-// Notion から「対象事業・部署＝brand」の最大 起票番号 を取り、+1 した番号を返す。
-// 取得に失敗した場合も 1 を返して処理を止めない（重複は運用で直す方が安全）。
-async function nextSeqNumber(env, brand) {
-  const version = (env.NOTION_VERSION || "2022-06-28").trim();
-  const res = await fetch("https://api.notion.com/v1/databases/" + env.NOTION_DB_ID + "/query", {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + env.NOTION_TOKEN,
-      "Notion-Version": version,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      filter: { property: "対象事業・部署", select: { equals: brand } },
-      sorts: [{ property: DRIVE_SEQ_PROP, direction: "descending" }],
-      page_size: 1,
-    }),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error("起票番号の取得に失敗: " + (body.message || res.status));
-  const row = (body.results || [])[0];
-  const prop = row && row.properties ? row.properties[DRIVE_SEQ_PROP] : null;
-  const text = prop && Array.isArray(prop.rich_text) && prop.rich_text[0]
-    ? prop.rich_text[0].plain_text
-    : "";
-  return parseSeq(text) + 1;
-}
+// 【V1-5.9】nextSeqNumber（Notionからの採番）は起票番号の廃止に伴い撤去した。
 
 // 案件フォルダ＋3点セットを作る。戻り値はフォルダのURL。
-async function createProjectFolderTree(name, parentId, token) {
+// 【V1-5.9】kind＝"project"（新規・転用・相談）| "kaitei"（改訂）。
+// 作ったフォルダのIDをKV（dfolder:<id>）へ記録し、改訂の入れ子打ち止めの判定に使う。
+// KVへの記録失敗は握りつぶす＝最悪でも「引き上げが効かず入れ子が1段深くなる」だけで、
+// フォルダ作成そのものは成立させる。
+async function createProjectFolderTree(name, parentId, token, env, kind) {
   const folder = await createDriveFolder(name, parentId, token);
+  const markFolder = async (id, mark) => {
+    try { await env.REQUESTS.put(DFOLDER_KV_PREFIX + id, JSON.stringify(mark)); } catch {}
+  };
+  if (kind === "kaitei") {
+    await markFolder(folder.id, { t: "kaitei", up: parentId });
+  } else {
+    await markFolder(folder.id, { t: "project" });
+  }
   for (const sub of DRIVE_SUBFOLDERS) {
     // サブフォルダの失敗は致命にしない（親フォルダは使えるため）
-    try { await createDriveFolder(sub, folder.id, token); } catch {}
+    try {
+      const made = await createDriveFolder(sub, folder.id, token);
+      await markFolder(made.id, { t: "sub", up: folder.id });
+    } catch {}
   }
   return folder.webViewLink || ("https://drive.google.com/drive/folders/" + folder.id);
 }
 
 // 1件ぶんのフォルダ作成。呼び出し側は try/catch 不要（必ず結果オブジェクトを返す）。
-// 戻り値: { created, url, reason, seqLabel, inferredBrand }
-//   - seqLabel      … 実際にフォルダ名へ使った起票番号（改訂はここで採番するため呼び出し側に返す）
+// 戻り値: { created, url, reason, inferredBrand }
 //   - inferredBrand … 改訂で親フォルダから推定できた対象事業・部署（Notionへ書き戻す用）
-async function createDriveFolderForRequest(data, seqLabel, env) {
-  const out = { created: false, url: "", reason: "", seqLabel: seqLabel || "", inferredBrand: "" };
+async function createDriveFolderForRequest(data, env) {
+  const out = { created: false, url: "", reason: "", inferredBrand: "" };
   if (!(env.GOOGLE_SA_EMAIL || "").trim() || !env.GOOGLE_SA_PRIVATE_KEY) {
     out.reason = "Drive未設定（GOOGLE_SA_EMAIL / GOOGLE_SA_PRIVATE_KEY）";
     return out;
@@ -989,7 +992,7 @@ async function createDriveFolderForRequest(data, seqLabel, env) {
       out.inferredBrand = String(data._kaiteiBrand || "").trim();
       if (!parentId) {
         // 事前チェックを通らない経路（想定外）への保険。ここで解決を試みる。
-        const parent = await resolveKaiteiParent(data.sourceUrls, token);
+        const parent = await resolveKaiteiParent(data.sourceUrls, token, env);
         if (!parent) {
           out.reason = "改訂元の親フォルダにアクセスできませんでした（URLの誤り・権限不足の可能性）";
           return out;
@@ -997,16 +1000,8 @@ async function createDriveFolderForRequest(data, seqLabel, env) {
         parentId = parent.id;
         out.inferredBrand = await inferBrandFromFolder(parent, token);
       }
-      // 事業が分かるので採番する（失敗しても作成は止めない＝番号なしで作る）
-      if (out.inferredBrand) {
-        try {
-          out.seqLabel = formatSeq(await nextSeqNumber(env, out.inferredBrand));
-        } catch {
-          out.seqLabel = "";
-        }
-      }
-      const name = out.seqLabel ? out.seqLabel + "_" + safeTitle : safeTitle;
-      out.url = await createProjectFolderTree(name, parentId, token);
+      // 【V1-5.9】起票番号は廃止＝フォルダ名はタイトルのみ
+      out.url = await createProjectFolderTree(safeTitle, parentId, token, env, "kaitei");
       out.created = true;
       return out;
     }
@@ -1019,9 +1014,10 @@ async function createDriveFolderForRequest(data, seqLabel, env) {
     }
 
     // 相談：02_案件管理/相談/ にフラットに置く。どの事業か分かるよう略称を前に付ける。
+    // 【V1-5.9】起票番号は廃止＝ [略称]_タイトル
     if (category === "相談") {
-      const name = "[" + brandShortName(brand) + "]_" + seqLabel + "_" + safeTitle;
-      out.url = await createProjectFolderTree(name, DRIVE_SOUDAN_FOLDER_ID, token);
+      const name = "[" + brandShortName(brand) + "]_" + safeTitle;
+      out.url = await createProjectFolderTree(name, DRIVE_SOUDAN_FOLDER_ID, token, env, "project");
       out.created = true;
       return out;
     }
@@ -1029,9 +1025,9 @@ async function createDriveFolderForRequest(data, seqLabel, env) {
     // 【互換】旧「改訂・流用」：元データのURLが解けたら、その中に入れる（旧挙動の踏襲）
     if (category === "改訂・流用") {
       let parentId = brandFolderId;
-      const revParent = await resolveKaiteiParent(data.sourceUrls, token);
+      const revParent = await resolveKaiteiParent(data.sourceUrls, token, env);
       if (revParent) parentId = revParent.id;
-      out.url = await createProjectFolderTree(seqLabel + "_" + safeTitle, parentId, token);
+      out.url = await createProjectFolderTree(safeTitle, parentId, token, env, "kaitei");
       out.created = true;
       return out;
     }
@@ -1049,7 +1045,7 @@ async function createDriveFolderForRequest(data, seqLabel, env) {
         // 棚の解決に失敗しても事業フォルダ直下に作る（フォルダなしよりよい）
       }
     }
-    out.url = await createProjectFolderTree(seqLabel + "_" + safeTitle, parentId, token);
+    out.url = await createProjectFolderTree(safeTitle, parentId, token, env, "project");
     out.created = true;
     return out;
   } catch (e) {
@@ -1059,13 +1055,10 @@ async function createDriveFolderForRequest(data, seqLabel, env) {
 }
 
 // 作ったフォルダのURL等を Notion のプロパティに書き戻す。
-// extra（任意）: { seqLabel, brand } … 改訂でDrive処理中に確定した値を追記する。
+// extra（任意）: { brand } … 改訂でDrive処理中に確定した値を追記する。
 async function patchNotionStorageUrl(pageId, url, env, extra) {
   const version = (env.NOTION_VERSION || "2022-06-28").trim();
   const properties = { [DRIVE_STORAGE_PROP]: { url } };
-  if (extra && extra.seqLabel) {
-    properties[DRIVE_SEQ_PROP] = { rich_text: [{ text: { content: extra.seqLabel } }] };
-  }
   if (extra && extra.brand) {
     properties["対象事業・部署"] = { select: { name: extra.brand } };
   }
@@ -1137,7 +1130,7 @@ async function appendImageBlocksToNotion(pageId, imageUploads, env) {
 //   ② Drive：フォルダ作成 → 「データ格納先」書き戻し（改訂の採番・事業もここで書く）
 // ①②は互いに依存しないため並走させる。どれが失敗しても他は続行する
 // （Promise.allSettled）。依頼そのもの（Notionページ）は応答時点で成立済み。
-async function finishSubmitInBackground(data, images, notion, seqLabel, env) {
+async function finishSubmitInBackground(data, images, notion, env) {
   const imagesJob = (async () => {
     if (!images.length) return;
     try {
@@ -1154,14 +1147,13 @@ async function finishSubmitInBackground(data, images, notion, seqLabel, env) {
   })();
 
   const driveJob = (async () => {
-    // 従来と同じ実施条件：採番できた依頼か、改訂（採番はDrive処理の中で行う）
-    if (!(seqLabel || data.category === "改訂")) return;
-    const drive = await createDriveFolderForRequest(data, seqLabel, env);
+    // 実施条件：対象事業・部署が分かる依頼（新規・転用・相談）か、改訂（事業は親から推定済み）
+    if (!(data.brand || data.category === "改訂")) return;
+    const drive = await createDriveFolderForRequest(data, env);
     if (drive.created && drive.url) {
       try {
         await patchNotionStorageUrl(notion.pageId, drive.url, env, {
           // 改訂でDrive処理中に確定した値だけ追記する（それ以外は作成時に書いてある）
-          seqLabel: data.category === "改訂" ? drive.seqLabel : "",
           brand: data.category === "改訂" ? drive.inferredBrand : "",
         });
       } catch {
@@ -1291,7 +1283,7 @@ export default {
         let kaiteiBrand = "";
         try {
           const token = await getDriveAccessToken(env);
-          kaiteiParent = await resolveKaiteiParent(data.sourceUrls, token);
+          kaiteiParent = await resolveKaiteiParent(data.sourceUrls, token, env);
           if (kaiteiParent) kaiteiBrand = await inferBrandFromFolder(kaiteiParent, token);
         } catch (e) {
           return json({
@@ -1318,20 +1310,7 @@ export default {
       // ① 参考画像の検証だけ同期で行う（アップロードは応答後＝V1-5.8）
       const images = asImageList(data.images);
 
-      // ②-a【V1-5】起票番号を採番する。
-      //    対象事業・部署ごとの連番で、発番元は Notion（＝唯一の正本）。
-      //    採番に失敗しても送信は止めない（番号なしでページだけ作る）。
-      //    【V1-5.6】改訂はフォームに「対象事業・部署」が無いため、ここでは採番しない。
-      //    Drive処理の中で親フォルダから事業を推定できたときだけ採番し、あとからNotionへ書き戻す。
-      let seqLabel = "";
-      if (data.brand && data.category !== "改訂") {
-        try {
-          seqLabel = formatSeq(await nextSeqNumber(env, data.brand));
-        } catch {
-          seqLabel = "";
-        }
-      }
-      data.seqLabel = seqLabel;
+      // 【V1-5.9】起票番号の採番は廃止（2026-08-12決定）。フォルダ名はタイトルのみで作る。
 
       // ②-b Notionページ作成（唯一の正本）。
       //    【V1-5.8】画像は応答後にアップロードするため、ページは「画像なし」で先に作る。
@@ -1349,7 +1328,6 @@ export default {
         ok: true,
         notionUrl: notion.notionUrl,
         notionPageId: notion.pageId,
-        seqLabel,
         imagesQueued: images.length,
         deferred: true, // 画像アップロード・Driveフォルダ作成は応答後に実行
       };
@@ -1359,7 +1337,7 @@ export default {
 
       // ②-c【V1-5.8】時間のかかる後続処理（画像・Drive）は応答後に回す。
       //    ctx.waitUntil に渡すことで、レスポンス返却後もWorkerが処理を続行できる。
-      ctx.waitUntil(finishSubmitInBackground(data, images, notion, seqLabel, env));
+      ctx.waitUntil(finishSubmitInBackground(data, images, notion, env));
 
       return json(result, 200, request, env);
     }
@@ -1477,8 +1455,6 @@ export {
   buildImageBlocks,
   // 【V1-5】Drive自動フォルダ作成
   brandShortName,
-  formatSeq,
-  parseSeq,
   sanitizeFolderName,
   extractDriveFolderId,
   importServiceAccountKey,
@@ -1496,7 +1472,8 @@ export {
   SEC_KAITEI_LEGACY,
   DRIVE_TYPE_SHELVES,
   DRIVE_FOLDER_TO_BRAND,
-  NUMBERED_FOLDER_RE,
+  // 【V1-5.9】起票番号の廃止・KVによるツール製フォルダの記録
+  DFOLDER_KV_PREFIX,
   // 【V1-5.7】改訂の親フォルダを02_案件管理内に限定
   DRIVE_KANRI_FOLDER_ID,
   brandFromShortName,

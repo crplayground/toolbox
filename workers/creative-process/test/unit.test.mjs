@@ -20,8 +20,6 @@ import {
   buildNotionBlocks,
   buildImageBlocks,
   brandShortName,
-  formatSeq,
-  parseSeq,
   sanitizeFolderName,
   extractDriveFolderId,
   DRIVE_BRAND_FOLDERS,
@@ -35,7 +33,7 @@ import {
   SEC_KAITEI_LEGACY,
   DRIVE_TYPE_SHELVES,
   DRIVE_FOLDER_TO_BRAND,
-  NUMBERED_FOLDER_RE,
+  DFOLDER_KV_PREFIX,
   DRIVE_KANRI_FOLDER_ID,
   brandFromShortName,
 } from "../src/worker.js";
@@ -197,18 +195,17 @@ t("Google のエラー本文をそのまま返さない", src.indexOf("out.error
 t("File Upload APIを使用", src.indexOf("/v1/file_uploads") !== -1);
 t("editId送信には410で案内", src.indexOf("EDIT_REMOVED") !== -1);
 
-// ---- 10. V1-5 Drive自動フォルダ作成 ----
-section("10. V1-5 起票番号（formatSeq / parseSeq）");
-t("1 → no00001（5桁ゼロ埋め）", formatSeq(1) === "no00001");
-t("42 → no00042", formatSeq(42) === "no00042");
-t("99999 → no99999", formatSeq(99999) === "no99999");
-t("5桁を超えたら桁を伸ばす", formatSeq(100000) === "no100000");
-t("0以下は1に丸める", formatSeq(0) === "no00001" && formatSeq(-5) === "no00001");
-t("数値でない入力も1に丸める", formatSeq(undefined) === "no00001" && formatSeq("あ") === "no00001");
-t("no00042 → 42", parseSeq("no00042") === 42);
-t("前後の空白を許容", parseSeq("  no00007 ") === 7);
-t("形式外は0（採番の起点＝1になる）", parseSeq("") === 0 && parseSeq("42") === 0 && parseSeq("NO00042") === 0);
-t("ゼロ埋め文字列は辞書順＝数値順", ["no00002","no00010","no00001"].sort().join(",") === "no00001,no00002,no00010");
+// ---- 10. V1-5.9 起票番号の廃止（撤去確認） ----
+section("10. V1-5.9 起票番号の廃止（採番機構の撤去確認）");
+for (const name of [
+  "formatSeq", "parseSeq", "nextSeqNumber", "NUMBERED_FOLDER_RE", "DRIVE_SEQ_PROP",
+]) {
+  t("撤去済み: " + name, !new RegExp("(function |const )" + name + "\\b").test(src));
+}
+t("採番のNotionクエリが無い（起票番号の降順取得）", !/direction: "descending"[\s\S]{0,60}page_size: 1/.test(src));
+t("プロパティ「起票番号」への書き込みコードが無い", !/"起票番号"\]? ?[:=] ?\{ rich_text/.test(src));
+t("応答に seqLabel を含まない", !/^\s*seqLabel,\s*$/m.test(src));
+t("KVの目印キーは dfolder:", DFOLDER_KV_PREFIX === "dfolder:");
 
 section("11. V1-5 略称の切り出し（brandShortName）");
 t("IWAI-婚礼｜… → IWAI-婚礼", brandShortName("IWAI-婚礼｜婚礼に関する制作物") === "IWAI-婚礼");
@@ -252,7 +249,7 @@ t("フォルダIDに重複がない（互換キーの1件を除く）", new Set(
 t("サブフォルダは3点セット", JSON.stringify(DRIVE_SUBFOLDERS) === JSON.stringify(["01_支給素材", "02_作業データ", "03_納品データ"]));
 t("サブフォルダ名は番号順に並ぶ", [...DRIVE_SUBFOLDERS].sort().join(",") === DRIVE_SUBFOLDERS.join(","));
 
-section("14b. V1-5.6 種別フォルダ（棚）対応表・番号付きフォルダ判定");
+section("14b. V1-5.6 種別フォルダ（棚）対応表");
 const shelfKeys = Object.keys(DRIVE_TYPE_SHELVES);
 t("棚は10種別すべてを持つ", shelfKeys.length === 10);
 t("棚名は「数字_種別名」で始まる", shelfKeys.every((k) => DRIVE_TYPE_SHELVES[k].replace(/^\d+_/, "").startsWith(k)));
@@ -264,10 +261,15 @@ t("逆引き表がCRAZYのIDを正式名に解決する（互換キーに負け�
   DRIVE_FOLDER_TO_BRAND[DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・全社会議・自社HP等に関する制作物"]] ===
   "CRAZY｜全社周年・全社会議・自社HP等に関する制作物");
 t("逆引き表は18フォルダぶん", Object.keys(DRIVE_FOLDER_TO_BRAND).length === 18);
-t("no00001_… は番号付きフォルダ", NUMBERED_FOLDER_RE.test("no00001_夏フェア"));
-t("[IWAI-婚礼]_no00005_… も番号付きフォルダ（相談発）", NUMBERED_FOLDER_RE.test("[IWAI-婚礼]_no00005_看板の相談"));
-t("番号のない旧フォルダは対象外", !NUMBERED_FOLDER_RE.test("営業資料A") && !NUMBERED_FOLDER_RE.test("2025_周年ロゴ"));
-t("no123（5桁未満）は対象外", !NUMBERED_FOLDER_RE.test("no123_x"));
+
+section("14b-2. V1-5.9 ツール製フォルダのKV記録（入れ子打ち止めの新方式）");
+t("作成時にKVへ記録する（dfolder:<id>）", /createProjectFolderTree[\s\S]{0,900}?DFOLDER_KV_PREFIX/.test(src));
+t("改訂フォルダは kaitei として親付きで記録", /\{ t: "kaitei", up: parentId \}/.test(src));
+t("案件フォルダは project として記録", /\{ t: "project" \}/.test(src));
+t("3点セットは sub として親付きで記録", /\{ t: "sub", up: folder\.id \}/.test(src));
+t("KVへの記録失敗は握りつぶす（フォルダ作成を止めない）", /markFolder[\s\S]{0,200}?catch \{\}/.test(src));
+t("引き上げ判定はKVを読む（getDfolderMark）", src.indexOf("getDfolderMark") !== -1);
+t("KVに無いフォルダ（過去データ等）は引き上げない", /if \(!mark \|\| mark\.t === "project" \|\| !mark\.up\) break;/.test(src));
 
 section("14c. V1-5.7 改訂の親フォルダ制限・略称の逆引き");
 t("02_案件管理のルートIDを定数で持つ", /^[A-Za-z0-9_-]{20,}$/.test(DRIVE_KANRI_FOLDER_ID));
@@ -280,12 +282,11 @@ t("18略称すべてが往復できる", Object.keys(DRIVE_BRAND_FOLDERS)
   .filter((b) => b !== "CRAZY｜全社周年・自社WEBサイト等に関する制作物")
   .every((b) => brandFromShortName(brandShortName(b)) === b));
 
-section("15. V1-5 起票番号のNotion書き込み");
+section("15. V1-5.9 起票番号はNotionに書かない");
 const propsSeq = buildNotionProperties({ title: "テスト", category: "新規", brand: "IWAI-婚礼｜婚礼に関する制作物", seqLabel: "no00007" });
-t("起票番号をrich_textで書く", propsSeq["起票番号"].rich_text[0].text.content === "no00007");
-t("Driveのフォルダ名と同じ文字列", propsSeq["起票番号"].rich_text[0].text.content === formatSeq(7));
+t("旧seqLabelが紛れ込んでも起票番号プロパティを送らない", !("起票番号" in propsSeq));
 const propsNoSeq = buildNotionProperties({ title: "テスト", category: "新規" });
-t("採番できなかったときは起票番号を送らない（Notionの400回避）", !("起票番号" in propsNoSeq));
+t("通常データでも起票番号プロパティを送らない", !("起票番号" in propsNoSeq));
 t("データ格納先は依頼者入力があるときだけ載せる", !("データ格納先" in propsNoSeq));
 
 // ---- 16. ソース検査：V1-5 Drive連携 ----
@@ -295,19 +296,16 @@ t("サービスアカウントのJWT Bearerフローを使う", src.indexOf("urn
 t("Driveのスコープを要求", src.indexOf("https://www.googleapis.com/auth/drive") !== -1);
 t("秘密鍵はenvから読む（ソースに直書きしない）", src.indexOf("env.GOOGLE_SA_PRIVATE_KEY") !== -1);
 t("秘密鍵の実体がソースに無い", src.indexOf("BEGIN PRIVATE KEY-----\\n") === -1 && src.indexOf("MIIE") === -1);
-t("起票番号はNotionから採番する（KVカウンタを持たない）",
-  src.indexOf("nextSeqNumber") !== -1 && src.indexOf('"seq:"') === -1);
-t("採番は対象事業・部署で絞り込む", /filter: \{ property: "対象事業・部署"/.test(src));
-t("採番は起票番号の降順1件で最大値を取る", /direction: "descending"[\s\S]{0,60}page_size: 1/.test(src));
 t("Drive失敗時も送信を止めない（createDriveFolderForRequestがthrowしない）",
   /async function createDriveFolderForRequest[\s\S]*?\n\}/.test(src) &&
   /createDriveFolderForRequest[\s\S]{0,5000}?catch \(e\) \{[\s\S]{0,120}?out\.reason/.test(src));
 t("フォルダURLはNotionの「データ格納先」へ書き戻す", src.indexOf("patchNotionStorageUrl") !== -1);
-t("相談はフラット配置（略称を先頭に付ける）", /"\[" \+ brandShortName\(brand\) \+ "\]_" \+ seqLabel/.test(src));
+t("相談はフラット配置（略称を先頭に付ける・番号なし）", /"\[" \+ brandShortName\(brand\) \+ "\]_" \+ safeTitle/.test(src));
+t("新規・転用・改訂のフォルダ名はタイトルのみ", /createProjectFolderTree\(safeTitle, parentId, token, env/.test(src));
 t("改訂の親解決は位置非依存（resolveKaiteiParent）", src.indexOf("resolveKaiteiParent") !== -1 && src.indexOf("resolveRevisionParent") === -1);
-t("改訂は番号付き入れ子を1段引き上げる（2階層で止める）", /resolveKaiteiParent[\s\S]{0,1500}?NUMBERED_FOLDER_RE\.test/.test(src));
+t("改訂の入れ子はKVの記録で引き上げる（2階層で止める）", /resolveKaiteiParent[\s\S]{0,1800}?getDfolderMark/.test(src));
 t("改訂元は sourceUrls（フォームの設問名）を読む", src.indexOf("data.sourceUrls") !== -1);
-t("改訂は親から事業を推定して採番する", src.indexOf("inferBrandFromFolder") !== -1);
+t("改訂は親から事業を推定してNotionへ書き戻す", src.indexOf("inferBrandFromFolder") !== -1);
 t("新規・転用は種別フォルダ（棚）に振り分ける", src.indexOf("resolveTypeShelf") !== -1);
 t("転用の元URLは置き場所に使わない（改訂と旧種別のみ親解決）", !/category === "転用"[\s\S]{0,300}?resolveKaiteiParent/.test(src));
 t("改訂でフォルダを作れなかったら本文に注記を残す", src.indexOf("appendNotionNote") !== -1);
@@ -347,9 +345,7 @@ t("追記はNotionの blocks/children API を使う", /appendImageBlocksToNotion
 t("ページは画像なしで先に作る", src.indexOf("await createNotionPage(data, { ids: [], failed: 0 }, env)") !== -1);
 t("改訂の事前チェックは同期のまま（waitUntilより前＝400で弾ける）",
   src.indexOf('code: "KAITEI_PARENT"') < src.indexOf("ctx.waitUntil("));
-t("採番も同期のまま（ページのプロパティに入れるため）",
-  src.indexOf("formatSeq(await nextSeqNumber(env, data.brand))") !== -1
-  && src.indexOf("formatSeq(await nextSeqNumber(env, data.brand))") < src.indexOf("ctx.waitUntil("));
+t("同期パスに採番処理が無い（V1-5.9で廃止）", src.indexOf("nextSeqNumber(") === -1);
 t("冪等キーの保存は応答前（waitUntilより前）", src.indexOf('put("idem:') !== -1
   && src.indexOf('put("idem:') < src.indexOf("ctx.waitUntil("));
 t("Driveフォルダ作成はバックグラウンド内", /finishSubmitInBackground[\s\S]*?createDriveFolderForRequest/.test(src));
