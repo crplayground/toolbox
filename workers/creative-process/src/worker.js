@@ -277,19 +277,27 @@ async function verifyGoogleIdToken(idToken, env) {
 // ---- Googleログイン：認可コード → IDトークン --------------------
 // フォームは自前のボタンから認可コードを受け取り、それをここへ送る。
 // クライアントシークレットはWorker Secrets（GOOGLE_CLIENT_SECRET）にのみ置き、
-// ブラウザには一切渡さない。ポップアップ方式なので redirect_uri は "postmessage" を使う。
-async function exchangeCodeForIdToken(code, env) {
+// ブラウザには一切渡さない。
+// ポップアップ方式のトークン交換では redirect_uri に「呼び出し元ページのオリジン」を使う
+// （Google公式仕様: https://developers.google.com/identity/oauth2/web/guides/use-code-model ）。
+// 旧実装の "postmessage"（gapi時代の慣習）はGoogleが交換を拒否するようになったため廃止（2026-08-12）。
+async function exchangeCodeForIdToken(code, env, origin) {
   const clientId = (env.GOOGLE_CLIENT_ID || "").trim();
   const clientSecret = (env.GOOGLE_CLIENT_SECRET || "").trim();
   if (!clientId || !clientSecret) {
     throw new Error("サーバー設定が未完了です（GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET）");
   }
+  // origin は isAllowedOrigin 検証済みリクエストの Origin ヘッダ。
+  // 万一空のとき（同一生成元ポリシー外のツール等）は ALLOWED_ORIGIN の先頭を使う。
+  const redirectUri =
+    (origin || "").trim() ||
+    (env.ALLOWED_ORIGIN || "").split(",").map((s) => s.trim()).filter(Boolean)[0] || "";
   const body = new URLSearchParams({
     code,
     client_id: clientId,
     client_secret: clientSecret,
     grant_type: "authorization_code",
-    redirect_uri: "postmessage",
+    redirect_uri: redirectUri,
   });
   const res = await fetch(GOOGLE_TOKEN_URL, {
     method: "POST",
@@ -298,7 +306,9 @@ async function exchangeCodeForIdToken(code, env) {
   });
   const out = await res.json().catch(() => ({}));
   if (!res.ok || !out.id_token) {
-    // Googleのエラー内容はそのまま返さない（設定情報が漏れるため）
+    // Googleのエラー内容はブラウザにそのまま返さない（設定情報が漏れるため）。
+    // 原因調査用にエラーコードだけサーバーログへ出す（`npx wrangler tail` で閲覧可）。
+    console.error("[auth/exchange] Googleトークン交換に失敗:", res.status, out.error || "(エラーコードなし)");
     throw new AuthError("ログインに失敗しました。もう一度お試しください");
   }
   return out.id_token;
@@ -1198,7 +1208,7 @@ export default {
       if (!code) return json({ error: "認可コードがありません" }, 400, request, env);
 
       try {
-        const idToken = await exchangeCodeForIdToken(code, env);
+        const idToken = await exchangeCodeForIdToken(code, env, request.headers.get("Origin"));
         const actor = await verifyGoogleIdToken(idToken, env);
         return json({
           ok: true,

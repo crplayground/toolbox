@@ -556,7 +556,9 @@ One Tapが出なかったとき、別のアカウントに切り替えたいと�
 
 - **どちらの経路でも、最終的な判定はWorker側のIDトークン署名検証**（発行元・aud・exp・`hd`・メール確認済み）。
 - **クライアントシークレットは Worker Secrets（`GOOGLE_CLIENT_SECRET`）にのみ置く。** フォームHTMLにもリポジトリにも書かない。
-- ポップアップ方式のため、トークン交換の `redirect_uri` は `postmessage` を使う。
+- ポップアップ方式のトークン交換の `redirect_uri` は **呼び出し元ページのオリジン**（検証済みの `Origin` ヘッダ＝本番では `https://crplayground.github.io`）を使う（[Google公式仕様](https://developers.google.com/identity/oauth2/web/guides/use-code-model)）。
+  旧実装の `postmessage`（gapi時代の慣習）はGoogleが交換を拒否するようになり、ボタンログインが「ログインに失敗しました」になる不具合の原因だったため2026-08-12に廃止。
+- 交換失敗時、Googleのエラーコードはブラウザに返さずサーバーログにのみ出す（`npx wrangler tail` で閲覧）。
 - `/auth/exchange` も `/submit` と同じく `ALLOWED_ORIGIN` のオリジンからしか受け付けない。
 - ログインの有効期限は約1時間。切れたら送信時に検知して、再ログインを促す。
 

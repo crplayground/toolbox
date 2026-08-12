@@ -186,7 +186,11 @@ t('guest:<email> の読み書きが無い（Slack白紙化で撤去）', src.ind
 // 2026-08-01 Googleログイン：認可コードフロー
 t("/auth/exchange エンドポイントがある", src.indexOf('"/auth/exchange"') !== -1);
 t("トークン交換の宛先が Google の token エンドポイント", src.indexOf("https://oauth2.googleapis.com/token") !== -1);
-t("ポップアップ方式のため redirect_uri は postmessage", src.indexOf('redirect_uri: "postmessage"') !== -1);
+// 2026-08-12 ボタンログイン不具合修正: redirect_uri は「呼び出し元オリジン」（Google公式仕様）。
+// 旧 "postmessage" はGoogleが拒否するようになったため、残っていないことも検査する。
+t("トークン交換の redirect_uri は呼び出し元オリジン（変数 redirectUri）", src.indexOf("redirect_uri: redirectUri") !== -1);
+t("交換に検証済みリクエストの Origin ヘッダを渡している", /exchangeCodeForIdToken\(code, env, request\.headers\.get\("Origin"\)\)/.test(src));
+t('旧 redirect_uri: "postmessage" が残っていない', src.indexOf('redirect_uri: "postmessage"') === -1);
 t("シークレットは env から読む（ソースに直書きしない）", src.indexOf("env.GOOGLE_CLIENT_SECRET") !== -1);
 t("交換したIDトークンも署名検証している", /exchangeCodeForIdToken[\s\S]{0,400}verifyGoogleIdToken/.test(src));
 t("Google のエラー本文をそのまま返さない", src.indexOf("out.error_description") === -1);
