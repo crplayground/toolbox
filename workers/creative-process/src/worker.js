@@ -49,10 +49,18 @@
 //   プロパティへの発番・書き込み）ごと廃止した。理由＝棚（種別フォルダ）の導入で
 //   「種別で拾える」状態が実現し、番号の有無が過去データとの分断を生むデメリットの
 //   ほうが大きくなったため（決定ログ 2026-08-12）。
-//   - フォルダ名＝タイトルのみ。相談のみ [略称]_タイトル。
 //   - 同名フォルダの衝突は許容（頻度が低く、Notionの「データ格納先」URLで区別できる）。
-//   - 改訂の入れ子打ち止めは、番号の名前パターンに代わり KV（dfolder:<id>）で
-//     「ツールが作ったフォルダかどうか」を記録して判定する。
+//
+// V1-5.10（フラット＋日付前置・2026-08-12）：
+//   ①全種別のフォルダ名に起票日付（JST・YYMMDD）を前置する＝ 260812_タイトル。
+//     相談は [略称]_260812_タイトル。日付はNotionの「作成日時」と同じ日になる（どちらも送信時刻）。
+//     過去データにも同じ形式を手で付与できる＝棚の中で新旧が同じルールで時系列に並ぶ。
+//   ②改訂の入れ子を廃止＝改訂フォルダは元フォルダの「中」ではなく「隣」
+//     （元の案件フォルダと同じ容れ物＝棚／事業フォルダ直下／相談）に並列に作る。
+//     これにより8/6の日付案不採用理由（親フォルダの日付が古びて最新が行方不明に見える）が
+//     構造ごと消える＝古びる親がそもそも存在しない。
+//   ③入れ子打ち止め判定は不要になり、V1-5.9のKV記録（dfolder:<id>）は書き込みごと撤去。
+//     既存のKV残置データは無害（コードは読み書きしない）。
 //
 // V1-5.8（起票高速化・2026-08）：
 //   /submit の応答は「Notionページ作成の直後」に返す。時間のかかる後続処理は
@@ -67,10 +75,8 @@
 //
 // KVキー（binding=REQUESTS）：
 //   idem:<key>     冪等キー（二重送信防止・7日保持）
-//   dfolder:<folderId>  【V1-5.9】ツールが作ったDriveフォルダの目印（無期限保持）。
-//                  値={"t":"project"|"kaitei"|"sub","up":"<親のfolderId>"}（projectはupなし）。
-//                  改訂の入れ子打ち止め（2階層で止める）の判定に使う。
-//                  KVに無いフォルダ＝ツール外（過去データ等）とみなし、引き上げない。
+//   dfolder:<folderId>  旧【V1-5.9】ツール製フォルダの目印。入れ子の廃止（V1-5.10）で
+//                  不使用＝コードは読み書きしない。残置データは無害・掃除は任意。
 //   guest:<email>  旧・既知依頼者リスト（Slack自動投稿の白紙化〈2026-08-11〉で不使用。残置データは無害）
 //   form:<id> / html:<id>  フェーズ2以前の残置データ（新規保存はしない。TTLで自然消滅）
 // ============================================================
@@ -559,26 +565,28 @@ async function createNotionPage(data, imageUploads, env) {
 // 案件フォルダ（＋3点セットのサブフォルダ）を作り、そのURLを
 // Notion の「データ格納先」プロパティに書き戻す。
 //
-// 置き場所のルール（V1-5.6で改訂・V1-5.9で命名変更）：
-//   新規・転用 … 02_案件管理/<対象事業・部署>/<種別フォルダ>/タイトル
+// 置き場所のルール（V1-5.6で改訂・V1-5.10でフラット化）：
+//   新規・転用 … 02_案件管理/<対象事業・部署>/<種別フォルダ>/260812_タイトル
 //                 ※種別フォルダ＝「01_イベント・キャンペーン」〜「10_その他（基本的に使用しない）」。
 //                   制作物の種別（単一選択）で振り分ける。棚が見つからなければ作る。
 //                 ※転用の「転用元のデータ」URLは記録のみ。置き場所には使わない（元と並列に置く）。
-//   改訂       … 「改訂するデータの親フォルダのURL」（必須）が指すフォルダの中に作る。
+//   改訂       … 【V1-5.10】改訂元の案件フォルダの「隣」に作る（入れ子の廃止）。
+//                 「改訂するデータの親フォルダのURL」（必須）から改訂元の案件フォルダを特定し、
+//                 その容れ物（棚／事業フォルダ直下／相談）に他の案件と並列に作る。
 //                 【V1-5.7】親は 02_案件管理 の事業フォルダ（または相談）配下に限る。
 //                 外を指している・アクセスできない場合は /submit の事前チェックが400で弾き、
 //                 Notionページ自体を作らない（＝依頼種別「転用」への切り替えを促す）。
-//                 貼られたのがツール製の改訂フォルダ（またはその3点セット）なら、KVの記録
-//                 （dfolder:<id>）をたどって案件フォルダまで引き上げる（＝入れ子は2階層で止める）。
-//   相談       … 02_案件管理/相談/[対象事業・部署の略称]_タイトル（フラット）
+//   相談       … 02_案件管理/相談/[対象事業・部署の略称]_260812_タイトル（フラット）
 //
-// 命名のルール（V1-5.9・2026-08-12決定）：
-//   - フォルダ名＝タイトルのみ（起票番号は廃止。過去データと同じ棚に自然に混ざるようにする）。
+// 命名のルール（V1-5.10・2026-08-12決定）：
+//   - フォルダ名＝起票日付（JST・YYMMDD）＋タイトル。起票番号は付けない（V1-5.9で廃止済み）。
+//     日付により棚の中が名前順＝時系列に並び、同名案件も日付で区別できる。
+//     過去データにも同じ形式を手で付与する運用（リネームしてもNotionとの紐付けはURLベースで壊れない）。
 //   - 相談のみ [略称]_ を先頭に付ける＝フラット配置でどの事業か分かるようにし、
 //     相談発の案件の改訂で事業を逆引きできるようにする（案件化して棚へ移す際は略称を手で削る）。
-//   - 同名フォルダの衝突は許容する（Driveは同名フォルダを許す。頻度が低く、
+//   - 同日・同名の衝突は許容する（Driveは同名フォルダを許す。頻度が低く、
 //     Notionの「データ格納先」URLで一意に区別できるため。運用で直す）。
-//   - 改訂はフォームに「対象事業・部署」が無い。親フォルダから事業フォルダをさかのぼって特定し、
+//   - 改訂はフォームに「対象事業・部署」が無い。改訂元の容れ物から事業を特定し、
 //     Notion の「対象事業・部署」に書き戻す。相談フォルダ配下の案件はフォルダ名の [略称]_ から引く。
 //     【V1-5.7】特定できない親（02_案件管理の外）は事前チェックで送信ごと弾くため、ここには来ない。
 //
@@ -642,10 +650,15 @@ const DRIVE_TYPE_SHELVES = {
   "その他": "10_その他（基本的に使用しない）",
 };
 
-// 【V1-5.9】ツールが作ったフォルダの目印（KVキーの接頭辞）。
-// 起票番号の廃止で名前から「ツール製かどうか」を判定できなくなったため、
-// 作成時にフォルダIDをKVへ記録し、改訂の入れ子打ち止めはこの記録で判定する。
-const DFOLDER_KV_PREFIX = "dfolder:";
+// 【V1-5.10】種別フォルダ（棚）の名前判定。
+// 棚は「2桁番号_種別名…」（01_〜10_）。日付前置の案件フォルダ（260812_…＝6桁）や
+// 過去データの年号付き名（2025_…＝4桁）と取り違えないよう、2桁番号＋既知の種別名の両方で判定する。
+function looksLikeShelf(name) {
+  const s = String(name || "");
+  if (!/^\d{2}_/.test(s)) return false;
+  const rest = s.replace(/^\d+_/, "");
+  return Object.keys(DRIVE_TYPE_SHELVES).some((t) => rest.startsWith(t));
+}
 
 // 案件フォルダの中に必ず作るサブフォルダ（順序＝作成順＝名前順）
 const DRIVE_SUBFOLDERS = ["01_支給素材", "02_作業データ", "03_納品データ"];
@@ -664,6 +677,17 @@ function brandShortName(brand) {
 }
 
 // 【V1-5.9】formatSeq / parseSeq（起票番号の整形・解釈）は採番の廃止に伴い撤去した。
+
+// 【V1-5.10】起票日付ラベル（JST・YYMMDD。例 "260812"）。
+// Notionの「作成日時」と同じ日付になる（どちらも送信時刻のため）。
+// 日付は人が読むための表示であり、機械はこの値に依存しない（照合はURLベース）。
+function formatDateLabelJST(ms) {
+  const d = new Date((Number(ms) || 0) + 9 * 60 * 60 * 1000);
+  const yy = String(d.getUTCFullYear() % 100).padStart(2, "0");
+  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const da = String(d.getUTCDate()).padStart(2, "0");
+  return yy + mo + da;
+}
 
 // Driveのフォルダ名に使えない・使うと事故る文字を落とす。
 // スラッシュ系はパス区切りと誤解されるため全角ハイフンではなく半角ハイフンに寄せる。
@@ -837,7 +861,12 @@ async function resolveTypeShelf(brandFolderId, typeName, token) {
   if (!canonical) return null;
   try {
     const children = await listDriveChildFolders(brandFolderId, token);
-    const hit = children.find((f) => String(f.name || "").replace(/^\d+_/, "").startsWith(String(typeName).trim()));
+    // 【V1-5.10】棚は「2桁番号_種別名…」に限定して一致させる。
+    // 日付前置の案件フォルダ（260812_…）が種別名で始まるタイトルでも棚と取り違えない。
+    const hit = children.find((f) => {
+      const n = String(f.name || "");
+      return /^\d{2}_/.test(n) && n.replace(/^\d+_/, "").startsWith(String(typeName).trim());
+    });
     if (hit) return hit.id;
   } catch {
     // 一覧に失敗しても作成は試みる
@@ -846,27 +875,17 @@ async function resolveTypeShelf(brandFolderId, typeName, token) {
   return made.id;
 }
 
-// 【V1-5.9】ツールが作ったフォルダのKV記録を読む。無ければ null（＝ツール外のフォルダ）。
-// KVの読み取り失敗も null に倒す＝引き上げをやめるだけで、フォルダ作成自体は止めない。
-async function getDfolderMark(env, folderId) {
-  try {
-    const raw = await env.REQUESTS.get(DFOLDER_KV_PREFIX + folderId);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-// 【V1-5.6】改訂の親を決める（位置非依存）。
-// 貼られたURLのフォルダをそのまま親にする。ファイルURLならその入れ物から始める。
-// 【V1-5.9】起票番号の廃止で名前からツール製フォルダを判定できないため、
-// KVの記録（dfolder:<id>）をたどって引き上げる：
-//   - "sub"（3点セット）→ その親（改訂or案件フォルダ）へ
-//   - "kaitei"（ツール製の改訂フォルダ）→ その親（案件フォルダ）へ ＝入れ子は2階層で止める
-//   - "project"（ツール製の案件フォルダ）→ そのまま採用
-//   - 記録なし（過去データ等ツール外）→ そのまま採用（従来どおり引き上げない）
-// たどれない場合は null（呼び出し側はフォルダを作らず、Notion本文に注記を残す）。
-async function resolveKaiteiParent(sourceUrl, token, env) {
+// 【V1-5.10】改訂の置き場所（容れ物）と事業を決める（入れ子の廃止＝フラット配置）。
+// 改訂フォルダは改訂元の「中」ではなく「隣」＝改訂元の案件フォルダが入っている容れ物
+// （種別の棚／事業フォルダ直下／相談）に、他の案件と並列に作る。
+// 貼られたURLがファイルならその入れ物から、案件フォルダ内のサブフォルダ等なら
+// 親をさかのぼって容れ物を特定する。
+// 戻り値：
+//   null                              … フォルダ自体にアクセスできない（URLの誤り・権限不足）
+//   { containerId:"", brand:"" }      … たどれたが 02_案件管理 の事業配下に着地しない（範囲外）
+//   { containerId, brand }            … 作成先の容れ物と、推定した対象事業・部署
+async function resolveKaiteiPlacement(sourceUrl, token) {
+  const OUTSIDE = { containerId: "", brand: "" };
   const startId = extractDriveFolderId(sourceUrl);
   if (!startId) return null;
 
@@ -886,19 +905,46 @@ async function resolveKaiteiParent(sourceUrl, token, env) {
     }
   }
 
-  // ツール製の改訂フォルダ・3点セットを指していたら、案件フォルダまで引き上げる（最大4段の保険）
-  for (let i = 0; i < 4; i++) {
-    const mark = await getDfolderMark(env, node.id);
-    if (!mark || mark.t === "project" || !mark.up) break;
-    let parent;
-    try {
-      parent = await getDriveFile(mark.up, token);
-    } catch {
-      break;
-    }
-    node = parent;
+  // 貼られたのが容れ物そのもののケース
+  if (DRIVE_FOLDER_TO_BRAND[node.id]) {
+    // 事業フォルダ直下＝そのまま事業フォルダの中に作る（棚を介さない過去データの改訂など）
+    return { containerId: node.id, brand: DRIVE_FOLDER_TO_BRAND[node.id] };
   }
-  return node; // { id, name, parents }
+  if (node.id === DRIVE_SOUDAN_FOLDER_ID || node.id === DRIVE_KANRI_FOLDER_ID) {
+    return OUTSIDE; // 事業を特定できない（相談直下は略称が要る・02直下は範囲外扱い）
+  }
+
+  // 親をさかのぼり、IDで分かる容れ物（事業フォルダ／相談／02root）に行き当たるまで登る
+  let cur = node;
+  for (let i = 0; i < 8; i++) {
+    const up = (cur.parents || [])[0];
+    if (!up) return OUTSIDE;
+
+    if (DRIVE_FOLDER_TO_BRAND[up]) {
+      // cur は「棚」か「事業フォルダ直下の案件フォルダ（過去データ含む）」
+      if (looksLikeShelf(cur.name)) {
+        // 棚＝改訂元と同じ棚の中に並列に作る
+        return { containerId: cur.id, brand: DRIVE_FOLDER_TO_BRAND[up] };
+      }
+      // 棚を介さない案件フォルダ＝その隣（事業フォルダ直下）に作る
+      return { containerId: up, brand: DRIVE_FOLDER_TO_BRAND[up] };
+    }
+    if (up === DRIVE_SOUDAN_FOLDER_ID) {
+      // cur は相談の案件フォルダ（[略称]_…）。隣＝相談フォルダに作り、事業は略称から引く
+      const m = /^\[([^\]]+)\]_/.exec(String(cur.name || ""));
+      const brand = brandFromShortName(m ? m[1] : "");
+      return brand ? { containerId: DRIVE_SOUDAN_FOLDER_ID, brand } : OUTSIDE;
+    }
+    if (up === DRIVE_KANRI_FOLDER_ID) {
+      return OUTSIDE; // 02_案件管理直下の想定外フォルダ＝事業を特定できない
+    }
+    try {
+      cur = await getDriveFile(up, token);
+    } catch {
+      return OUTSIDE;
+    }
+  }
+  return OUTSIDE;
 }
 
 // 略称（[IWAI-婚礼] の中身）→ 対象事業・部署の正式名。相談フォルダ配下の案件の事業推定に使う。
@@ -911,58 +957,16 @@ function brandFromShortName(short) {
   return "";
 }
 
-// 【V1-5.6】フォルダから親をさかのぼって「対象事業・部署」を推定する（改訂の採番用）。
-// 事業フォルダ配下なら、そのフォルダIDから逆引きする。
-// 相談フォルダ配下なら、起点フォルダ名の [略称]_ から逆引きする（相談発の案件の改訂）。
-// 02_案件管理の外を指している場合は空文字（V1-5.7＝呼び出し側が送信自体を400で弾く）。
-async function inferBrandFromFolder(node, token) {
-  let cur = node;
-  for (let i = 0; i < 6; i++) {
-    if (!cur) return "";
-    if (DRIVE_FOLDER_TO_BRAND[cur.id]) return DRIVE_FOLDER_TO_BRAND[cur.id];
-    if (cur.id === DRIVE_SOUDAN_FOLDER_ID) {
-      const m = /^\[([^\]]+)\]_/.exec(String(node.name || ""));
-      return brandFromShortName(m ? m[1] : "");
-    }
-    const up = (cur.parents || [])[0];
-    if (!up) return "";
-    if (DRIVE_FOLDER_TO_BRAND[up]) return DRIVE_FOLDER_TO_BRAND[up];
-    if (up === DRIVE_SOUDAN_FOLDER_ID) {
-      const m = /^\[([^\]]+)\]_/.exec(String(node.name || ""));
-      return brandFromShortName(m ? m[1] : "");
-    }
-    try {
-      cur = await getDriveFile(up, token);
-    } catch {
-      return "";
-    }
-  }
-  return "";
-}
-
 // 【V1-5.9】nextSeqNumber（Notionからの採番）は起票番号の廃止に伴い撤去した。
+// 【V1-5.10】inferBrandFromFolder は resolveKaiteiPlacement に統合。
+//            KVによる入れ子判定（dfolder: 記録）は入れ子の廃止に伴い撤去した。
 
 // 案件フォルダ＋3点セットを作る。戻り値はフォルダのURL。
-// 【V1-5.9】kind＝"project"（新規・転用・相談）| "kaitei"（改訂）。
-// 作ったフォルダのIDをKV（dfolder:<id>）へ記録し、改訂の入れ子打ち止めの判定に使う。
-// KVへの記録失敗は握りつぶす＝最悪でも「引き上げが効かず入れ子が1段深くなる」だけで、
-// フォルダ作成そのものは成立させる。
-async function createProjectFolderTree(name, parentId, token, env, kind) {
+async function createProjectFolderTree(name, parentId, token) {
   const folder = await createDriveFolder(name, parentId, token);
-  const markFolder = async (id, mark) => {
-    try { await env.REQUESTS.put(DFOLDER_KV_PREFIX + id, JSON.stringify(mark)); } catch {}
-  };
-  if (kind === "kaitei") {
-    await markFolder(folder.id, { t: "kaitei", up: parentId });
-  } else {
-    await markFolder(folder.id, { t: "project" });
-  }
   for (const sub of DRIVE_SUBFOLDERS) {
     // サブフォルダの失敗は致命にしない（親フォルダは使えるため）
-    try {
-      const made = await createDriveFolder(sub, folder.id, token);
-      await markFolder(made.id, { t: "sub", up: folder.id });
-    } catch {}
+    try { await createDriveFolder(sub, folder.id, token); } catch {}
   }
   return folder.webViewLink || ("https://drive.google.com/drive/folders/" + folder.id);
 }
@@ -983,25 +987,26 @@ async function createDriveFolderForRequest(data, env) {
   try {
     const token = await getDriveAccessToken(env);
     const safeTitle = sanitizeFolderName(data.title);
+    // 【V1-5.10】全種別共通＝起票日付（JST）を前置する
+    const dateLabel = formatDateLabelJST(Date.now());
 
-    // 改訂：貼られた親フォルダの中に作る。
-    // 【V1-5.7】親の解決と事業の推定は /submit の事前チェックで済んでいる
+    // 改訂：【V1-5.10】改訂元の案件フォルダの「隣」（同じ容れ物）に並列に作る（入れ子の廃止）。
+    // 【V1-5.7】容れ物の解決と事業の推定は /submit の事前チェックで済んでいる
     // （02_案件管理の外は送信自体を400で弾く）。ここでは結果を受け取って作るだけ。
     if (category === "改訂") {
       let parentId = String(data._kaiteiParentId || "").trim();
       out.inferredBrand = String(data._kaiteiBrand || "").trim();
       if (!parentId) {
         // 事前チェックを通らない経路（想定外）への保険。ここで解決を試みる。
-        const parent = await resolveKaiteiParent(data.sourceUrls, token, env);
-        if (!parent) {
+        const placement = await resolveKaiteiPlacement(data.sourceUrls, token);
+        if (!placement || !placement.containerId) {
           out.reason = "改訂元の親フォルダにアクセスできませんでした（URLの誤り・権限不足の可能性）";
           return out;
         }
-        parentId = parent.id;
-        out.inferredBrand = await inferBrandFromFolder(parent, token);
+        parentId = placement.containerId;
+        out.inferredBrand = placement.brand;
       }
-      // 【V1-5.9】起票番号は廃止＝フォルダ名はタイトルのみ
-      out.url = await createProjectFolderTree(safeTitle, parentId, token, env, "kaitei");
+      out.url = await createProjectFolderTree(dateLabel + "_" + safeTitle, parentId, token);
       out.created = true;
       return out;
     }
@@ -1014,20 +1019,20 @@ async function createDriveFolderForRequest(data, env) {
     }
 
     // 相談：02_案件管理/相談/ にフラットに置く。どの事業か分かるよう略称を前に付ける。
-    // 【V1-5.9】起票番号は廃止＝ [略称]_タイトル
+    // 【V1-5.10】[略称]_日付_タイトル
     if (category === "相談") {
-      const name = "[" + brandShortName(brand) + "]_" + safeTitle;
-      out.url = await createProjectFolderTree(name, DRIVE_SOUDAN_FOLDER_ID, token, env, "project");
+      const name = "[" + brandShortName(brand) + "]_" + dateLabel + "_" + safeTitle;
+      out.url = await createProjectFolderTree(name, DRIVE_SOUDAN_FOLDER_ID, token);
       out.created = true;
       return out;
     }
 
-    // 【互換】旧「改訂・流用」：元データのURLが解けたら、その中に入れる（旧挙動の踏襲）
+    // 【互換】旧「改訂・流用」：元データのURLが解けたら、その容れ物に並列に作る（V1-5.10のフラット準拠）
     if (category === "改訂・流用") {
       let parentId = brandFolderId;
-      const revParent = await resolveKaiteiParent(data.sourceUrls, token, env);
-      if (revParent) parentId = revParent.id;
-      out.url = await createProjectFolderTree(safeTitle, parentId, token, env, "kaitei");
+      const placement = await resolveKaiteiPlacement(data.sourceUrls, token);
+      if (placement && placement.containerId) parentId = placement.containerId;
+      out.url = await createProjectFolderTree(dateLabel + "_" + safeTitle, parentId, token);
       out.created = true;
       return out;
     }
@@ -1045,7 +1050,7 @@ async function createDriveFolderForRequest(data, env) {
         // 棚の解決に失敗しても事業フォルダ直下に作る（フォルダなしよりよい）
       }
     }
-    out.url = await createProjectFolderTree(safeTitle, parentId, token, env, "project");
+    out.url = await createProjectFolderTree(dateLabel + "_" + safeTitle, parentId, token);
     out.created = true;
     return out;
   } catch (e) {
@@ -1279,32 +1284,31 @@ export default {
             code: "KAITEI_PARENT",
           }, 400, request, env);
         }
-        let kaiteiParent = null;
-        let kaiteiBrand = "";
+        // 【V1-5.10】改訂元の容れ物（棚など）と事業をまとめて解決する（フラット配置）
+        let placement = null;
         try {
           const token = await getDriveAccessToken(env);
-          kaiteiParent = await resolveKaiteiParent(data.sourceUrls, token, env);
-          if (kaiteiParent) kaiteiBrand = await inferBrandFromFolder(kaiteiParent, token);
+          placement = await resolveKaiteiPlacement(data.sourceUrls, token);
         } catch (e) {
           return json({
             error: "親フォルダの確認に失敗しました。時間をおいてもう一度お試しください。（" + String(e.message || e) + "）",
             code: "KAITEI_PARENT",
           }, 503, request, env);
         }
-        if (!kaiteiParent) {
+        if (!placement) {
           return json({
             error: "「CRAZY CREATIVE/02_案件管理」の中のフォルダURLを貼ってください。" + KAITEI_NG_HINT,
             code: "KAITEI_PARENT",
           }, 400, request, env);
         }
-        if (!kaiteiBrand) {
+        if (!placement.containerId || !placement.brand) {
           return json({
             error: "指定された親フォルダが「CRAZY CREATIVE/02_案件管理」の中にありません。02_案件管理の中にある改訂元のフォルダURLを貼ってください。" + KAITEI_NG_HINT,
             code: "KAITEI_PARENT",
           }, 400, request, env);
         }
-        data._kaiteiParentId = kaiteiParent.id;
-        data._kaiteiBrand = kaiteiBrand;
+        data._kaiteiParentId = placement.containerId;
+        data._kaiteiBrand = placement.brand;
       }
 
       // ① 参考画像の検証だけ同期で行う（アップロードは応答後＝V1-5.8）
@@ -1472,8 +1476,9 @@ export {
   SEC_KAITEI_LEGACY,
   DRIVE_TYPE_SHELVES,
   DRIVE_FOLDER_TO_BRAND,
-  // 【V1-5.9】起票番号の廃止・KVによるツール製フォルダの記録
-  DFOLDER_KV_PREFIX,
+  // 【V1-5.10】日付前置・フラット配置
+  formatDateLabelJST,
+  looksLikeShelf,
   // 【V1-5.7】改訂の親フォルダを02_案件管理内に限定
   DRIVE_KANRI_FOLDER_ID,
   brandFromShortName,

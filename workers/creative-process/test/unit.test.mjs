@@ -33,7 +33,8 @@ import {
   SEC_KAITEI_LEGACY,
   DRIVE_TYPE_SHELVES,
   DRIVE_FOLDER_TO_BRAND,
-  DFOLDER_KV_PREFIX,
+  formatDateLabelJST,
+  looksLikeShelf,
   DRIVE_KANRI_FOLDER_ID,
   brandFromShortName,
 } from "../src/worker.js";
@@ -196,16 +197,33 @@ t("File Upload APIを使用", src.indexOf("/v1/file_uploads") !== -1);
 t("editId送信には410で案内", src.indexOf("EDIT_REMOVED") !== -1);
 
 // ---- 10. V1-5.9 起票番号の廃止（撤去確認） ----
-section("10. V1-5.9 起票番号の廃止（採番機構の撤去確認）");
+section("10. V1-5.9/5.10 廃止機構の撤去確認");
 for (const name of [
   "formatSeq", "parseSeq", "nextSeqNumber", "NUMBERED_FOLDER_RE", "DRIVE_SEQ_PROP",
+  "DFOLDER_KV_PREFIX", "getDfolderMark", "resolveKaiteiParent", "inferBrandFromFolder",
 ]) {
   t("撤去済み: " + name, !new RegExp("(function |const )" + name + "\\b").test(src));
 }
 t("採番のNotionクエリが無い（起票番号の降順取得）", !/direction: "descending"[\s\S]{0,60}page_size: 1/.test(src));
 t("プロパティ「起票番号」への書き込みコードが無い", !/"起票番号"\]? ?[:=] ?\{ rich_text/.test(src));
 t("応答に seqLabel を含まない", !/^\s*seqLabel,\s*$/m.test(src));
-t("KVの目印キーは dfolder:", DFOLDER_KV_PREFIX === "dfolder:");
+t("KVへの書き込みは冪等キーのみ（dfolder記録の撤去）", (src.match(/REQUESTS\.put\(/g) || []).length === 1);
+
+// ---- 10b. V1-5.10 起票日付ラベル ----
+section("10b. V1-5.10 起票日付ラベル（formatDateLabelJST）");
+t("UTC午前3時＝JST同日正午", formatDateLabelJST(Date.UTC(2026, 7, 12, 3, 0, 0)) === "260812");
+t("UTC15時以降はJSTでは翌日", formatDateLabelJST(Date.UTC(2026, 7, 12, 15, 30, 0)) === "260813");
+t("年またぎ（UTC大晦日16時＝JST元日）", formatDateLabelJST(Date.UTC(2025, 11, 31, 16, 0, 0)) === "260101");
+t("1桁の月日はゼロ埋め", formatDateLabelJST(Date.UTC(2026, 0, 5, 0, 0, 0)) === "260105");
+t("常に6桁", /^\d{6}$/.test(formatDateLabelJST(Date.UTC(2026, 7, 12))));
+
+section("10c. V1-5.10 棚の名前判定（looksLikeShelf）");
+t("正規の棚名は棚", looksLikeShelf("01_イベント・キャンペーン") && looksLikeShelf("10_その他（基本的に使用しない）"));
+t("番号や補足が変わっても種別名が先頭なら棚", looksLikeShelf("03_バナー・告知画像（SNS含む）"));
+t("日付前置の案件フォルダは棚ではない（6桁日付）", !looksLikeShelf("260812_バナー・告知画像の改訂"));
+t("年号付きの過去データは棚ではない", !looksLikeShelf("2025_周年ロゴ"));
+t("2桁でも種別名でなければ棚ではない", !looksLikeShelf("01_春のフェア"));
+t("種別名で始まっても番号なしは棚ではない", !looksLikeShelf("バナー・告知画像まとめ"));
 
 section("11. V1-5 略称の切り出し（brandShortName）");
 t("IWAI-婚礼｜… → IWAI-婚礼", brandShortName("IWAI-婚礼｜婚礼に関する制作物") === "IWAI-婚礼");
@@ -262,14 +280,14 @@ t("逆引き表がCRAZYのIDを正式名に解決する（互換キーに負け�
   "CRAZY｜全社周年・全社会議・自社HP等に関する制作物");
 t("逆引き表は18フォルダぶん", Object.keys(DRIVE_FOLDER_TO_BRAND).length === 18);
 
-section("14b-2. V1-5.9 ツール製フォルダのKV記録（入れ子打ち止めの新方式）");
-t("作成時にKVへ記録する（dfolder:<id>）", /createProjectFolderTree[\s\S]{0,900}?DFOLDER_KV_PREFIX/.test(src));
-t("改訂フォルダは kaitei として親付きで記録", /\{ t: "kaitei", up: parentId \}/.test(src));
-t("案件フォルダは project として記録", /\{ t: "project" \}/.test(src));
-t("3点セットは sub として親付きで記録", /\{ t: "sub", up: folder\.id \}/.test(src));
-t("KVへの記録失敗は握りつぶす（フォルダ作成を止めない）", /markFolder[\s\S]{0,200}?catch \{\}/.test(src));
-t("引き上げ判定はKVを読む（getDfolderMark）", src.indexOf("getDfolderMark") !== -1);
-t("KVに無いフォルダ（過去データ等）は引き上げない", /if \(!mark \|\| mark\.t === "project" \|\| !mark\.up\) break;/.test(src));
+section("14b-2. V1-5.10 フラット配置（入れ子の廃止）");
+t("改訂の置き場所は resolveKaiteiPlacement が決める", src.indexOf("resolveKaiteiPlacement") !== -1);
+t("改訂は容れ物（containerId）に並列に作る＝入れ子にしない", /data\._kaiteiParentId = placement\.containerId/.test(src));
+t("棚の下の案件（の中）を貼られたら同じ棚を返す", /looksLikeShelf\(cur\.name\)[\s\S]{0,200}?containerId: cur\.id/.test(src));
+t("棚を介さない案件は事業フォルダ直下を返す", /containerId: up, brand: DRIVE_FOLDER_TO_BRAND\[up\]/.test(src));
+t("相談配下は相談フォルダを容れ物にし略称から事業を引く", /containerId: DRIVE_SOUDAN_FOLDER_ID, brand/.test(src));
+t("02_案件管理直下・相談直下は範囲外扱い", /OUTSIDE/.test(src));
+t("棚の名前解決も2桁番号を要求（日付前置と取り違えない）", /\/\^\\d\{2\}_\/\.test\(n\)/.test(src));
 
 section("14c. V1-5.7 改訂の親フォルダ制限・略称の逆引き");
 t("02_案件管理のルートIDを定数で持つ", /^[A-Za-z0-9_-]{20,}$/.test(DRIVE_KANRI_FOLDER_ID));
@@ -300,21 +318,20 @@ t("Drive失敗時も送信を止めない（createDriveFolderForRequestがthrow�
   /async function createDriveFolderForRequest[\s\S]*?\n\}/.test(src) &&
   /createDriveFolderForRequest[\s\S]{0,5000}?catch \(e\) \{[\s\S]{0,120}?out\.reason/.test(src));
 t("フォルダURLはNotionの「データ格納先」へ書き戻す", src.indexOf("patchNotionStorageUrl") !== -1);
-t("相談はフラット配置（略称を先頭に付ける・番号なし）", /"\[" \+ brandShortName\(brand\) \+ "\]_" \+ safeTitle/.test(src));
-t("新規・転用・改訂のフォルダ名はタイトルのみ", /createProjectFolderTree\(safeTitle, parentId, token, env/.test(src));
-t("改訂の親解決は位置非依存（resolveKaiteiParent）", src.indexOf("resolveKaiteiParent") !== -1 && src.indexOf("resolveRevisionParent") === -1);
-t("改訂の入れ子はKVの記録で引き上げる（2階層で止める）", /resolveKaiteiParent[\s\S]{0,1800}?getDfolderMark/.test(src));
+t("相談は [略称]_日付_タイトル", /"\[" \+ brandShortName\(brand\) \+ "\]_" \+ dateLabel \+ "_" \+ safeTitle/.test(src));
+t("新規・転用・改訂のフォルダ名は日付＋タイトル", /createProjectFolderTree\(dateLabel \+ "_" \+ safeTitle, parentId, token\)/.test(src));
+t("改訂の置き場所は容れ物を解決して決める（resolveKaiteiPlacement）", src.indexOf("resolveKaiteiPlacement") !== -1);
 t("改訂元は sourceUrls（フォームの設問名）を読む", src.indexOf("data.sourceUrls") !== -1);
-t("改訂は親から事業を推定してNotionへ書き戻す", src.indexOf("inferBrandFromFolder") !== -1);
+t("改訂は容れ物から推定した事業をNotionへ書き戻す", /resolveKaiteiPlacement[\s\S]{0,3000}?brandFromShortName/.test(src) && src.indexOf("_kaiteiBrand") !== -1);
 t("新規・転用は種別フォルダ（棚）に振り分ける", src.indexOf("resolveTypeShelf") !== -1);
-t("転用の元URLは置き場所に使わない（改訂と旧種別のみ親解決）", !/category === "転用"[\s\S]{0,300}?resolveKaiteiParent/.test(src));
+t("転用の元URLは置き場所に使わない（改訂と旧種別のみ親解決）", !/category === "転用"[\s\S]{0,300}?resolveKaiteiPlacement/.test(src));
 t("改訂でフォルダを作れなかったら本文に注記を残す", src.indexOf("appendNotionNote") !== -1);
 t("棚は名前検索で解決し、無ければ正式名で作る", /resolveTypeShelf[\s\S]{0,900}?createDriveFolder\(canonical/.test(src));
 t("改訂は送信前に親フォルダを検証する（V1-5.7事前チェック）", src.indexOf('code: "KAITEI_PARENT"') !== -1);
 t("02_案件管理の外は400で弾く", /02_案件管理」の中にありません[\s\S]{0,200}?400/.test(src));
 t("エラー文言で「転用」への切り替えを案内する", src.indexOf("依頼種別を「転用」にして") !== -1);
 t("事前チェックはNotionページ作成より前に行う", src.indexOf('code: "KAITEI_PARENT"') < src.indexOf("await createNotionPage(data"));
-t("相談フォルダ配下は略称から事業を引く", /inferBrandFromFolder[\s\S]{0,1200}?brandFromShortName/.test(src));
+t("相談フォルダ配下は略称から事業を引く", /DRIVE_SOUDAN_FOLDER_ID[\s\S]{0,400}?brandFromShortName/.test(src));
 t("診断エンドポイント /drive/health がある", src.indexOf('"/drive/health"') !== -1);
 t("診断は秘密鍵の中身を返さない（長さと有無のみ）", !/診断[\s\S]{0,3000}?pem\s*\}/.test(src) && src.indexOf("詳細: pem") === -1);
 t("診断はテストフォルダを後片付けする", /_接続テスト[\s\S]{0,1200}?trashed: true/.test(src));
