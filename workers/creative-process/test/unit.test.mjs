@@ -380,6 +380,169 @@ t("応答にdeferredの目印を持つ（後続処理は結果に含まれない
 t("改訂のフォルダ作成失敗の注記も引き続き残す（バックグラウンド内）",
   /finishSubmitInBackground[\s\S]*?改訂元の親フォルダにアクセスできなかった/.test(src));
 
+// ============================================================
+// チャット機能P2（/chat・src/chat.js）
+// 仕様の正: 開発/P1_チャット機能_仕様確定.md（§3-7-5判定・§3-7-6マッピング・§6文言）
+// ============================================================
+import {
+  validateChatPayload,
+  normalizeDraft,
+  normalizeBrand,
+  normalizeProductType,
+  normalizePrStatus,
+  normalizeSourceUrls,
+  normalizeScheduleRows,
+  buildSystemInstruction,
+  chatLimitKey,
+  chatDateLabelJST,
+  CHAT_BRAND_OPTIONS,
+  CHAT_PRODUCT_TYPES,
+  TENYO_EXCLUDED_TYPES,
+  CHAT_MAX_MESSAGE_CHARS,
+  CHAT_WRAPUP_TURNS,
+  CHAT_DAILY_LIMIT,
+  GEMINI_RESPONSE_SCHEMA,
+  MSG_TOO_LONG,
+  MSG_LIMIT,
+  MSG_UPSTREAM,
+} from "../src/chat.js";
+
+// ---- 19. 選択肢マスタの整合（chat.js ⇔ worker.js） ----
+section("19. チャット: 選択肢マスタが worker.js と一致する");
+t("対象事業・部署は18件", CHAT_BRAND_OPTIONS.length === 18);
+t("worker.jsの正式名18件と過不足なく一致（互換キーは含まない）",
+  CHAT_BRAND_OPTIONS.length === Object.keys(DRIVE_FOLDER_TO_BRAND).length &&
+  Object.values(DRIVE_FOLDER_TO_BRAND).every((b) => CHAT_BRAND_OPTIONS.includes(b)));
+t("制作物の種別は10件", CHAT_PRODUCT_TYPES.length === 10);
+t("worker.jsの棚マスタのキーと過不足なく一致",
+  CHAT_PRODUCT_TYPES.length === Object.keys(DRIVE_TYPE_SHELVES).length &&
+  Object.keys(DRIVE_TYPE_SHELVES).every((k) => CHAT_PRODUCT_TYPES.includes(k)));
+t("転用の除外種別＝イベント・キャンペーンとその他",
+  JSON.stringify(TENYO_EXCLUDED_TYPES) === JSON.stringify(["イベント・キャンペーン", "その他"]));
+
+// ---- 20. 事業名の正規化（P2検品指定＝18件のいずれかに正規化） ----
+section("20. チャット: normalizeBrand（事業名は18件に完全一致へ正規化）");
+t("完全一致はそのまま通す", normalizeBrand("IWAI-婚礼｜婚礼に関する制作物") === "IWAI-婚礼｜婚礼に関する制作物");
+t("前後の空白はtrimして一致させる", normalizeBrand("  CWA｜CWAに関する制作物 ") === "CWA｜CWAに関する制作物");
+t("略称だけでも正式名に解決（IWAI-婚礼）", normalizeBrand("IWAI-婚礼") === "IWAI-婚礼｜婚礼に関する制作物");
+t("略称だけでも正式名に解決（MT-the-Terrace）", normalizeBrand("MT-the-Terrace") === "MT-the-Terrace｜the Terraceに関する制作物");
+t("略称＋崩れた説明文でも略称で救う", normalizeBrand("HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物") === "HR｜ハピネス室・組織開発に関する制作物");
+t("判定不能は空欄（依頼者が選ぶ）", normalizeBrand("存在しない事業") === "");
+t("空・未定義は空欄", normalizeBrand("") === "" && normalizeBrand(undefined) === "");
+t("18件すべてが自分自身に正規化される", CHAT_BRAND_OPTIONS.every((b) => normalizeBrand(b) === b));
+t("18件すべてが略称からも正規化される", CHAT_BRAND_OPTIONS.every((b) => normalizeBrand(b.split("｜")[0]) === b));
+
+section("20b. チャット: normalizeProductType / normalizePrStatus");
+t("10件マスタの完全一致を通す", normalizeProductType("バナー・告知画像", "新規") === "バナー・告知画像");
+t("新規はイベント・キャンペーンを選べる", normalizeProductType("イベント・キャンペーン", "新規") === "イベント・キャンペーン");
+t("転用はイベント・キャンペーンを空欄に落とす", normalizeProductType("イベント・キャンペーン", "転用") === "");
+t("転用はその他も空欄に落とす", normalizeProductType("その他", "転用") === "");
+t("転用でも他の8種別は通す", normalizeProductType("スライド・ePDF", "転用") === "スライド・ePDF");
+t("マスタに無い種別は空欄", normalizeProductType("KV・アイキャッチ", "新規") === "");
+t("prStatus: 3値を通す", normalizePrStatus("必要なし") === "必要なし" && normalizePrStatus("これから") === "これから" && normalizePrStatus("共有済み") === "共有済み");
+t("prStatus: 不明は空欄", normalizePrStatus("確認中") === "" && normalizePrStatus("") === "");
+
+section("20c. チャット: normalizeSourceUrls / normalizeScheduleRows");
+t("URLらしき文字列のみ残す", JSON.stringify(normalizeSourceUrls(["https://drive.google.com/drive/folders/abc", "どこかにあります"])) === JSON.stringify(["https://drive.google.com/drive/folders/abc"]));
+t("文字列1本でも受ける", normalizeSourceUrls("https://drive.google.com/x").length === 1);
+t("URL無しは空配列", normalizeSourceUrls(["フォルダ名だけ"]).length === 0 && normalizeSourceUrls(undefined).length === 0);
+t("scheduleはYYYY-MM-DDに正規化（スラッシュ・1桁も）", normalizeScheduleRows([{ date: "2026/9/1", text: "入稿" }])[0].date === "2026-09-01");
+t("日付不明の行はdate空でtextのみ（捨てない）", JSON.stringify(normalizeScheduleRows([{ date: "9月上旬", text: "校了" }])[0]) === JSON.stringify({ date: "", text: "校了" }));
+t("date・textとも空の行は落とす", normalizeScheduleRows([{ date: "", text: "" }, { date: "2026-09-01", text: "納品" }]).length === 1);
+t("上限20行", normalizeScheduleRows(Array(25).fill({ date: "2026-09-01", text: "x" })).length === 20);
+
+// ---- 21. ドラフト全体の正規化（§3-7-5 判定ロジック） ----
+section("21. チャット: normalizeDraft（§3-7-5 依頼種別の整合チェック）");
+const drKaitei = normalizeDraft({ category: "改訂", title: "営業資料 ver.2", sourceUrls: ["https://drive.google.com/drive/folders/abc123"], brand: "CWA｜CWAに関する制作物" });
+t("改訂＋URLあり＝改訂のまま", drKaitei.category === "改訂");
+t("改訂にはbrandを反映しない（設問が無い）", drKaitei.brand === "");
+const drFall = normalizeDraft({ category: "改訂", title: "x", sourceUrls: [] });
+t("改訂なのにURL無し→転用に落とす（§3-7-5）", drFall.category === "転用");
+t("URLらしくない文字列だけでも転用に落とす", normalizeDraft({ category: "改訂", title: "x", sourceUrls: ["共有ドライブのどこか"] }).category === "転用");
+t("不明な種別は既定＝新規", normalizeDraft({ category: "未定", title: "x" }).category === "新規");
+const drShin = normalizeDraft({
+  category: "新規", title: "夏フェア バナー", brand: "IWAI-婚礼",
+  productTypes: ["バナー・告知画像", "チラシ・ポスター・パネル"],
+  purpose: " 集客 ", prStatus: "これから",
+  schedule: [{ date: "2026/09/01", text: "入稿" }],
+});
+t("brandは正式名へ正規化される", drShin.brand === "IWAI-婚礼｜婚礼に関する制作物");
+t("productTypesは先頭1件のみ（単一選択）", JSON.stringify(drShin.productTypes) === JSON.stringify(["バナー・告知画像"]));
+t("自由文はtrimされる", drShin.purpose === "集客");
+t("scheduleが正規化されて入る", drShin.schedule[0].date === "2026-09-01");
+const drTenyo = normalizeDraft({ category: "転用", title: "x", productTypes: ["その他"] });
+t("転用の除外種別は空配列になる", drTenyo.productTypes.length === 0);
+t("相談はproductTypesを持たない（空配列）", normalizeDraft({ category: "相談", title: "x", productTypes: ["バナー・告知画像"] }).productTypes.length === 0);
+t("ドラフト無しはnull", normalizeDraft(null) === null && normalizeDraft(undefined) === null);
+t("§3-7-6のキーが揃っている", ["category","title","brand","productTypes","purpose","target","useDate","usePlace","outcome","afterFeeling","budget","prStatus","manuscript","prototype","intent","sourceUrls","reviseManuscript","consultDetail","schedule"].every((k) => k in drShin));
+
+// ---- 22. 入力の検証（P2検品指定＝入力上限・ログイン必須） ----
+section("22. チャット: validateChatPayload（入力上限ほか）");
+const okPayload = validateChatPayload({ history: [{ role: "user", text: "バナーを作りたい" }] });
+t("正常系はok", okPayload.ok === true && okPayload.history.length === 1 && okPayload.turns === 1);
+t("2,000字ちょうどは通す", validateChatPayload({ history: [{ role: "user", text: "あ".repeat(CHAT_MAX_MESSAGE_CHARS) }] }).ok === true);
+const tooLong = validateChatPayload({ history: [{ role: "user", text: "あ".repeat(CHAT_MAX_MESSAGE_CHARS + 1) }] });
+t("2,001字は400で弾く", tooLong.ok === false && tooLong.status === 400 && tooLong.code === "CHAT_TOO_LONG");
+t("上限エラーはSPEC §6の確定文言", tooLong.error === MSG_TOO_LONG && MSG_TOO_LONG === "メッセージが長すぎます。2,000字以内に分けて送ってください。");
+t("historyが無いのは400", validateChatPayload({}).ok === false && validateChatPayload(null).ok === false);
+t("空のhistoryは400", validateChatPayload({ history: [] }).ok === false);
+t("末尾がモデル発言なら400", validateChatPayload({ history: [{ role: "model", text: "こんにちは" }] }).ok === false);
+t("roleの不正値はuserに寄せる", validateChatPayload({ history: [{ role: "system", text: "x" }] }).ok === true);
+const manyTurns = (n) => {
+  const h = [];
+  for (let i = 0; i < n; i++) { h.push({ role: "user", text: "u" + i }); h.push({ role: "model", text: "m" + i }); }
+  h.push({ role: "user", text: "最後" });
+  return h;
+};
+t("24往復まではwrapUpしない", validateChatPayload({ history: manyTurns(23) }).wrapUp === false);
+t("25往復でwrapUp（打ち切り指示）になる", validateChatPayload({ history: manyTurns(24) }).wrapUp === true);
+t("draftHintの不正値は無害化される", validateChatPayload({ history: [{ role: "user", text: "x" }], draftHint: { category: "怪しい", productType: 1 } }).draftHint.category === "");
+
+// ---- 23. レート制限・システム指示 ----
+section("23. チャット: レート制限キーとシステム指示（二段構成）");
+t("1日の上限は120回（SPEC §6）", CHAT_DAILY_LIMIT === 120);
+t("キーは chatlimit:<email>:<date>（JST）", chatLimitKey("Taro@crazy.co.jp", Date.UTC(2026, 7, 12, 3, 0, 0)) === "chatlimit:taro@crazy.co.jp:260812");
+t("JSTの日付切り替え（UTC15時以降は翌日）", chatDateLabelJST(Date.UTC(2026, 7, 12, 15, 30, 0)) === "260813");
+t("上限エラー文言はSPEC §6どおり", MSG_LIMIT === "本日のチャット利用上限に達しました。フォームに直接入力してください。");
+t("通信失敗文言はSPEC §6どおり", MSG_UPSTREAM === "ヒアリーと通信できませんでした。時間をおいてもう一度お試しください。");
+const sysBase = buildSystemInstruction({});
+t("基本指示は毎回送れるサイズ（9,000字以内≒約5,000トークン）", sysBase.length > 2000 && sysBase.length < 9000);
+t("記入代行の役割が書かれている（壁打ちだけではない）", sysBase.indexOf("記入") !== -1 && sysBase.indexOf("代行") !== -1);
+t("18件の事業マスタを含む", CHAT_BRAND_OPTIONS.every((b) => sysBase.indexOf(b) !== -1));
+t("反映ボタンの案内を含む", sysBase.indexOf("フォームに反映する") !== -1);
+t("【仮】ルールを含む", sysBase.indexOf("【仮】") !== -1);
+t("改訂の02_案件管理チェックを含む", sysBase.indexOf("02_案件管理") !== -1);
+t("画像はチャットで受け取らない旨を含む", sysBase.indexOf("添付") !== -1 && sysBase.indexOf("チャットでは受け取れない") !== -1);
+const sysBanner = buildSystemInstruction({ productType: "バナー・告知画像" });
+t("二段構成: 種別が決まるとカテゴリ要点が足される", sysBanner.length > sysBase.length && sysBanner.indexOf("ストーリーズ1080×1920") !== -1);
+t("二段構成: 未知の種別は何も足さない", buildSystemInstruction({ productType: "未知" }).length === sysBase.length);
+t("wrapUpで打ち切り指示が足される", buildSystemInstruction({ wrapUp: true }).indexOf("ここまでの内容で反映しましょう") !== -1);
+t("全10種別ぶんのカテゴリ要点が用意されている", CHAT_PRODUCT_TYPES.every((p) => buildSystemInstruction({ productType: p }).length > sysBase.length));
+
+// ---- 24. ソース検査（/chat・chat.js） ----
+section("24. ソース検査（チャット機能P2）");
+const chatSrc = readFileSync(join(__dir, "../src/chat.js"), "utf8");
+t("worker.jsに /chat ルートがある", src.indexOf('path === "/chat"') !== -1);
+t("ログイン必須: /chat はGemini呼び出し前にIDトークンを検証する（P2検品指定）",
+  /path === "\/chat"[\s\S]{0,900}?verifyGoogleIdToken[\s\S]{0,700}?handleChat/.test(src));
+t("/chat でもトークンを以降の処理に残さない", /path === "\/chat"[\s\S]{0,1200}?delete body\.idToken/.test(src));
+t("/chat のロジック本体は chat.js に分離（worker.jsはルーティングのみ）", src.indexOf('from "./chat.js"') !== -1);
+t("既存ルートの順序は不変（/auth/exchange → /chat → /submit）",
+  src.indexOf('path === "/auth/exchange"') < src.indexOf('path === "/chat"') &&
+  src.indexOf('path === "/chat"') < src.indexOf('path === "/submit"'));
+t("APIキーはenvから読む（ソースに直書きしない）", chatSrc.indexOf("env.GEMINI_API_KEY") !== -1 && chatSrc.indexOf("AIza") === -1);
+t("キーはURLではなくヘッダで渡す", chatSrc.indexOf("x-goog-api-key") !== -1 && !/key=.*GEMINI_API_KEY/.test(chatSrc));
+t("ステートレス: chat.js はNotionに書かない（論点⑤）", chatSrc.indexOf("api.notion.com") === -1);
+t("ステートレス: chat.js はDriveに触らない", chatSrc.indexOf("googleapis.com/drive") === -1);
+t("ステートレス: chat.js は /submit を叩かない（起票は既存フォームのみ・論点③）", chatSrc.indexOf('"/submit"') === -1);
+t("KV書き込みはレート制限カウンタの1か所のみ", (chatSrc.match(/REQUESTS\.put\(/g) || []).length === 1 && /REQUESTS\.put\(limitKey/.test(chatSrc));
+t("レート制限は上限判定→加算の順（超過時は加算しない）", chatSrc.indexOf("CHAT_DAILY_LIMIT) {") < chatSrc.indexOf("REQUESTS.put(limitKey"));
+t("構造化出力を使う（responseSchema）", chatSrc.indexOf("responseSchema") !== -1 && chatSrc.indexOf("application/json") !== -1);
+t("スキーマは依頼種別の判定を含む（§3-7-5）", JSON.stringify(GEMINI_RESPONSE_SCHEMA).indexOf('"新規","改訂","転用","相談"') !== -1);
+t("Geminiのエラー本文をブラウザに返さない", chatSrc.indexOf("MSG_UPSTREAM") !== -1 && !/body\.error\.message[\s\S]{0,120}?status: 502/.test(chatSrc));
+t("worker.js側のKV書き込みは従来どおり冪等キーのみ", (src.match(/REQUESTS\.put\(/g) || []).length === 1);
+t("localStorage/sessionStorageを使わない（会話はJS変数のみ・§3-7-2）", chatSrc.indexOf("localStorage") === -1 && chatSrc.indexOf("sessionStorage") === -1);
+
 // ---- 結果 ----
 console.log("\n============================");
 console.log("合格 " + pass + " 件 ／ 不合格 " + fail + " 件");

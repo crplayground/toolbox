@@ -81,6 +81,10 @@
 //   form:<id> / html:<id>  フェーズ2以前の残置データ（新規保存はしない。TTLで自然消滅）
 // ============================================================
 
+// 【チャット機能P2・2026-08-12】「相談」のSTEP3チャット（ヒアリー）の会話エンジン。
+// /chat のロジック本体は src/chat.js（仕様の正＝開発/P1_チャット機能_仕様確定.md）。
+import { handleChat } from "./chat.js";
+
 // ---- 種別ごとの「長文与件」項目（フォームのname → 見出しラベル） ----
 // Notion本文の見出し構成に使う。順序＝表示順。
 const SEC_YOKEN = [
@@ -1223,6 +1227,35 @@ export default {
         }
         return json({ error: String(e.message || e) }, 500, request, env);
       }
+    }
+
+    // ⓪'' チャット：POST /chat（チャット機能P2・2026-08-12）
+    //     「相談」のSTEP3チャット（ヒアリー）。ステートレス＝会話履歴を受け取り、
+    //     応答と記入ドラフトを返すだけ。KV・Notionには書かない（唯一の例外は
+    //     レート制限カウンタ chatlimit:<email>:<date>）。起票は従来どおり /submit のみ。
+    if (request.method === "POST" && path === "/chat") {
+      if (!isAllowedOrigin(request, env)) {
+        return json({ error: "許可されていない送信元です" }, 403, request, env);
+      }
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: "データの形式が不正です" }, 400, request, env);
+      }
+      // チャットの送信にもログインが必要（フォーム送信と同じ検証・SPEC §3-7-1）
+      let actor;
+      try {
+        actor = await verifyGoogleIdToken(body && body.idToken, env);
+        if (body) delete body.idToken; // 以降の処理・ログにトークンを残さない
+      } catch (e) {
+        if (e instanceof AuthError) {
+          return json({ error: String(e.message || e), code: "AUTH" }, 403, request, env);
+        }
+        return json({ error: String(e.message || e) }, 500, request, env);
+      }
+      const out = await handleChat(body, actor, env);
+      return json(out.body, out.status, request, env);
     }
 
     // ① フォーム送信：POST /submit
