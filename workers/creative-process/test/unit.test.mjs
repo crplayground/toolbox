@@ -257,13 +257,19 @@ t("空入力は空", extractDriveFolderId("") === "" && extractDriveFolderId(und
 
 section("14. V1-5 フォルダID対応表");
 const brandKeys = Object.keys(DRIVE_BRAND_FOLDERS);
-t("Notionの18選択肢＋旧CRAZY名の互換キー＝19件", brandKeys.length === 19);
+t("Notionの18選択肢＋互換キー3件（旧CRAZY名×2・旧HR名×1）＝21件", brandKeys.length === 21);
 t("すべてDriveのファイルID形式", brandKeys.every((k) => /^[A-Za-z0-9_-]{20,}$/.test(DRIVE_BRAND_FOLDERS[k])));
-t("旧CRAZY名は現行と同じフォルダを指す（リネーム漏れの保険）",
+t("旧CRAZY名（2026-08-06リネームの旧名）は現行と同じフォルダを指す（リネーム漏れの保険）",
   DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・自社WEBサイト等に関する制作物"] ===
-  DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・全社会議・自社HP等に関する制作物"]);
+  DRIVE_BRAND_FOLDERS["CRAZY｜自社発信物・全社会議等に関する制作物"]);
+t("旧CRAZY名（2026-08-12リネームの旧名）は現行と同じフォルダを指す",
+  DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・全社会議・自社HP等に関する制作物"] ===
+  DRIVE_BRAND_FOLDERS["CRAZY｜自社発信物・全社会議等に関する制作物"]);
+t("旧HR名（2026-08-12リネームの旧名）は現行と同じフォルダを指す",
+  DRIVE_BRAND_FOLDERS["HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物"] ===
+  DRIVE_BRAND_FOLDERS["HR｜ハピネス室・組織開発に関する制作物"]);
 t("相談フォルダIDはブランドと重複しない", !Object.values(DRIVE_BRAND_FOLDERS).includes(DRIVE_SOUDAN_FOLDER_ID));
-t("フォルダIDに重複がない（互換キーの1件を除く）", new Set(Object.values(DRIVE_BRAND_FOLDERS)).size === 18);
+t("フォルダIDに重複がない（互換キーの3件を除く）", new Set(Object.values(DRIVE_BRAND_FOLDERS)).size === 18);
 t("サブフォルダは3点セット", JSON.stringify(DRIVE_SUBFOLDERS) === JSON.stringify(["01_支給素材", "02_作業データ", "03_納品データ"]));
 t("サブフォルダ名は番号順に並ぶ", [...DRIVE_SUBFOLDERS].sort().join(",") === DRIVE_SUBFOLDERS.join(","));
 
@@ -277,7 +283,10 @@ t("その他の棚は（基本的に使用しない）付き", DRIVE_TYPE_SHELVE
 t("旧名KV・アイキャッチは棚に無い", !("KV・アイキャッチ" in DRIVE_TYPE_SHELVES));
 t("逆引き表がCRAZYのIDを正式名に解決する（互換キーに負けない）",
   DRIVE_FOLDER_TO_BRAND[DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・全社会議・自社HP等に関する制作物"]] ===
-  "CRAZY｜全社周年・全社会議・自社HP等に関する制作物");
+  "CRAZY｜自社発信物・全社会議等に関する制作物");
+t("逆引き表がHRのIDを正式名に解決する（互換キーに負けない）",
+  DRIVE_FOLDER_TO_BRAND[DRIVE_BRAND_FOLDERS["HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物"]] ===
+  "HR｜ハピネス室・組織開発に関する制作物");
 t("逆引き表は18フォルダぶん", Object.keys(DRIVE_FOLDER_TO_BRAND).length === 18);
 
 section("14b-2. V1-5.10 フラット配置（入れ子の廃止）");
@@ -296,8 +305,7 @@ t("ルートIDは事業フォルダ・相談と重複しない",
 t("略称→正式名の逆引き（IWAI-婚礼）", brandFromShortName("IWAI-婚礼") === "IWAI-婚礼｜婚礼に関する制作物");
 t("略称→正式名の逆引き（MT-the-Terrace）", brandFromShortName("MT-the-Terrace") === "MT-the-Terrace｜the Terraceに関する制作物");
 t("未知の略称は空", brandFromShortName("存在しない部署") === "" && brandFromShortName("") === "");
-t("18略称すべてが往復できる", Object.keys(DRIVE_BRAND_FOLDERS)
-  .filter((b) => b !== "CRAZY｜全社周年・自社WEBサイト等に関する制作物")
+t("18略称すべてが往復できる（互換キーは除く＝正式名は逆引き表の値と一致）", Object.values(DRIVE_FOLDER_TO_BRAND)
   .every((b) => brandFromShortName(brandShortName(b)) === b));
 
 section("15. V1-5.9 起票番号はNotionに書かない");

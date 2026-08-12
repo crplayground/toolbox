@@ -605,13 +605,16 @@ const DRIVE_BRAND_FOLDERS = {
   "CGM-レストラン｜レストランに関する制作物": "1daaRMbf_7Z0f6cS0_ir3CkmIHXLqhX7A",
   "CGM-館内｜館内備品等に関する制作物": "1M1k_bStUW4yBOyFZ7Va_2A0JimEx29r1",
   "CGM-婚礼｜婚礼に関する制作物": "1nMI3usJ925tTK__iilWIGwYaet7N7kGV",
+  "CRAZY｜自社発信物・全社会議等に関する制作物": "1c3dMues92Eu3Yv5VcklJxdzhQtNSnSK5",
+  // 【互換】Notion選択肢リネーム前の旧名（2026-08-12リネームの旧名と、2026-08-06リネームの旧旧名）。
+  //   リネーム漏れでもフォルダ作成が止まらないように残す。全レコードの移行が確認できたら削除してよい。
   "CRAZY｜全社周年・全社会議・自社HP等に関する制作物": "1c3dMues92Eu3Yv5VcklJxdzhQtNSnSK5",
-  // 【互換】2026-08-06のNotion選択肢リネーム前の名前。リネーム漏れでもフォルダ作成が
-  //   止まらないように残す。全レコードの移行が確認できたら削除してよい。
   "CRAZY｜全社周年・自社WEBサイト等に関する制作物": "1c3dMues92Eu3Yv5VcklJxdzhQtNSnSK5",
   "CR室｜クリ室の自主企画・外部案件の管理用": "114OFh9NLBMTejui-L79_1gDk7sskOhfN",
   "CW｜CWブランド全体の婚礼・営業に関する制作物": "1vyGDL23XV5Pu1dvfiYXUSr9ryBFdYEWn",
   "CWA｜CWAに関する制作物": "1bOftDrEvABYRW0KxAdw4-QWnJy5meZ1S",
+  "HR｜ハピネス室・組織開発に関する制作物": "1cVDtUY_dV16cB2ZWvB4mCPs7z9TDTPTi",
+  // 【互換】2026-08-12のNotion選択肢リネーム前の旧名。同上。
   "HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物": "1cVDtUY_dV16cB2ZWvB4mCPs7z9TDTPTi",
   "IWAI-婚礼｜婚礼に関する制作物": "1-qUTHhUDMojziFirGsowOmu4c4DHsdzt",
   "IWAI-館内｜館内備品等に関する制作物": "1qv9_Tt5BxwfVOYjs9jViDiGLrWatd3ve",
@@ -628,7 +631,7 @@ const DRIVE_KANRI_FOLDER_ID = "1T3J-bOCpWrCKDlOwb3-wFIImg6mgNuFz";
 const DRIVE_SOUDAN_FOLDER_ID = "1_YbqkpMimOFM5_zMF91YqQqw2jH38zvu";
 
 // フォルダID → 対象事業・部署 の逆引き（改訂の事業推定に使う）。
-// 互換キー（旧CRAZY名）は同じIDなので、先に定義された正式名が勝つ。
+// 互換キー（旧CRAZY名・旧HR名）は同じIDなので、先に定義された正式名が勝つ。
 const DRIVE_FOLDER_TO_BRAND = {};
 for (const [brand, id] of Object.entries(DRIVE_BRAND_FOLDERS)) {
   if (!DRIVE_FOLDER_TO_BRAND[id]) DRIVE_FOLDER_TO_BRAND[id] = brand;

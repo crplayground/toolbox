@@ -205,7 +205,7 @@
 ANV／CAREER／CCA／CGM-BP／CGM-D／CGM-Kitchen／CGM-P／CR室／CW（婚礼企画・営業企画）／CWA／HR（ハピネス室・組織開発）／IWAI-BP／IWAI-D／IWAI-Kitchen／IWAI-P／MKT・広報／MT-BP／MT-D／MT-Kitchen／MT-P／その他（AI推進・BD・食企画・経営企画）
 
 ### 7-2. 対象事業・部署（18件・Notion「対象事業・部署」select）
-ANV｜アニバに関する制作物／CAREER｜CRAZY CAREERに関する制作物／CCA｜CCA事業に関する制作物／CGM-PSC｜PARKSIDE CAFEに関する制作物／CGM-レストラン｜レストランに関する制作物／CGM-館内｜館内備品等に関する制作物／CGM-婚礼｜婚礼に関する制作物／CRAZY｜全社周年・全社会議・自社HP等に関する制作物／CR室｜クリ室の自主企画・外部案件の管理用／CW｜CWブランド全体の婚礼・営業に関する制作物／CWA｜CWAに関する制作物／HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物／IWAI-館内｜館内備品等に関する制作物／IWAI-婚礼｜婚礼に関する制作物／MT-the-Terrace｜the Terraceに関する制作物／MT-館内｜館内備品等に関する制作物／MT-婚礼｜婚礼に関する制作物／その他｜AI推進・BD・食企画・経営企画等に関する制作物
+ANV｜アニバに関する制作物／CAREER｜CRAZY CAREERに関する制作物／CCA｜CCA事業に関する制作物／CGM-PSC｜PARKSIDE CAFEに関する制作物／CGM-レストラン｜レストランに関する制作物／CGM-館内｜館内備品等に関する制作物／CGM-婚礼｜婚礼に関する制作物／CRAZY｜自社発信物・全社会議等に関する制作物／CR室｜クリ室の自主企画・外部案件の管理用／CW｜CWブランド全体の婚礼・営業に関する制作物／CWA｜CWAに関する制作物／HR｜ハピネス室・組織開発に関する制作物／IWAI-館内｜館内備品等に関する制作物／IWAI-婚礼｜婚礼に関する制作物／MT-the-Terrace｜the Terraceに関する制作物／MT-館内｜館内備品等に関する制作物／MT-婚礼｜婚礼に関する制作物／その他｜AI推進・BD・食企画・経営企画等に関する制作物
 
 ### 7-3. 制作物の種別（10件・Notion「制作物の種別」multi_select）
 
