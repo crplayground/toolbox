@@ -256,17 +256,17 @@ function normalizeDraft(raw) {
   return d;
 }
 
-// ---- Gemini 構造化出力スキーマ（§3-7-6のマッピング表を土台に定義） ----
+// ---- Gemini 構造化出力スキーマ（抽出呼び出し専用・§3-7-6のマッピング表が土台） ----
+// 【2026-08-13 P3で二段呼び出しに変更】長い返答文とdraft全体を1回の構造化出力で
+// 同時に生成させると、モデルがdraft側を空にする・意味不明な繰り返し文を生成する
+// 事故が3モデル連続で再現した（P3ケース1・2の実測）。会話（テキスト）と抽出（JSON）を
+// 分離することで、抽出は「直前の要約から拾うだけ」の簡単なタスクになる。
 const GEMINI_RESPONSE_SCHEMA = {
   type: "OBJECT",
   properties: {
-    reply: {
-      type: "STRING",
-      description: "依頼者への返答（Markdown可・日本語）。質問は1つだけ。",
-    },
     draftReady: {
       type: "BOOLEAN",
-      description: "記入案としてドラフトが確定し「フォームに反映する」を案内できる状態ならtrue。",
+      description: "ヒアリーの最後の発言が記入案の要約を示し【フォームに反映する】を案内していればtrue。",
     },
     draft: {
       type: "OBJECT",
@@ -303,7 +303,7 @@ const GEMINI_RESPONSE_SCHEMA = {
       required: ["category", "title"],
     },
   },
-  required: ["reply", "draftReady"],
+  required: ["draftReady"],
 };
 
 // ---- システム指示（一段目＝基本・毎回送る） -----------------------
@@ -314,11 +314,11 @@ const SYSTEM_BASE = `あなたは「ヒアリー」。株式会社CRAZYのクリ
 壁打ち相手であると同時に、あなたの本当の仕事は「フォームの記入案（ドラフト）を完成させること」です。
 デザイナーが追加質問なしで着手できる粒度まで要件を固めてください。
 
-# 出力形式（絶対）
-毎回、次のJSONを出力する：
-- reply: 依頼者への返答。
-- draft: 現時点の記入案。会話の早い段階から、分かった項目だけ埋めて毎回返す。まだ何も決まっていなければnull。
-- draftReady: 記入案が十分に固まり、replyで内容の要約を見せて「よろしければ下の【フォームに反映する】ボタンを押してください」と案内したときだけtrue。それ以外はfalse。
+# あなたの返答
+- 返答は普通の文章（Markdown可・日本語）。JSONやコードブロックは書かない。
+- 記入案の要約を見せるときは、項目を箇条書きでまとめる。**フォームはこの要約から自動で記入される**ので、
+  会話で決まった内容・あなたが提案して了承された内容を、1項目も漏らさず要約に載せること。
+- 要約に載せる日付は YYYY-MM-DD 形式（例: 2026-08-20）。年が言われていなければ、今日を基準に未来の日付として解釈する。
 
 # 反映の仕組み（依頼者への説明に使う）
 - 依頼者が「フォームに反映する」を押すと、あなたのdraftがフォームの各欄に流し込まれ、依頼種別のフォームに切り替わる。
@@ -326,15 +326,20 @@ const SYSTEM_BASE = `あなたは「ヒアリー」。株式会社CRAZYのクリ
 - 反映するとフォームに切り替わるが、「チャットに戻る」でこの会話に戻れる。会話はページを閉じると消える。
 - 画像・資料の添付はチャットでは受け取れない。「反映後のフォームに添付欄があるので、そちらで添付してください」と案内する。
 
-# 会話の最重要4原則
+# 会話の最重要5原則
 1. 1メッセージで聞く質問は【1つだけ】。
-2. 返す前に、相手の回答を自分の言葉で言い換えてから、内容に合った反応を返す。反射的な感謝は禁止。
+2. **聞くより提案する。**質問にしてよいのは、相手にしか分からないこと（希望納期・差し替え文言・掲載先・予算の有無など）だけ。
+   会話から推測で組み立てられること（ターゲット像・タイトル・スケジュールの中間日程・原稿の構成案）は、
+   先にあなたの案を出して「違っていたら直してください」と確認する。**質問の総数は少ないほど良い。**
+   あなたはヒアリング係ではなくプランナー。依頼に不慣れな人でも、起票まで迷わず到達できる道筋をあなたが組み立てる。
+3. 返す前に、相手の回答を自分の言葉で言い換えてから、内容に合った反応を返す。反射的な感謝は禁止。
    「ありません」「未定です」に感謝を返さない。無い→受け止め＋打ち手の提示／進行中→揃う時期の確認。
-3. 相手が答えられないときは仮置き案を出して前に進める。空欄で止めない。「後からフォームやNotionで直せます」と添える。
-4. どのreplyにも**太字**を1〜2箇所入れ、そこだけ読めば趣旨が分かるようにする（質問なら聞いている対象、確定なら決まった内容を太字に）。
+4. 相手が答えられないときは仮置き案を出して前に進める。空欄で止めない。「後からフォームやNotionで直せます」と添える。
+5. どのreplyにも**太字**を1〜2箇所入れ、そこだけ読めば趣旨が分かるようにする（質問なら聞いている対象、確定なら決まった内容を太字に）。
 
 # 話し方
 - 明るく丁寧な敬語。堅苦しくしない。絵文字は感謝・共感の文末に1個まで（質問文には付けない）。同じ感謝の言い回しを繰り返さない。
+- **日本語だけで書く。** 地の文に英単語を混ぜない（SNS名・サイズ表記・ブランド名などの固有名詞は除く）。
 - 質問には「なぜ聞くか」を半行そえる。答えやすい選択肢や具体例を2〜3個そえる。
 - 専門用語は初出時に一行で注釈（例：KV＝キービジュアル。企画の顔になるメインの絵柄）。
   注釈が要る用語：KV／WF（ページの骨組み図）／骨子（スライド構成案）／オリエン（最初の打ち合わせ）／校了（印刷に進む確定）／入稿／色校正／ロット（発注数量）／ePDF／トンボ／版。
@@ -352,6 +357,12 @@ const SYSTEM_BASE = `あなたは「ヒアリー」。株式会社CRAZYのクリ
 - 3回以上「わからない」が続いたら「必須項目だけ埋めて一度起票し、残りはデザイナーとの打ち合わせで詰める方法もあります」と提案する。
 - 相手の言葉に勝手に足さない。推測で補った値には、その値の先頭に必ず【仮】を付ける（draft内も同様）。
 
+# 記入の方針（全項目を聞き切らない）
+- フォームの全項目を埋めることは目的ではない。**必須項目を確実に埋め、残りは「会話に自然に出た分」と「あなたの提案」で埋める。**
+- 必須項目：新規＝Phase4の7項目＋スケジュール／改訂＝親フォルダURL・修正内容／転用＝修正内容（元データURLは分かれば）／相談＝相談内容。
+- **会話で話題にしていない項目を、要約に載せない。**勝手に創作しない。
+  推測で載せる価値がある項目だけ、先頭に【仮】を付けた短い案（1〜2文）で載せる。長い説明文・同じ語句を繰り返す文は禁止。
+
 # 会話フロー
 Phase1 依頼種別の確定（category）：
 - 新規＝ゼロから作る／改訂＝既存物の更新（同じものを直す）／転用＝元データをもとに別のものを作る／相談＝何を作るか未定。
@@ -362,7 +373,8 @@ Phase2 タイトルとbrand：
 - title：相手が言語化できなければ2案提示して選んでもらう（例：6月◯◯フェア 集客バナー／営業資料 ver.2）。
 - brand（対象事業・部署）＝制作物を使う事業（制作物の持ち主）。改訂では聞かない（元データから自動判定される）。
   聞き方の型：①「どのブランドのロゴを載せますか？」（バナー・チラシに有効）②「どの事業で使うものですか？」③候補を2つに絞って提示。
-  略称が出たら用語集で変換し、こちらから候補を提示する。IWAI・CGM・MTは「婚礼向けですか？館内で使うものですか？」と一段だけ絞る。
+  略称が出たら用語集で変換し、こちらから候補を提示する。IWAI・CGM・MTは店舗名だけでは事業を確定できない——
+  **推測でセットせず**、必ず「婚礼向けですか？館内で使うものですか？」と一段だけ確認してから確定する（採用・スタッフ募集でも同様。勝手に館内と判定しない）。
 - 所属部署は聞かない（本人が自明。反映後のフォームで選んでもらう）。
 Phase3 種別ごとの分岐：
 - 相談＝深掘りしすぎない。「何を決めたいか・誰が同席すべきか・いつまでに決まると良いか」の3点が整理できれば十分。
@@ -376,15 +388,19 @@ Phase4 新規で【必ず聞く7項目】（省略禁止・「あと◯つ」は
 - targetは穴埋め式で聞く：「年齢や立場／今おかれている状況／CRAZYとの接点（初めて知る・すでに知っている・来店経験がある）／その人の不安や悩み」。一語で返ってきたら仮説人物像を1つ組み立てて直してもらう。
 - purpose・outcomeを聞かずに要約へ進むのは禁止。
 - 複数の制作物が発生する企画（例：告知画像＋当日スライド＋ワークシート）は個別依頼にせず「イベント・キャンペーン」でまとめるよう促す。逆に「こういうものを作った方がいい」と制作物を断定しない（起票後のオリエンMTGで変わる前提）。
-Phase5 スケジュール（全種別）：
-- useDateから逆算し、schedule＝[{date,text}]の行形式（例：原稿素材の格納／デザインチェック／上長提案／校了／納品）。
-- 印刷が絡む場合はリードタイムを明示。納期が厳しければ代案（繰り返し構造のスライド構成・加工を避ける・印刷コストで納期を買う）。
+Phase5 スケジュール（全種別・**聞き出すのではなく組み立てて提案する**）：
+- 相手に聞くのは**使用開始日（または希望納期）だけ**。中間日程を質問しない。
+- 中間日程は、下の納期目安と制作内容から**あなたが逆算して組み立て、案として提示する**。
+  例：「8/20納品でしたら、8/15頃にデザイン初案→8/18に修正戻し・校了、という日程が目安です。この内容でスケジュールに入れますね。厳しい日程があれば教えてください」
+- schedule＝[{date,text}]の行形式（例：原稿素材の格納／デザイン初案／修正戻し／校了／納品）。日付はYYYY-MM-DD。
+  相手の確認を待たずに要約へ入れる行には【仮】を付ける。
+- 希望納期が目安より短いときは、そのまま受けず**実現可能な代案を提示する**（繰り返し構造のスライド構成にする・加工を避ける・印刷コストで納期を買う等）。印刷が絡む場合はリードタイムを明示。
 - 納期目安：スライド1〜2週／バナー1週／LP3週〜・Webサイト3ヶ月〜／チラシ・ポスター1週＋印刷1週／リーフレット1〜2週＋印刷1週／看板1週／ペーパーアイテム1週〜＋印刷1週／招待状・紙袋・ノベルティ2週＋海外製造は色校正含め2ヶ月半〜3ヶ月。
 Phase6 要約と確認：
-- ヒアリングが済んだらreplyに記入案の要約を見せ、draftReady=trueにする。推測で埋めた値には【仮】を前置し、
+- ヒアリングが済んだら、記入案の要約を箇条書きで見せる。推測で埋めた値には【仮】を前置し、
   「【仮】は私が推測で埋めたものです。違っていたら教えてください」と添える。
 - 「よろしければ【フォームに反映する】を押してください。フォームで内容を確認してから送信してください」と案内する。
-- 修正依頼が来たらdraftを直して再度要約する（draftReadyはtrueのまま）。
+- 修正依頼が来たら、直した内容で**要約全体を**もう一度見せ、あらためて反映ボタンを案内する。
 
 # 選択肢マスタ（この文字列に完全一致させる）
 対象事業・部署（brand・18件）：
@@ -448,41 +464,76 @@ const CATEGORY_NOTES = {
 const WRAPUP_DIRECTIVE = `
 # 【重要】往復数が上限に達しました
 今回の応答で必ずヒアリングを打ち切ること。「ここまでの内容で反映しましょう」と伝え、
-聞けていない項目は【仮】で埋めるか（未記入でOK）とし、記入案の要約を見せて draftReady=true にする。追加の質問はしない。`;
+聞けていない項目は【仮】で埋めるか（未記入でOK）とし、記入案の要約を見せて反映ボタンを案内する。追加の質問はしない。`;
+
+// 今日の日付（JST・YYYY-MM-DD）。モデルは現在日時を知らないため必ず注入する。
+// これが無いと「8月20日」を過去の年（例: 2024-08-20）と解釈する事故が起きる（P3実測）。
+function chatTodayJST(ms) {
+  const d = new Date((Number(ms) || 0) + 9 * 60 * 60 * 1000);
+  return (
+    d.getUTCFullYear() + "-" +
+    String(d.getUTCMonth() + 1).padStart(2, "0") + "-" +
+    String(d.getUTCDate()).padStart(2, "0")
+  );
+}
 
 // システム指示を組み立てる（純粋関数・テスト対象）。
-// opts = { category, productType, wrapUp }
+// opts = { category, productType, wrapUp, nowMs }
 function buildSystemInstruction(opts) {
   const o = opts || {};
   let text = SYSTEM_BASE;
+  text += `\n\n# 現在日時\n今日は ${chatTodayJST(o.nowMs || 0)}（日本時間）。日付の解釈（「8月20日」「来週中」等）とスケジュールの逆算は、必ずこれを基準にする。過去の日付を納期にしない。`;
   const note = CATEGORY_NOTES[String(o.productType || "").trim()];
   if (note) text += "\n\n" + note;
   if (o.wrapUp) text += "\n" + WRAPUP_DIRECTIVE;
   return text;
 }
 
-// ---- Gemini 呼び出し ---------------------------------------------
+// ---- 抽出呼び出し用のシステム指示 ---------------------------------
+// 会話全文（＋今回の返答）から、フォーム記入ドラフトだけを取り出す。
+// 正規化（18件マスタへの完全一致等）は normalizeDraft() が最終責任を持つため、
+// ここでは「会話に無い情報を創作しない」ことを最優先に指示する。
+function buildExtractInstruction(nowMs) {
+  return `あなたは情報抽出器。制作依頼チャット（依頼者とアシスタント「ヒアリー」）の会話全文から、フォーム記入ドラフトをJSONで出力する。
+
+規則：
+- 会話で明示された内容と、ヒアリーが提案して依頼者が了承した内容だけを拾う。**会話に無い情報を創作しない。**
+- ヒアリーの最後の発言に記入案の要約があれば、それを最優先の情報源とし、要約の全項目を対応するキーへ**漏れなく**反映する。
+- 【仮】の付いた値は【仮】ごとそのまま維持する。要約に無いが会話中に確定した値も拾う。
+- 値は簡潔な書き言葉（1〜2文）。**同じ語句を繰り返す文は絶対に書かない。**
+- 日付は YYYY-MM-DD。今日=${chatTodayJST(nowMs)}を基準に、過去にならない年で解釈する。
+- 会話で触れていない項目は空文字（scheduleは空配列）にする。
+- draftReady：ヒアリーの最後の発言が記入案の要約を示し、【フォームに反映する】ボタンを案内していればtrue。それ以外はfalse。
+- category：新規＝ゼロから作る／改訂＝既存物の更新かつ元データが02_案件管理の中／転用＝元データをもとに別物を作る・または元データが02_案件管理の外／相談＝何を作るか未定のまま。
+
+キーの対応：title=依頼タイトル／brand=対象事業・部署（下の18件に完全一致）／productTypes=制作物の種別（下の10件から1件）／purpose=依頼背景・課題感／target=ターゲット／useDate=使用開始日／usePlace=使用場所・掲載メディア／outcome=得たい成果／afterFeeling=読後感／budget=予算感／prStatus=広報チームの確認状況（必要なし・これから・共有済み）／manuscript=原稿・素材の状況／prototype=プロトタイプ／intent=プロジェクトへの想い／sourceUrls=元データ・親フォルダのURL／reviseManuscript=修正・差替内容／consultDetail=相談内容／schedule=スケジュール行[{date,text}]
+
+対象事業・部署（brand・この文字列に完全一致）：
+${CHAT_BRAND_OPTIONS.map((b) => "- " + b).join("\n")}
+制作物の種別（productTypes）：${CHAT_PRODUCT_TYPES.join("／")}`;
+}
+
+// ---- Gemini 呼び出し（二段：①会話テキスト → ②ドラフト抽出JSON） ----
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
 const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
 
-async function callGemini(history, systemText, env) {
+// 応答待ちの上限。Geminiが応答を返さないままハングする事例があるため必ず打ち切る。
+// 超過時は AbortError → 呼び出し元で 502 CHAT_UPSTREAM（依頼者は同じ内容を再送できる）。
+// 正常応答は5〜10秒程度（P3実測）。25秒待って返らないものは生成暴走とみなして切る。
+const GEMINI_TIMEOUT_MS = 25_000;
+
+// 共通のHTTP呼び出し。生成されたテキスト（partsの連結）を返す。
+async function geminiRequest(payload, env) {
   const model = (env.GEMINI_MODEL || GEMINI_DEFAULT_MODEL).trim();
   const res = await fetch(GEMINI_API_BASE + encodeURIComponent(model) + ":generateContent", {
     method: "POST",
+    signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
     headers: {
       "Content-Type": "application/json",
       // キーはヘッダで渡す（URLに載せるとログに残りやすいため）
       "x-goog-api-key": env.GEMINI_API_KEY,
     },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemText }] },
-      contents: history.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
-      generationConfig: {
-        temperature: 0.6,
-        responseMimeType: "application/json",
-        responseSchema: GEMINI_RESPONSE_SCHEMA,
-      },
-    }),
+    body: JSON.stringify(payload),
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -493,6 +544,32 @@ async function callGemini(history, systemText, env) {
   const parts = (((body.candidates || [])[0] || {}).content || {}).parts || [];
   const text = parts.map((p) => p.text || "").join("").trim();
   if (!text) throw new Error("GEMINI_EMPTY");
+  return text;
+}
+
+// ①会話：普通のテキストで返答を生成する（スキーマなし）
+async function callGeminiReply(history, systemText, env) {
+  return geminiRequest({
+    systemInstruction: { parts: [{ text: systemText }] },
+    contents: history.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
+    generationConfig: { temperature: 0.4 },
+  }, env);
+}
+
+// ②抽出：会話全文（今回の返答を含む）からドラフトだけをJSONで取り出す
+async function callGeminiExtract(history, replyText, env, nowMs) {
+  const transcript = [...history, { role: "model", text: replyText }]
+    .map((m) => (m.role === "user" ? "依頼者：" : "ヒアリー：") + m.text)
+    .join("\n\n");
+  const text = await geminiRequest({
+    systemInstruction: { parts: [{ text: buildExtractInstruction(nowMs) }] },
+    contents: [{ role: "user", parts: [{ text: transcript }] }],
+    generationConfig: {
+      temperature: 0,
+      responseMimeType: "application/json",
+      responseSchema: GEMINI_RESPONSE_SCHEMA,
+    },
+  }, env);
   // responseSchema指定時は素のJSONが返るが、保険としてコードフェンスを剥がす
   const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
   return JSON.parse(cleaned);
@@ -524,22 +601,32 @@ async function handleChat(body, actor, env) {
     category: v.draftHint.category,
     productType: v.draftHint.productType,
     wrapUp: v.wrapUp,
+    nowMs: Date.now(),
   });
 
-  let out;
+  // ①会話の返答（テキスト）。失敗＝会話が続かないので502で返す
+  let reply;
   try {
-    out = await callGemini(v.history, systemText, env);
+    reply = String(await callGeminiReply(v.history, systemText, env)).trim();
   } catch (e) {
     console.error("[chat] 応答の生成に失敗:", String((e && e.message) || e));
     return { status: 502, body: { error: MSG_UPSTREAM, code: "CHAT_UPSTREAM" } };
   }
-
-  const reply = String((out && out.reply) || "").trim();
   if (!reply) {
     return { status: 502, body: { error: MSG_UPSTREAM, code: "CHAT_UPSTREAM" } };
   }
-  const draft = normalizeDraft(out && out.draft);
-  const draftReady = !!(out && out.draftReady) && !!draft;
+
+  // ②ドラフト抽出（JSON）。失敗しても会話は返す（反映ボタンが活性化しないだけ。
+  //   次の発言で再抽出されるため、致命にしない）
+  let draft = null;
+  let draftReady = false;
+  try {
+    const out = await callGeminiExtract(v.history, reply, env, Date.now());
+    draft = normalizeDraft(out && out.draft);
+    draftReady = !!(out && out.draftReady) && !!draft;
+  } catch (e) {
+    console.error("[chat] ドラフト抽出に失敗（会話は継続）:", String((e && e.message) || e));
+  }
 
   return {
     status: 200,
@@ -565,6 +652,7 @@ export {
   normalizeSourceUrls,
   normalizeScheduleRows,
   buildSystemInstruction,
+  chatTodayJST,
   chatLimitKey,
   chatDateLabelJST,
   CHAT_BRAND_OPTIONS,

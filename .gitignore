@@ -3,3 +3,9 @@
 node_modules/
 .claude/
 .fuse_hidden*
+
+# APIキー等のローカル秘密情報（wrangler dev / chat-repl が読む。絶対にコミットしない）
+.dev.vars
+
+# P3会話品質検証のログ（ローカル作業ファイル）
+workers/creative-process/test/p3-logs/

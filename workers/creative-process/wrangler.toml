@@ -19,6 +19,12 @@ id = "bbc21dc5a528436e8afe3623fdd282d6"
 ALLOWED_ORIGIN = "https://crplayground.github.io"
 # Notion APIバージョン（通常は変更不要）
 NOTION_VERSION = "2022-06-28"
+# 【チャット機能 2026-08-13】ヒアリーが使うGeminiのモデル名。
+#   ここを空にすると chat.js の既定 gemini-2.5-flash になるが、
+#   2026年に発行したAPIキーでは 2.5系が使えず 404 "no longer available to new users" になる。
+#   P3の会話品質検証は gemini-3.6-flash で実施済み＝この値を正とする。
+#   モデルを変えたら会話の挙動が変わるので、変更時はP3の5ケースを回し直すこと。
+GEMINI_MODEL = "gemini-3.6-flash"
 # 【フェーズ1】GISのOAuthクライアントID（公開情報なのでvarsでOK）。
 # フォーム側 index.html の GOOGLE_CLIENT_ID と同じ値にすること。
 # 空のままだと /submit が「サーバー設定が未完了です」を返す（＝ログイン必須が常に有効）。
@@ -41,6 +47,12 @@ GOOGLE_CLIENT_ID = "667021295506-c020jhqh9co7ou12q0r4kkchnqptf990.apps.googleuse
 #   （2026-07-25に削除済みのはずなので通常は何も残っていない）
 #   CREATIVE_EDITOR_EMAILS（Secret）… 再編集機構の撤去で未使用。
 #     登録済みなら `npx wrangler secret delete CREATIVE_EDITOR_EMAILS` で消してよい（残っていても無害）
+
+# 【チャット機能 2026-08-13】Gemini APIキー
+#   GEMINI_API_KEY … AI Studio（GCPプロジェクト creative-request）で発行したキー。
+#   登録: cd workers/creative-process && npx wrangler secret put GEMINI_API_KEY
+#   未登録だと /chat が500「サーバー設定が未完了です（GEMINI_API_KEY）」を返す（フォーム送信は無傷）。
+#   ※課金はGCP側の月額上限で天井を張る。Worker側のレート制限（1人1日120回）はコードなので書き換えられる。
 
 # 【V1-5 2026-08-06】Drive自動フォルダ作成のサービスアカウント
 #   GOOGLE_SA_EMAIL       … サービスアカウントのメール（xxx@<project>.iam.gserviceaccount.com）
