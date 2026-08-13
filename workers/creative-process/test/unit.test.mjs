@@ -543,6 +543,38 @@ t("Geminiのエラー本文をブラウザに返さない", chatSrc.indexOf("MSG
 t("worker.js側のKV書き込みは従来どおり冪等キーのみ", (src.match(/REQUESTS\.put\(/g) || []).length === 1);
 t("localStorage/sessionStorageを使わない（会話はJS変数のみ・§3-7-2）", chatSrc.indexOf("localStorage") === -1 && chatSrc.indexOf("sessionStorage") === -1);
 
+// ---- 25. システム指示のSSOT（ドライブ正本 ⇔ 生成物のズレ検査） ----
+// 文言の正本＝ドライブの 00_ヒアリー_システム指示.md、コードは生成物。
+// 「ドライブだけ直してビルドを忘れる」と本番の会話が変わらないまま気づけないので、
+// ここで必ず突き合わせる。ドライブが繋がっていない環境では検査をスキップする。
+section("25. システム指示のSSOT（ドライブ正本と生成物の一致）");
+
+const genSrc = readFileSync(join(__dir, "../src/prompt.generated.js"), "utf8");
+t("生成物に手編集の禁止が明記されている", genSrc.indexOf("直接編集しないこと") !== -1);
+t("chat.js はプロンプトを直書きせず生成物をimportしている",
+  chatSrc.indexOf('from "./prompt.generated.js"') !== -1 &&
+  chatSrc.indexOf("あなたは「ヒアリー」") === -1);
+t("選択肢マスタ（18件）はコード側が正本のまま（生成物には差し込み口だけ）",
+  genSrc.indexOf("{{BRAND_OPTIONS}}") !== -1 &&
+  CHAT_BRAND_OPTIONS.every((b) => genSrc.indexOf(b) === -1));
+t("組み立て後の指示に18件が差し込まれている",
+  CHAT_BRAND_OPTIONS.every((b) => buildSystemInstruction({}).indexOf(b) !== -1));
+
+const { resolveSsotPath, parseSsot, renderModule } = await import("../tools/build-prompt.mjs");
+const ssotPath = resolveSsotPath();
+if (!ssotPath) {
+  console.log("  ⏭️  ドライブの正本が見つからないため、ズレ検査はスキップ（Googleドライブ デスクトップ未起動）");
+} else {
+  const parsed = parseSsot(readFileSync(ssotPath, "utf8"));
+  t("正本の基本指示は9,000字以内（毎リクエストに乗るため）", parsed.base.length <= 9000,
+    parsed.base.length + "字");
+  t("正本のカテゴリ別要点は制作物の種別10件をすべて備える",
+    CHAT_PRODUCT_TYPES.every((k) => typeof parsed.notes[k] === "string" && parsed.notes[k].length > 0));
+  t("正本に差し込み口 {{BRAND_OPTIONS}} が残っている", parsed.base.indexOf("{{BRAND_OPTIONS}}") !== -1);
+  t("★生成物がドライブの正本と一致している（ズレていたら node tools/build-prompt.mjs を実行）",
+    renderModule(parsed) === genSrc);
+}
+
 // ---- 結果 ----
 console.log("\n============================");
 console.log("合格 " + pass + " 件 ／ 不合格 " + fail + " 件");
