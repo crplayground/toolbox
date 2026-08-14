@@ -18,6 +18,11 @@
        color/text/accent            → --color-text-accent
        spacing/semantic/padding-box → --spacing-padding-box
      値を変えるときは必ず Figma 側を先に直すこと。
+
+     ここに置くのは「このHTMLで実際に使うバリアブルだけ」。
+     Figmaに定義があってもUIに登場しないもの（btn/checkbox・radius/checkbox・
+     radius/button-focus・btn/tertiary/disable など）はCSS変数にしない。
+     何をなぜ落としたかは design/tokens.json の inCss:false に一覧がある。
      ========================================================================== */
   :root{
     /* ── color ───────────────────────────────────────────── */
@@ -52,22 +57,18 @@
     --color-btn-secondary-hover:#127cc0;
     --color-btn-secondary-focus:#0872b6;
     --color-btn-secondary-text:#ffffff;
+    --color-btn-secondary-disable:#878787;
     --color-btn-tertiary-text:#333333;
     --color-btn-tertiary-white:#ffffff;
     --color-btn-tertiary-border:#9f9f9f;
     --color-btn-tertiary-hover:#d9e9f6;
     --color-btn-tertiary-focus:#0872b6;
-    --color-btn-tertiary-disable:#878787;
-    --color-btn-selection-ctrl-default:#0872b6;
-    --color-btn-selection-ctrl-white:#ffffff;
-    --color-btn-selection-ctrl-border:#9f9f9f;
-    --color-btn-selection-ctrl-focus:#d9e9f6;
     --color-btn-radio-default:#0872b6;
     --color-btn-radio-white:#ffffff;
     --color-btn-radio-border:#9f9f9f;
-    --color-btn-radio-hover:#d9e9f6;
     --color-btn-tertiary-blue-border:#0872b6;
     --color-btn-tertiary-blue-text:#0872b6;
+    --color-btn-tertiary-blue-hover:#d9e9f6;
 
     /* ── gradation（Figmaのローカル色スタイル） ─────────────── */
     --gradation-sunbeam-default:linear-gradient(90deg,#EB8237 0%,#EE8D3F 60%,#F4A771 100%);
@@ -91,8 +92,6 @@
     --typo-weight-caption:400;
 
     /* ── spacing ─────────────────────────────────────────── */
-    --space-primitive-space-8:8px;
-    --space-primitive-space-16:16px;
     --spacing-padding-page-x:160px;
     --spacing-padding-page-y:64px;
     --spacing-gap-head-offset:80px;
@@ -119,11 +118,8 @@
     /* ── radius ──────────────────────────────────────────── */
     --radius-section:24px;
     --radius-button:16px;
-    --radius-button-focus:18px;
     --radius-button-s:8px;
-    --radius-button-s-focus:10px;
     --radius-textarea:8px;
-    --radius-checkbox:4px;
     --radius-full:999px;
 
     /* ── shadow（Figmaのエフェクトスタイル） ────────────────── */
@@ -137,7 +133,6 @@
     /* ── icon（Figmaの書き出しをマスク画像として保持）────────
        色は background-color: currentColor で決まる。 */
     --icon-calendar: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect x=%227%22 y=%221%22 width=%222%22 height=%222%22/%3E%3Cpath d=%22M18%2C5c.6%2C0%2C1%2C.4%2C1%2C1v12c0%2C.6-.4%2C1-1%2C1H6c-.6%2C0-1-.4-1-1V6c0-.6.4-1%2C1-1h12M18%2C3H6c-1.7%2C0-3%2C1.3-3%2C3v12c0%2C1.7%2C1.3%2C3%2C3%2C3h12c1.7%2C0%2C3-1.3%2C3-3V6c0-1.7-1.3-3-3-3h0Z%22/%3E%3Crect x=%223%22 y=%228%22 width=%2218%22 height=%222%22/%3E%3Crect x=%2215%22 y=%221%22 width=%222%22 height=%222%22/%3E%3C/svg%3E");
-    --icon-check: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M9.5%2C18.2c-.3%2C0-.5%2C0-.7-.3l-5.5-5.5c-.4-.4-.4-1%2C0-1.4s1-.4%2C1.4%2C0l4.8%2C4.8%2C9.8-9.8c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-10.5%2C10.5c-.2.2-.5.3-.7.3Z%22/%3E%3C/svg%3E");
     --icon-close: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M5.2%2C19.8c-.3%2C0-.5%2C0-.7-.3-.4-.4-.4-1%2C0-1.4l13.5-13.5c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-13.5%2C13.5c-.2.2-.5.3-.7.3Z%22/%3E%3Cpath d=%22M18.8%2C19.8c-.3%2C0-.5%2C0-.7-.3L4.5%2C6c-.4-.4-.4-1%2C0-1.4s1-.4%2C1.4%2C0l13.5%2C13.5c.4.4.4%2C1%2C0%2C1.4s-.5.3-.7.3Z%22/%3E%3C/svg%3E");
     --icon-extend: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M5.2%2C19.8c-.3%2C0-.5%2C0-.7-.3-.4-.4-.4-1%2C0-1.4l13.5-13.5c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-13.5%2C13.5c-.2.2-.5.3-.7.3Z%22/%3E%3Cpath d=%22M13.8%2C21.5c-.3%2C0-.5%2C0-.7-.3-.4-.4-.4-1%2C0-1.4l6.8-6.8c.4-.4%2C1-.4%2C1.4%2C0s.4%2C1%2C0%2C1.4l-6.8%2C6.8c-.2.2-.5.3-.7.3Z%22/%3E%3C/svg%3E");
     --icon-trg-down: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12%2C20L1.6%2C5h20.8l-10.4%2C15Z%22/%3E%3C/svg%3E");
@@ -414,6 +409,9 @@
     border-color:var(--color-btn-tertiary-blue-border);
     color:var(--color-btn-tertiary-blue-text);
   }
+  /* hoverは btn/tertiary ではなく btn/tertiary-blue 系のトークンを使う。
+     値は同じ #d9e9f6 だが、Figmaで別バリアブルとして定義された（2026-08-14修正） */
+  @media(hover:hover){ .btn-leftcon-blue:hover{background:var(--color-btn-tertiary-blue-hover);} }
   /* コピー完了の一時表示（コード側で決めた仕様。2.2秒で元に戻る） */
   .btn-leftcon-blue.copied{background:var(--color-bg-select);border-color:var(--color-bg-select);color:var(--color-text-white);}
 
@@ -569,9 +567,14 @@
   .img-thumb img{width:100%;height:100%;object-fit:cover;display:block}
   .img-thumb button{
     position:absolute;top:4px;right:4px;width:24px;height:24px;padding:0;border:none;cursor:pointer;
-    border-radius:var(--radius-full);background:var(--color-btn-selection-ctrl-default);
+    border-radius:var(--radius-full);background:var(--color-btn-secondary-default);
     display:flex;align-items:center;justify-content:center;color:var(--color-icon-white);
+    transition:background-color var(--motion-ui-transition) ease-out;
   }
+  /* btn/close-circle（38:899）。hover・focus はFigmaの定義どおり secondary 系。
+     旧実装は選択コントロール用のバリアブルを参照していた（2026-08-14修正） */
+  @media(hover:hover){ .img-thumb button:hover{background:var(--color-btn-secondary-hover);} }
+  .img-thumb button:focus-visible{outline:1px solid var(--color-btn-secondary-focus);outline-offset:2px;}
   .img-thumb button .i{width:16px;height:16px}
 
 
@@ -636,8 +639,18 @@
     padding:calc(var(--spacing-padding-textarea) - 1px) var(--spacing-padding-textarea) calc(var(--spacing-padding-textarea) + 1px);
     transition:background-color var(--motion-ui-transition) ease-out,box-shadow var(--motion-ui-transition) ease-out;
   }
+  /* writing（143:955）＝1文字でも入力されたら1pxのグレー枠が出る。
+     JSを増やさず :placeholder-shown で判定する（プレースホルダは常に入っている） */
+  .chat-send:has(textarea:not(:placeholder-shown)):not(:focus-within){
+    box-shadow:inset 0 0 0 1px var(--color-input-border);
+  }
   @media(hover:hover){ .chat-send:hover{background:var(--color-input-hover);} }
-  .chat-send:focus-within{background:var(--color-input-default);box-shadow:inset 0 0 0 1px var(--color-input-border);}
+  /* focus（143:901）＝グレー枠＋外側2pxの淡青リング。他の入力欄（.ctl）と同じ組み方 */
+  .chat-send:focus-within{
+    background:var(--color-input-default);
+    outline:2px solid transparent;outline-offset:0;
+    box-shadow:inset 0 0 0 1px var(--color-input-border), 0 0 0 2px var(--color-input-focus);
+  }
   .chat-send textarea{
     flex:1;min-width:0;background:none;border:none;padding:0;resize:none;
     font-family:inherit;font-weight:var(--typo-weight-body);font-size:var(--typo-size-body);line-height:2;
@@ -654,7 +667,7 @@
   }
   .btn-send-circle .i{width:14px;height:14px;}
   @media(hover:hover){ .btn-send-circle:not(:disabled):hover{background:var(--color-btn-secondary-hover);} }
-  .btn-send-circle:disabled{background:var(--color-btn-primary-disable);cursor:not-allowed;}
+  .btn-send-circle:disabled{background:var(--color-btn-secondary-disable);cursor:not-allowed;}
   .btn-send-circle:focus-visible{outline:1px solid var(--color-btn-secondary-focus);outline-offset:2px;}
 
   /* チャット下部の導線（フォームで直接入力する）と注記 */
@@ -670,7 +683,7 @@
     cursor:pointer;transition:background-color var(--motion-ui-transition) ease-out;
   }
   @media(hover:hover){ .btn-secondary:not(:disabled):hover{background:var(--color-btn-secondary-hover);} }
-  .btn-secondary:disabled{background:var(--color-btn-primary-disable);cursor:not-allowed;}
+  .btn-secondary:disabled{background:var(--color-btn-secondary-disable);cursor:not-allowed;}
   .btn-secondary:focus-visible{outline:1px solid var(--color-btn-secondary-focus);outline-offset:2px;}
 
   /* ==========================================================================

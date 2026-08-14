@@ -8,7 +8,7 @@
 **扱う範囲**：色・タイポグラフィ・余白・角丸・影・コンポーネント・レイアウト・モーションといった**見た目のこと**。
 **扱わない範囲**：設問構成・画面フロー・Worker／Notionのデータ設計は [`../SPEC.md`](../SPEC.md)、インフラ・セキュリティ・運用は Google Drive の `creative-process/開発/BRIEF.md`。
 
-- 最終更新: 2026-08-11（Figma第3次改修のUI反映）
+- 最終更新: 2026-08-14（Figma第4次改修＝STEP3チャットの反映と、トークン名の整理）
 - 対象コード: `creative-process/index.html`
 - 関連ファイル: [`tokens.json`](./tokens.json)（トークン定義）／[`components.json`](./components.json)（コンポーネント定義）
 
@@ -28,7 +28,7 @@
 ## 2. Figmaの構成
 
 ### ページ `design`（`0:1`）— 画面
-セクション `CREATIVE PROCESS`（`27:3284`）配下に10フレーム（第3次改修・2026-08-11反映）。**これがすべて最新の正**。
+セクション `CREATIVE PROCESS`（`27:3284`）配下に13フレーム（第4次改修・2026-08-14反映）。**これがすべて最新の正**。
 
 | ノード | 名前 | 何を描いているか |
 |---|---|---|
@@ -36,7 +36,9 @@
 | `1:482` | form-new | 依頼種別＝新規。依頼者はログイン済み |
 | `11:1981` | form-modify | 依頼種別＝改訂（タイトル→スケジュール→親フォルダURL→制作内容→添付） |
 | `86:992` | form-reuse | 依頼種別＝転用（制作物の種別は8択） |
-| `11:2264` | form-consult | 依頼種別＝相談（タイトルは「相談タイトル」） |
+| `11:2264` | form-consult（ver.1） | **非表示・廃止**。相談フォームの旧デザイン。ver.2に置き換え済み |
+| `143:475` | form-consult-start（ver.2） | 相談＝チャットの開始状態。ヒアリーのイラスト176px＋名乗り＋説明文＋`input/send` |
+| `143:1164` | form-consult-chat（ver.2） | 相談＝会話中。ヒアリー64px＋地の文／依頼者は右寄せの `input/chat` バブル |
 | `64:720` | error-message | 送信できないときのエラー表示 |
 | `86:1919` | submit | 送信完了画面（絵文字ヒーロー＋Slack共有手順＋全幅ボタン2つ） |
 | `86:1966` | submit-animation | 送信成功時のアニメーション（コンポーネント `86:2083`＝start / emoji-action / finish） |
@@ -46,11 +48,11 @@
 ### ページ ` component`（`38:174`）— デザインシステム
 | セクション | 中身 |
 |---|---|
-| btn | checkbox / close-circle / **radio-btn** / linktext / primary / secondary / tertiary / tertiary-leftcon / **tertiary-blue-leftcon** |
+| btn | checkbox / close-circle / **send-circle** / radio-btn / linktext / primary / secondary / tertiary / tertiary-leftcon / tertiary-blue-leftcon |
 | card | check（廃止・radio に置換）/ **radio** / anchorlink |
-| input | text / textarea / select / calendar / add / login |
-| icono | add / calendar / check / close / extend / trg-down / **link** / loading |
-| chip, logo | badge/required / logo-Notion / logo-url / logo-google-g |
+| input | text / textarea / select / calendar / add / login / **send** / **chat** |
+| icono | add / calendar / check / close / extend / trg-down / link / loading / picture / **arrow-top** |
+| chip, logo, ill | badge/required / logo-Notion / logo-url / logo-google-g / **ill_Heary** |
 | emoji | Laughing ほか16種（現行デザインで使うのは Laughing 😆 のみ） |
 | submit-animation | start / emoji-action / finish（送信アニメーションのキーフレーム） |
 
@@ -73,6 +75,20 @@ Figmaのバリアブル名の `/` を `-` に置き換え、**名前空間を省
 | `radius/button-s` | `--radius-button-s` |
 
 短縮しないのは、**Figmaの値が変わったときにどのCSS変数を直せばよいかを名前だけで機械的に特定できる**ようにするため。
+
+### CSSに書き出さないトークンがある（2026-08-14決定）
+`tokens.json` は **Figmaのバリアブルをそのまま写した台帳**。いっぽう `index.html` の `:root` には
+**このHTMLで実際に使うものだけ**を置く。使わないものは `tokens.json` 側に `"inCss": false` と理由を残す。
+
+| Figmaにある | CSSに出さない理由 |
+|---|---|
+| `color/btn/checkbox/*`・`radius/checkbox` | `card/check` → `card/radio` 置換でUIから消えた（Figmaには残す） |
+| `radius/button-focus`・`radius/button-s-focus` | フォーカス枠は `outline` + `outline-offset` で描くので角丸値が要らない |
+| `color/btn/tertiary/disable`・`color/btn/tertiary-blue/disable`・`color/icon/gray` | 送信ボタン以外にdisableを持たせない方針（§10） |
+| `color/btn/radio/hover`・`color/btn/radio/focus` | カード側で表現するためラジオ単体では使わない（§5-2-2） |
+
+**両方向の照合を必ず通す。**「CSSに定義があるのに使っていない変数」と「使っているのに定義がない変数」は
+どちらもゼロにする。片方だけ直すと、次の突き合わせでまた同じ指摘が出る。
 
 ### グラデーションと影
 Figmaではグラデーションをバリアブルに登録できないため、`gradation/*` と `shadow/*` は**ローカルスタイル**（色スタイル／エフェクトスタイル）で管理している。
@@ -204,6 +220,18 @@ outline-offset: 2px;
 - **`:focus` ではなく `:focus-visible`** を使う（マウスクリックではリングを出さない）。
 - 選択中・hover中の要素は `box-shadow` を別用途で使っていることがある。`box-shadow: none` でリングを打ち消さないよう、hover の影は `:not()` で選択中を除外して当てる。
 
+### 5-2-2. ラジオボタンのhoverはカード上では出さない
+
+Figmaの `btn/radio-btn` には hover バリアント（地色 `color/btn/radio/hover` ＝淡青）がある。
+**しかし実装では使わない。** これは食い違いではなく、設計上そう決めている。
+
+- **サーフェイス上にラジオが単体で置かれる場合**を想定したのが、このhoverバリアント。マウスを乗せたら淡青になる。
+- **カードの中に置かれる場合**（＝現行UIの `card/radio` はこちら）は、カード自体が `color/bg/hover` に変わる。
+  ここでラジオまで淡青にすると、**同じ淡青が二重に重なってアクセントがぼやける**。だからラジオは白のままにする。
+
+現行UIにラジオ単体の配置はないので、`color/btn/radio/hover` はCSSに出していない（§3）。
+単体配置が生まれたときに、このバリアントをそのまま使う。
+
 ### 5-3. 依頼者欄はログイン状態で2つの形をとる
 | 状態 | 見た目 |
 |---|---|
@@ -238,8 +266,10 @@ outline-offset: 2px;
 | ログインボタン | `logo/google-g` | 24px |
 | 完了画面「NotionのURLをコピー」 | `icon/link` | **24px**（第3次改修で新設。色は currentColor＝tertiary-blue の青） |
 | 完了画面「Notionで編集」 | `logo/Notion` | 24px |
+| チャットの送信ボタン | `icon/arrow-top` | **14px**（24pxの円の中） |
 
-> `icon/check`（チェックボックス用20px）は card/check の廃止にともない未使用になった。マスク定義はコードに残っている。
+> `icon/check`（チェックボックス用20px）は `card/check` の廃止にともない未使用になった。**2026-08-14にコードのマスク定義も削除した**（Figmaには残す）。
+> `icon/picture` はFigmaにあるがどの画面にも置かれていない。使う場面ができたらG-Driveへ書き出す。
 
 ### 5-4-3. 入力欄の高さと文字の縦位置
 
@@ -270,6 +300,40 @@ Noto Sans JP はアセンダ側が厚く、16/16 で素直に置くと文字の�
 - 背景 `color/warning/bg`／文字 `color/warning/text`／`Japanese/label-L`／角丸8／padding 24・32。
 - `role="alert"` を付ける。複数のエラーは1つの枠の中に改行で並べる。
 - エラーがないときは要素ごと消す（高さを持たせない）。
+
+### 5-6. STEP3のチャット（ヒアリー）
+
+依頼種別＝**相談**のときだけ、STEP3が入力フォームではなくチャットになる。
+正は Figma `form-consult-start（ver.2）`（`143:475`）と `form-consult-chat（ver.2）`（`143:1164`）。
+旧 `form-consult`（`11:2264`）は非表示で残っているだけなので**参照しない**。
+
+| 部品 | Figma | 実装 |
+|---|---|---|
+| 開始状態 | `143:831` | イラスト**176px**＋見出し（`Japanese/head-3`／`color/text/accent`）＋説明文（`Japanese/body`／`color/text/sub`）。中央揃え・間隔16px |
+| ヒアリーの発言 | `143:1208` | イラスト**64px**＋地の文。**吹き出しは付けない**。文字色 `color/text/sub` |
+| 依頼者の発言 | `input/chat`（`143:1137`） | 右寄せ・地色 `color/input/default`・角丸 `radius/full`・padding 24/32 |
+| 入力欄 | `input/send`（`143:894`） | 全幅・高さ64px（1行時）。右端に `btn/send-circle` |
+| 発言どうしの間隔 | — | `spacing/semantic/gap-content`（32px） |
+
+**`input/send` の状態**（`btn/send-circle` は `color/btn/secondary/*` 系）
+
+| 状態 | Figma | 見た目 |
+|---|---|---|
+| default | `143:895` | 地色 `color/input/default`・枠なし |
+| hover | `143:898` | 地色 `color/input/hover` |
+| writing | `143:955` | 1文字でも入力されたら1pxの `color/border/default` 枠が出る。実装は `:has(textarea:not(:placeholder-shown))` で判定 |
+| waiting | `143:968` | ヒアリーの応答待ち。入力欄は空・送信ボタンは `color/btn/secondary/disable` |
+| focus | `143:901` | 1px枠＋外側2pxの淡青リング（§5-2-1 A と同じ組み方） |
+
+**Figmaに定義がない部分**（コード側で決めた。根拠はその場のコメントにも残してある）
+
+| 対象 | 決めた内容 |
+|---|---|
+| ヒアリーの発言の縦そろえ | Figmaは中央そろえだが、要約が20行を超えるとイラストが宙に浮く。**上そろえ**にする |
+| 応答待ちの表示 | 3点のドットが順に浮くだけ。**文言は出さない**（会話文に混ざって読み違えるため） |
+| 入力欄の伸び方 | 1行32pxから最大192px（6行相当）まで伸ばし、以降はtextarea内でスクロール |
+| 長文の折り返し | `overflow-wrap: anywhere`（URLを貼られても横に溢れさせない） |
+| エラー | 既存の `error-message` を入力欄の**上**に出す |
 
 ---
 
@@ -326,6 +390,9 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 - `icon/extend` は **textareaの右下のリサイズハンドル**として使う。`resize: vertical` と併用し、つまみの見た目だけアイコンで置き換える。
 - `logo/url` は書き出さない。完了画面のコピーボタンは `icon/link`（`86:2304`）を使う（第3次改修で絵文字🔗から変更）。
   `icon/link` はFigmaのMCPエクスポートから取得したパスをマスク化してコードに埋め込み済み。他アイコンと同じくG-Driveの `icon/` にもマスターを置くこと（未書き出しならFigmaからSVGエクスポートする）。
+- `icon/arrow-top`（`143:866`）は **`btn/send-circle` の↑**。G-Driveの `icon/` から書き出し済みで、他アイコンと同じくマスク化して埋め込む。
+- `ill_Heary`（`143:1104`）はイラストなので**マスクにしない**。多色のまま `--ill-heary` として背景画像で使う。マスターはG-Driveの `ill/` に置く。
+- `icon/check` はUIから消えたため、**2026-08-14にコードのマスク定義を削除した**（Figma・G-Driveの素材は残す）。
 - `icon/add` は**コードでは描画しない**。「＋日程を追加する」などの先頭の「＋」はFigma上も文字だから（§5-4-1）。
 - 表示サイズは置き場所ごとに違う（§5-4-2）。素材が24pxだからといって24pxで置かない。
 - **絵文字はNoto Animated Emoji（Google Fonts CDN）が正**（2026-08-11確定）。Figmaのemojiセクション16種と同じ素材を
@@ -355,7 +422,7 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 | フォントのフォールバック | 和文 `'Hiragino Kaku Gothic ProN', -apple-system, BlinkMacSystemFont, sans-serif`／欧文 `-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif` |
 | スクロールバー | 幅8px・つまみ `#c9c9c9`（hoverで `#b0b0b0`）・角丸4px。トラックは透明 |
 | 選択範囲のハイライト | 背景 `color/bg/select`／文字 `color/text/white` |
-| ボタン以外のdisable表現 | 送信ボタン以外にdisable状態を持たせない（必要な操作は常に押せる状態にしておく） |
+| ボタン以外のdisable表現 | **送信ボタン系以外にdisable状態を持たせない**（必要な操作は常に押せる状態にしておく）。対象は `btn/primary`（送信）・`btn/secondary`（フォームに反映する）・`btn/send-circle`（チャット送信）の3つだけ。<br>Figmaには `btn/tertiary` / `btn/tertiary/leftcon` / `btn/tertiary/blue-leftcon` のdisableバリアントも将来用に用意してあるが、**実装しない**（2026-08-14確認）。この一文は残す ─ 外すと「Figmaにあるのにコードに無い」が毎回の指摘対象になり、そのたびに同じ判断をやり直すことになるため |
 
 ---
 
@@ -366,7 +433,10 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 | 1 | ~~モーダル内のコピーだけ旧バリアブルを参照~~ → 差し替え済み（2026-08-01） | 解決 |
 | 2 | ~~Googleログインボタンが `input/add` と同名~~ → `input/login` に改名済み（2026-08-01） | 解決 |
 | 3 | ~~依頼者欄のラベルが画面ごとに不統一~~ → 統一済み（2026-08-01） | 解決 |
-| 4 | `btn/secondary`・`btn/tertiary/leftcon` はどの画面にも置かれていない（デザインシステム上の定義だけがある） | 使う場面ができたら components.json の定義に従って実装する |
+| 4 | ~~`btn/secondary` はどの画面にも置かれていない~~ → STEP3チャットの「フォームに反映する」で使用開始（2026-08-14） | 解決 |
+| 5 | `icon/picture` がどの画面にも置かれていない | 2026-08-11に**意図的に未使用で確定**（放置でよい）。以後の突き合わせで指摘しない |
+| 6 | `space/primitive/space-8`・`space-16` は無関係なデータからのコピーで混入したもの。git側（tokens.json・CSS）からは削除済み | **Figma側のバリアブルも削除する**（ユウキ作業。削除後この行を消す） |
+| 7 | `card/check`・`btn/checkbox`・`radius/checkbox`・`icon/check` はFigmaに残すが、UIには登場しない | 意図どおり。コードには出さない（§3の表を正とする） |
 
 ---
 
@@ -374,6 +444,7 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 
 | 日付 | 内容 |
 |---|---|
+| 2026-08-14 | Figma第4次改修の反映とトークンの整理。①STEP3チャット（ヒアリー）を§5-6として明文化し、`btn/send-circle`・`input/send`・`input/chat`・`icon/arrow-top`・`ill_Heary` を components.json に追加 ②`color/btn/selection-ctrl/*` → **`color/btn/checkbox/*`** の改名を反映 ③Figmaに追加された `color/btn/secondary/disable`・`color/btn/tertiary-blue/hover`・`color/btn/tertiary-blue/disable`・`color/btn/radio/focus`・`color/icon/gray` を tokens.json に追加 ④「CSSに書き出さないトークン」の方針を§3に明記し、未使用CSS変数を全廃（`radius/button-focus`・`radius/button-s-focus`・`radius/checkbox`・`icon/check`・`space/primitive/*`・`btn/tertiary/disable`・`btn/radio/hover`） ⑤「NotionのURLをコピー」のhoverを `btn/tertiary` → **`btn/tertiary-blue/hover`** に修正 ⑥添付サムネイルの削除ボタン（`btn/close-circle`）が旧バリアブルを参照していたのを `color/btn/secondary/*` に修正し、hover・focusを定義どおり実装 ⑦`input/send` の focus に淡青リングを追加し、writing状態を実装 ⑧ラジオhoverの設計意図を§5-2-2に明文化 ⑨完了画面の `done-hero`／`done-actions` の記述を第3次改修後のFigmaへ追従 |
 | 2026-08-11 | 追補：①STEP1ログイン欄キャプション・依頼種別4カードのサブテキストをFigmaの最新文言へ追従 ②`btn/linktext` の下線を2px→**1px**（Figma underbar h-px 実測） ③送信中スピナーを24px→**16px**・地色を `gradation/sunbeam-h-hover` に（Figma btn/primary loading 64:783 実測） ④`icon/link` をG-Drive `icon/link.svg`（Illustrator書き出し）のパスに同期 ⑤絵文字をNoto Animated Emoji（CDN直リンク・16種ランダム・😆フォールバック付き）に変更 ⑥ファビコン🌟を追加 |
 | 2026-08-11 | Figma第3次改修のUI反映。①制作物の種別を `card/check`→`card/radio`（＋`btn/radio-btn`）に置換 ②STEP2依頼種別カードを4枚構成の寸法（gap16・角丸8・padding 16/24）に変更 ③完了画面を全面刷新（絵文字ヒーロー・箇条書きの共有手順・`btn/tertiary-blue/leftcon`「NotionのURLをコピー」＋`btn/tertiary/leftcon`「Notionで編集」の全幅縦積み） ④送信アニメーション新設（`submit-animation`） ⑤`icon/link` 新設・`icon/extend` を12pxに縮小 ⑥`btn/tertiary` のラベルを label-M 12px に修正 ⑦納期・サイズ目安表からKV・アイキャッチ行を削除し文言をFigmaへ追従 |
 | 2026-08-01 | 新規作成。Figmaのコンポーネントページ新設にあわせ、トークン・コンポーネント・状態定義を全面的に整理 |

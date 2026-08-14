@@ -1,8 +1,8 @@
 {
   "$meta": {
     "name": "CREATIVE PROCESS components",
-    "version": "2.1.0",
-    "updatedAt": "2026-08-11",
+    "version": "2.2.0",
+    "updatedAt": "2026-08-14",
     "source": {
       "type": "figma",
       "fileKey": "paEvn9ugpEQoYRPBWF3fc6",
@@ -13,7 +13,8 @@
     "rules": [
       "figmaNodeId は出典。Figmaで開くURLは https://www.figma.com/design/paEvn9ugpEQoYRPBWF3fc6/CREATIVE-PROCESS?node-id=<idの : を - に置換>",
       "tokens は tokens.json のキー。色や数値を直書きせずトークン名で参照する。",
-      "status=undefined-in-figma は Figma に定義がなく、コード側で決めた仕様。根拠は DESIGN.md に記載する。"
+      "status=undefined-in-figma は Figma に定義がなく、コード側で決めた仕様。根拠は DESIGN.md に記載する。",
+      "figmaName はFigma上の実際のレイヤー名。このJSONのキーと違う場合だけ書く（Figmaを探すときはfigmaName側を見る）。"
     ],
     "focusRing": {
       "$note": "Figmaのfocusバリアントを1pxずつ実測して転記した値。DESIGN.md §5-2-1 と対応する。",
@@ -28,7 +29,8 @@
           "card/check",
           "card/radio",
           "card/anchorlink",
-          "btn/checkbox"
+          "btn/checkbox",
+          "input/send"
         ],
         "color": "color/input/focus",
         "spread": 2,
@@ -46,7 +48,8 @@
           "btn/tertiary/leftcon",
           "btn/close-circle",
           "btn/linktext",
-          "btn/tertiary-blue/leftcon"
+          "btn/tertiary-blue/leftcon",
+          "btn/send-circle"
         ],
         "color": "color/btn/primary/focus（tertiary系は color/btn/tertiary/focus、secondary系は color/btn/secondary/focus。値はいずれも #0872b6）",
         "width": 1,
@@ -107,11 +110,32 @@
     },
     "form-consult": {
       "figmaNodeId": "11:2264",
+      "figmaName": "form-consult（ver.1）",
       "size": [
         1280,
         2047
       ],
-      "desc": "依頼種別＝相談。タイトルは「相談タイトル」"
+      "hidden": true,
+      "deprecated": "2026-08-13 ver.2（チャット）に置き換え。Figmaでは非表示にして残している",
+      "desc": "依頼種別＝相談の旧デザイン。タイトルは「相談タイトル」"
+    },
+    "form-consult-start": {
+      "figmaNodeId": "143:475",
+      "figmaName": "form-consult-start（ver.2）",
+      "size": [
+        1280,
+        1853
+      ],
+      "desc": "依頼種別＝相談の開始状態。STEP3が「チャット」になり、ヒアリーのイラスト176px＋名乗り＋説明文＋input/send を出す。送信セクションは btn/secondary「フォームに反映する」"
+    },
+    "form-consult-chat": {
+      "figmaNodeId": "143:1164",
+      "figmaName": "form-consult-chat（ver.2）",
+      "size": [
+        1280,
+        1728
+      ],
+      "desc": "相談の会話中。ヒアリー＝64pxイラスト＋地の文（吹き出しなし）／依頼者＝右寄せの input/chat バブル。下に input/send"
     },
     "error-message": {
       "figmaNodeId": "64:720",
@@ -283,7 +307,7 @@
     },
     "btn/secondary": {
       "figmaNodeId": "41:409",
-      "role": "青ベタの主要アクション。現状フォーム内での配置はない",
+      "role": "青ベタの主要アクション。STEP3チャットの「フォームに反映する」で使う",
       "size": {
         "figma": [
           128,
@@ -316,7 +340,7 @@
         },
         "disable": {
           "figmaNodeId": "41:492",
-          "background": "color/btn/primary/disable",
+          "background": "color/btn/secondary/disable",
           "color": "color/text/white"
         }
       }
@@ -454,19 +478,29 @@
         },
         "hover": {
           "figmaNodeId": "86:2367",
-          "background": "color/btn/tertiary/hover"
+          "background": "color/btn/tertiary-blue/hover",
+          "note": "値は color/btn/tertiary/hover と同じ #d9e9f6 だが参照は tertiary-blue 系を使う（2026-08-14修正。旧実装は btn/tertiary で作った名残で tertiary 側を見ていた）"
         },
         "focus": {
           "figmaNodeId": "86:2372",
           "ring": "color/btn/tertiary/focus",
           "ringWidth": 1,
-          "ringOffset": 2
+          "ringOffset": 2,
+          "ringRadius": "radius/button-s-focus"
         },
         "disable": {
-          "figmaNodeId": "86:2379"
+          "figmaNodeId": "86:2379",
+          "border": "color/btn/tertiary-blue/disable",
+          "color": "color/btn/tertiary-blue/disable",
+          "icon": "color/icon/gray",
+          "note": "実装しない（送信ボタン以外にdisableを持たせない・DESIGN.md §10）"
         }
       },
-      "copiedState": "コピー後2.2秒は bg=color/bg/select・文字白・ラベル「コピーしました」（コード側で決めた仕様）"
+      "copiedState": "コピー後2.2秒は bg=color/bg/select・文字白・ラベル「コピーしました」（コード側で決めた仕様）",
+      "figmaName": "btn/tertiary/blue-leftcon",
+      "usage": [
+        "86:2385"
+      ]
     },
     "btn/linktext": {
       "figmaNodeId": "38:909",
@@ -522,18 +556,18 @@
       "states": {
         "default": {
           "figmaNodeId": "38:967",
-          "background": "color/btn/selection-ctrl/white",
-          "border": "color/btn/selection-ctrl/border",
+          "background": "color/btn/checkbox/white",
+          "border": "color/btn/checkbox/border",
           "borderWidth": 1
         },
         "hover": {
           "figmaNodeId": "41:446",
           "background": "color/bg/hover",
-          "border": "color/btn/selection-ctrl/border"
+          "border": "color/btn/checkbox/border"
         },
         "select": {
           "figmaNodeId": "41:449",
-          "background": "color/btn/selection-ctrl/default",
+          "background": "color/btn/checkbox/default",
           "icon": "icon/check",
           "iconSize": 20,
           "iconColor": "color/icon/white",
@@ -541,16 +575,17 @@
         },
         "focus-default": {
           "figmaNodeId": "41:466",
-          "ring": "color/btn/selection-ctrl/focus",
+          "ring": "color/btn/checkbox/focus",
           "ringWidth": 2
         },
         "focus-select": {
           "figmaNodeId": "41:462",
-          "background": "color/btn/selection-ctrl/default",
-          "ring": "color/btn/selection-ctrl/focus",
+          "background": "color/btn/checkbox/default",
+          "ring": "color/btn/checkbox/focus",
           "ringWidth": 2
         }
-      }
+      },
+      "deprecated": "2026-08-11 card/check→card/radio 置換によりUIから消えた。Figmaには残す（バリアブルは2026-08-14に color/btn/selection-ctrl → color/btn/checkbox へ改名）。コードにはCSS変数を出していない"
     },
     "btn/close-circle": {
       "figmaNodeId": "38:899",
@@ -579,7 +614,41 @@
           "ringOffset": 2
         }
       },
-      "note": "スケジュール行の削除には使わない（そちらは丸なしの icon/close 単体）"
+      "note": "スケジュール行の削除には使わない（そちらは丸なしの icon/close 単体）／2026-08-14：実装が旧 selection-ctrl のバリアブルを参照していたのを color/btn/secondary/* に修正し、hover・focus も定義どおり実装した"
+    },
+    "btn/send-circle": {
+      "figmaNodeId": "143:867",
+      "role": "STEP3チャットの送信ボタン。input/send の右端に置く24pxの丸",
+      "size": [
+        24,
+        24
+      ],
+      "radius": "radius/full",
+      "icon": "icon/arrow-top",
+      "iconSize": 14,
+      "iconColor": "color/icon/white",
+      "states": {
+        "default": {
+          "figmaNodeId": "143:868",
+          "background": "color/btn/secondary/default"
+        },
+        "hover": {
+          "figmaNodeId": "143:870",
+          "background": "color/btn/secondary/hover"
+        },
+        "focus": {
+          "figmaNodeId": "143:872",
+          "ring": "color/btn/secondary/focus",
+          "ringWidth": 1,
+          "ringOffset": 2
+        },
+        "disable": {
+          "figmaNodeId": "143:965",
+          "background": "color/btn/secondary/disable",
+          "note": "入力が空のとき／ヒアリーの応答待ちのときは押せない"
+        }
+      },
+      "note": "1行のとき行の中央に来るよう、実装では margin-bottom:4px で上に寄せている（Figmaに指定はない）"
     },
     "card/anchorlink": {
       "figmaNodeId": "46:350",
@@ -809,7 +878,7 @@
           "figmaNodeId": "86:680",
           "background": "color/btn/radio/hover",
           "border": "color/btn/radio/border",
-          "note": "実装ではカード側のhover表現で代替し、ラジオ単体のhoverは付けない"
+          "note": "サーフェイス上に単体で置かれたラジオを想定した状態。現行UIはカード上にしか置かないため、カード側のhover色と二重にならないようラジオは白のままにする（＝実装しない）。設計意図はDESIGN.md §5-2-2"
         },
         "select": {
           "figmaNodeId": "86:678",
@@ -820,11 +889,13 @@
         },
         "focus-default": {
           "figmaNodeId": "86:683",
-          "note": "実装ではカード側にリングを出す（DESIGN.md §5-2-1 A）"
+          "note": "実装ではカード側にリングを出す（DESIGN.md §5-2-1 A）",
+          "ring": "color/btn/radio/focus"
         },
         "focus-select": {
           "figmaNodeId": "86:685",
-          "note": "同上"
+          "note": "同上",
+          "ring": "color/btn/radio/focus"
         }
       }
     },
@@ -988,6 +1059,86 @@
         "placeholder": "未入力のあいだ今日の日付をプレースホルダとして表示し、実値は空のままにする",
         "displayFormat": "入力後の表示形式（yyyy/mm/dd）はブラウザのロケール依存でCSSからは変えられない"
       }
+    },
+    "input/send": {
+      "figmaNodeId": "143:894",
+      "role": "STEP3チャットの入力欄。左にtextarea・右に btn/send-circle。全幅・高さ64px（1行時）",
+      "size": {
+        "figma": [
+          400,
+          64
+        ],
+        "inUse": "全幅×64（内容に応じて縦に伸びる）"
+      },
+      "radius": "radius/textarea",
+      "padding": [
+        "spacing/semantic/padding-textarea"
+      ],
+      "gap": "spacing/semantic/gap-input-group",
+      "textStyle": "Japanese/body",
+      "placeholderColor": "color/text/sub",
+      "sendButton": "btn/send-circle",
+      "states": {
+        "default": {
+          "figmaNodeId": "143:895",
+          "background": "color/input/default",
+          "border": "none"
+        },
+        "hover": {
+          "figmaNodeId": "143:898",
+          "background": "color/input/hover"
+        },
+        "writing": {
+          "figmaNodeId": "143:955",
+          "background": "color/input/default",
+          "border": "color/border/default",
+          "borderWidth": 1,
+          "note": "1文字でも入力された状態。実装は :has(textarea:not(:placeholder-shown)) で判定する"
+        },
+        "waiting": {
+          "figmaNodeId": "143:968",
+          "background": "color/input/default",
+          "sendButton": "disable",
+          "note": "ヒアリーの応答待ち。入力欄は空・送信ボタンは無効"
+        },
+        "focus": {
+          "figmaNodeId": "143:901",
+          "background": "color/input/default",
+          "border": "color/border/default",
+          "borderWidth": 1,
+          "ring": "color/input/focus",
+          "ringWidth": 2,
+          "ringOffset": 0
+        }
+      },
+      "undefinedInFigma": {
+        "複数行への伸長": "1行32pxから最大192px（6行相当）まで伸ばし、以降はtextarea内スクロール。Figmaは1行のみ"
+      }
+    },
+    "input/chat": {
+      "figmaNodeId": "143:1137",
+      "role": "チャットログ内の依頼者の発言。右寄せのピル型バブル",
+      "size": {
+        "figma": [
+          208,
+          80
+        ],
+        "inUse": "内容に応じて可変（最大80%幅）"
+      },
+      "radius": "radius/full",
+      "padding": [
+        "spacing/semantic/padding-card-y",
+        "spacing/semantic/padding-card-x"
+      ],
+      "background": "color/input/default",
+      "textStyle": "Japanese/body",
+      "color": "color/text/sub",
+      "states": {
+        "default": {
+          "figmaNodeId": "143:1137"
+        }
+      },
+      "note": "状態は既定のみ。長文は折り返す（Figmaは1〜2行のみ）"
     },
     "input/add": {
       "figmaNodeId": "38:653",
@@ -1240,6 +1391,23 @@
         },
         "use": "送信中スピナー",
         "note": "Figmaは0/25/50/75の4コマ。実装ではコマ送りではなく1コマをCSSで連続回転させる（motion/loading-spin）"
+      },
+      "icon/arrow-top": {
+        "figmaNodeId": "143:866",
+        "asset": "creative-process/icon/arrow-top.svg",
+        "use": "btn/send-circle の↑。表示サイズは14px"
+      },
+      "icon/picture": {
+        "figmaNodeId": "136:508",
+        "asset": null,
+        "status": "not-exported",
+        "usedInCode": false,
+        "note": "Figmaにあるがどの画面にも置かれていない。2026-08-11に「意図的に未使用で確定（放置でよい）」と決定済み"
+      },
+      "icon/link": {
+        "figmaNodeId": "86:2304",
+        "asset": "creative-process/icon/link.svg",
+        "use": "btn/tertiary/blue-leftcon「NotionのURLをコピー」の左アイコン"
       }
     },
     "emoji": {
@@ -1268,6 +1436,13 @@
         "done": 64,
         "animation": 104
       }
+    },
+    "ill/Heary": {
+      "figmaNodeId": "143:1104",
+      "figmaName": "ill_Heary",
+      "role": "チャット担当キャラクター「ヒアリー」。開始状態は176px、会話中の発言者アイコンは64px",
+      "asset": "creative-process/ill/ill_Heary.svg",
+      "note": "多色のためマスクにせず、データURIの背景画像として使う（--ill-heary）"
     }
   },
   "screenParts": {
@@ -1311,29 +1486,33 @@
       }
     },
     "done-hero": {
-      "figmaNodeId": "11:1660",
-      "emoji": "🌟",
+      "figmaNodeId": "86:1926",
+      "desc": "完了画面のヒーロー。emoji/Laughing 64px＋タイトル＋サブテキスト",
+      "emoji": "emoji/Laughing 😆（実装ではNoto Animated Emojiを16種からランダム表示・😆フォールバック）",
+      "title": "＼ プランニングシートを作成しました! ／",
       "titleStyle": "Japanese/head-2",
       "titleColor": "color/text/accent",
       "subStyle": "Japanese/label-L",
-      "subColor": "color/text/default"
+      "subColor": "color/text/default",
+      "updated": "2026-08-14：第3次改修後のFigma（86:1919）に合わせて書き直し。旧記述は 11:1660 の🌟ヒーローだった"
     },
     "done-actions": {
-      "desc": "「URLをコピー」と「Notionページを開く」の2ボタン横並び",
-      "copyButton": {
-        "background": "color/bg/hover",
-        "border": "color/border/default",
-        "radius": "radius/button-s",
-        "icon": "🔗",
-        "label": "URLをコピー"
+      "figmaNodeId": "86:1937",
+      "desc": "完了画面の全幅ボタン2つ。横並びではなく縦積み（間隔16px）",
+      "primary": {
+        "component": "btn/tertiary-blue/leftcon",
+        "figmaNodeId": "86:2385",
+        "icon": "icon/link",
+        "label": "NotionのURLをコピー",
+        "copiedState": "コピー後2.2秒は bg=color/bg/select・文字白・ラベル「コピーしました」（コード側で決めた仕様）"
       },
-      "openButton": {
-        "background": "color/bg/box",
-        "border": "color/border/default",
-        "radius": "radius/button-s",
+      "secondary": {
+        "component": "btn/tertiary/leftcon",
+        "figmaNodeId": "86:1939",
         "icon": "logo/Notion",
-        "label": "Notionページを開く"
-      }
+        "label": "Notionで編集"
+      },
+      "updated": "2026-08-14：第3次改修後のFigmaに合わせて書き直し。旧記述は絵文字🔗の2ボタン横並びだった"
     },
     "image-preview": {
       "desc": "添付済み画像のサムネイル一覧",
@@ -1344,6 +1523,43 @@
         "deleteButton": "各サムネイルの右上に btn/close-circle を重ねる。クリックでその1枚を選択から外し、サムネイルとファイル入力の両方から取り除く",
         "fileName": "サムネイル下に表示しない（ホバー時の title 属性で補う）",
         "empty": "1枚も選ばれていないときは領域ごと非表示"
+      }
+    },
+    "chat": {
+      "figmaNodeId": [
+        "143:831",
+        "143:1207"
+      ],
+      "desc": "STEP3のチャット領域。開始状態（143:831）と会話中（143:1207）の2つ",
+      "start": {
+        "illSize": 176,
+        "titleStyle": "Japanese/head-3",
+        "titleColor": "color/text/accent",
+        "bodyStyle": "Japanese/body",
+        "bodyColor": "color/text/sub",
+        "align": "中央揃え",
+        "gap": "spacing/semantic/gap-input-group"
+      },
+      "aiMessage": {
+        "illSize": 64,
+        "gap": "spacing/semantic/gap-input-group",
+        "bubble": false,
+        "textStyle": "Japanese/body",
+        "textColor": "color/text/sub",
+        "note": "Figmaは items-center だが、要約が20行を超えるとイラストが宙に浮くため実装は上揃え"
+      },
+      "userMessage": {
+        "component": "input/chat",
+        "align": "右寄せ"
+      },
+      "rowGap": "spacing/semantic/gap-content",
+      "input": {
+        "component": "input/send"
+      },
+      "undefinedInFigma": {
+        "応答待ち": "3点のドットが順に浮くだけの最小表現。文言は出さない（会話に混ざるため）",
+        "エラー": "既存の error-message コンポーネントを入力欄の上に出す",
+        "長文の折り返し": "overflow-wrap:anywhere で強制折り返し"
       }
     }
   }
