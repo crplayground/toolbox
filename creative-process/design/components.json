@@ -1,7 +1,7 @@
 {
   "$meta": {
     "name": "CREATIVE PROCESS components",
-    "version": "2.2.0",
+    "version": "2.3.1",
     "updatedAt": "2026-08-14",
     "source": {
       "type": "figma",
@@ -471,7 +471,7 @@
       "states": {
         "default": {
           "figmaNodeId": "86:2350",
-          "background": "color/btn/tertiary/white",
+          "background": "color/btn/tertiary-blue/white",
           "border": "color/btn/tertiary-blue/border",
           "borderWidth": 1,
           "color": "color/btn/tertiary-blue/text"
@@ -483,10 +483,11 @@
         },
         "focus": {
           "figmaNodeId": "86:2372",
-          "ring": "color/btn/tertiary/focus",
+          "ring": "color/btn/tertiary-blue/focus",
           "ringWidth": 1,
           "ringOffset": 2,
-          "ringRadius": "radius/button-s-focus"
+          "ringRadius": "radius/button-s-focus",
+          "note": "2026-08-14 Figmaで tertiary/focus → tertiary-blue/focus に貼り替え。コードも追従（値は同じ）"
         },
         "disable": {
           "figmaNodeId": "86:2379",
@@ -562,8 +563,9 @@
         },
         "hover": {
           "figmaNodeId": "41:446",
-          "background": "color/bg/hover",
-          "border": "color/btn/checkbox/border"
+          "background": "color/btn/checkbox/hover",
+          "border": "color/btn/checkbox/border",
+          "note": "2026-08-14 Figmaで貼り替え。それまで checkbox/focus を参照していた（値は同じ #d9e9f6）"
         },
         "select": {
           "figmaNodeId": "41:449",

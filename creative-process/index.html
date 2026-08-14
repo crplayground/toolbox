@@ -69,6 +69,8 @@
     --color-btn-tertiary-blue-border:#0872b6;
     --color-btn-tertiary-blue-text:#0872b6;
     --color-btn-tertiary-blue-hover:#d9e9f6;
+    --color-btn-tertiary-blue-white:#ffffff;
+    --color-btn-tertiary-blue-focus:#0872b6;
 
     /* ── gradation（Figmaのローカル色スタイル） ─────────────── */
     --gradation-sunbeam-default:linear-gradient(90deg,#EB8237 0%,#EE8D3F 60%,#F4A771 100%);
@@ -406,9 +408,11 @@
   .btn-leftcon:focus-visible{outline:1px solid var(--color-btn-tertiary-focus);outline-offset:2px;}
   .btn-leftcon .i{width:24px;height:24px;}
   .btn-leftcon-blue{
+    background:var(--color-btn-tertiary-blue-white);
     border-color:var(--color-btn-tertiary-blue-border);
     color:var(--color-btn-tertiary-blue-text);
   }
+  .btn-leftcon-blue:focus-visible{outline-color:var(--color-btn-tertiary-blue-focus);}
   /* hoverは btn/tertiary ではなく btn/tertiary-blue 系のトークンを使う。
      値は同じ #d9e9f6 だが、Figmaで別バリアブルとして定義された（2026-08-14修正） */
   @media(hover:hover){ .btn-leftcon-blue:hover{background:var(--color-btn-tertiary-blue-hover);} }
