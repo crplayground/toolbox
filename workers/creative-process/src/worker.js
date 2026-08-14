@@ -669,9 +669,13 @@ function looksLikeShelf(name) {
 
 // 案件フォルダの中に必ず作るサブフォルダ（順序＝作成順＝名前順）
 const DRIVE_SUBFOLDERS = ["01_支給素材", "02_作業データ", "03_納品データ"];
+// 【V1-8】支給素材の自動格納先。DRIVE_SUBFOLDERS[0] と同じものを名前で参照する。
+const DRIVE_SHIKYU = "01_支給素材";
 
 const DRIVE_STORAGE_PROP = "データ格納先";
 const DRIVE_API = "https://www.googleapis.com/drive/v3/files";
+// 【V1-8】ファイル本体のアップロードは通常のAPIとは別ホスト・別パス
+const DRIVE_UPLOAD_API = "https://www.googleapis.com/upload/drive/v3/files";
 const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
 // 対象事業・部署の「｜」より前が略称（ANV / IWAI-婚礼 / MT-the-Terrace …）。
@@ -839,6 +843,49 @@ async function createDriveFolder(name, parentId, token) {
   );
 }
 
+// 【V1-8・検証用】Drive へ実ファイルをアップロードする。
+// Drive の uploadType=multipart は multipart/form-data ではなく multipart/related を
+// 要求するため FormData は使えない。バイナリを壊さないよう Uint8Array を手で連結する。
+// convertTo を渡すと Google 形式（ドキュメント等）へ変換して保存される。
+function buildMultipartRelated(metadata, mediaType, mediaBytes, boundary) {
+  const enc = new TextEncoder();
+  const head = enc.encode(
+    "--" + boundary + "\r\n" +
+      "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
+      JSON.stringify(metadata) + "\r\n" +
+      "--" + boundary + "\r\n" +
+      "Content-Type: " + mediaType + "\r\n\r\n",
+  );
+  const tail = enc.encode("\r\n--" + boundary + "--\r\n");
+  const out = new Uint8Array(head.length + mediaBytes.length + tail.length);
+  out.set(head, 0);
+  out.set(mediaBytes, head.length);
+  out.set(tail, head.length + mediaBytes.length);
+  return out;
+}
+
+async function uploadFileToDrive({ name, parentId, mimeType, bytes, convertTo }, token) {
+  const boundary = "cpb" + Math.floor(Math.random() * 1e12).toString(36);
+  const metadata = { name, parents: [parentId] };
+  if (convertTo) metadata.mimeType = convertTo;
+  const res = await fetch(
+    DRIVE_UPLOAD_API + "?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink",
+    {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "multipart/related; boundary=" + boundary,
+      },
+      body: buildMultipartRelated(metadata, mimeType, bytes, boundary),
+    },
+  );
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error("Driveアップロード失敗: " + ((body.error && body.error.message) || res.status));
+  }
+  return body;
+}
+
 async function getDriveFile(fileId, token) {
   return driveFetch(
     DRIVE_API + "/" + encodeURIComponent(fileId) + "?supportsAllDrives=true&fields=id,name,mimeType,parents",
@@ -968,21 +1015,31 @@ function brandFromShortName(short) {
 // 【V1-5.10】inferBrandFromFolder は resolveKaiteiPlacement に統合。
 //            KVによる入れ子判定（dfolder: 記録）は入れ子の廃止に伴い撤去した。
 
-// 案件フォルダ＋3点セットを作る。戻り値はフォルダのURL。
+// 案件フォルダ＋3点セットを作る。
+// 【V1-8】戻り値を { url, folderId, subIds } に変更（01_支給素材へ素材を置くためIDが要る）。
+//         従来 URL しか返しておらず、作った直後のサブフォルダIDを捨てていた。
 async function createProjectFolderTree(name, parentId, token) {
   const folder = await createDriveFolder(name, parentId, token);
+  const subIds = {};
   for (const sub of DRIVE_SUBFOLDERS) {
     // サブフォルダの失敗は致命にしない（親フォルダは使えるため）
-    try { await createDriveFolder(sub, folder.id, token); } catch {}
+    try {
+      const made = await createDriveFolder(sub, folder.id, token);
+      subIds[sub] = made.id;
+    } catch {}
   }
-  return folder.webViewLink || ("https://drive.google.com/drive/folders/" + folder.id);
+  return {
+    url: folder.webViewLink || ("https://drive.google.com/drive/folders/" + folder.id),
+    folderId: folder.id,
+    subIds,
+  };
 }
 
 // 1件ぶんのフォルダ作成。呼び出し側は try/catch 不要（必ず結果オブジェクトを返す）。
 // 戻り値: { created, url, reason, inferredBrand }
 //   - inferredBrand … 改訂で親フォルダから推定できた対象事業・部署（Notionへ書き戻す用）
 async function createDriveFolderForRequest(data, env) {
-  const out = { created: false, url: "", reason: "", inferredBrand: "" };
+  const out = { created: false, url: "", reason: "", inferredBrand: "", shikyuId: "" };
   if (!(env.GOOGLE_SA_EMAIL || "").trim() || !env.GOOGLE_SA_PRIVATE_KEY) {
     out.reason = "Drive未設定（GOOGLE_SA_EMAIL / GOOGLE_SA_PRIVATE_KEY）";
     return out;
@@ -1013,7 +1070,9 @@ async function createDriveFolderForRequest(data, env) {
         parentId = placement.containerId;
         out.inferredBrand = placement.brand;
       }
-      out.url = await createProjectFolderTree(dateLabel + "_" + safeTitle, parentId, token);
+      const tree = await createProjectFolderTree(dateLabel + "_" + safeTitle, parentId, token);
+      out.url = tree.url;
+      out.shikyuId = tree.subIds[DRIVE_SHIKYU] || "";
       out.created = true;
       return out;
     }
@@ -1029,7 +1088,9 @@ async function createDriveFolderForRequest(data, env) {
     // 【V1-5.10】[略称]_日付_タイトル
     if (category === "相談") {
       const name = "[" + brandShortName(brand) + "]_" + dateLabel + "_" + safeTitle;
-      out.url = await createProjectFolderTree(name, DRIVE_SOUDAN_FOLDER_ID, token);
+      const tree = await createProjectFolderTree(name, DRIVE_SOUDAN_FOLDER_ID, token);
+      out.url = tree.url;
+      out.shikyuId = tree.subIds[DRIVE_SHIKYU] || "";
       out.created = true;
       return out;
     }
@@ -1039,7 +1100,9 @@ async function createDriveFolderForRequest(data, env) {
       let parentId = brandFolderId;
       const placement = await resolveKaiteiPlacement(data.sourceUrls, token);
       if (placement && placement.containerId) parentId = placement.containerId;
-      out.url = await createProjectFolderTree(dateLabel + "_" + safeTitle, parentId, token);
+      const tree = await createProjectFolderTree(dateLabel + "_" + safeTitle, parentId, token);
+      out.url = tree.url;
+      out.shikyuId = tree.subIds[DRIVE_SHIKYU] || "";
       out.created = true;
       return out;
     }
@@ -1057,13 +1120,115 @@ async function createDriveFolderForRequest(data, env) {
         // 棚の解決に失敗しても事業フォルダ直下に作る（フォルダなしよりよい）
       }
     }
-    out.url = await createProjectFolderTree(dateLabel + "_" + safeTitle, parentId, token);
+    const tree = await createProjectFolderTree(dateLabel + "_" + safeTitle, parentId, token);
+    out.url = tree.url;
+    out.shikyuId = tree.subIds[DRIVE_SHIKYU] || "";
     out.created = true;
     return out;
   } catch (e) {
     out.reason = String(e.message || e);
     return out;
   }
+}
+
+// ---- 【V1-8】01_支給素材 への自動格納 ---------------------------
+// 依頼フォームで添付された参考画像と、記入された素材元URLを Drive 側にも置く。
+// 位置づけ：Notionページ作成の副産物。案件が進めば Drive 側が実態になり、
+// Notion 側の画像・原稿とはズレていく。ズレは許容する（更新の反映義務はない）。
+
+function escHtml(v) {
+  return String(v == null ? "" : v)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// 本文テキストからURLを拾う。全角の記号・かっこ・読点で切れるようにしてある。
+function extractUrls(text) {
+  if (!text) return [];
+  const found = String(text).match(/https?:\/\/[^\s　、。,"'<>（）()「」【】]+/g) || [];
+  const seen = new Set();
+  return found.filter((u) => (seen.has(u) ? false : (seen.add(u), true)));
+}
+
+// 素材リンク集のHTML。Drive側で Googleドキュメントに変換して保存する。
+// 【2026-08-14 文言・構成の確定】URL集に徹する。
+//   ・見出し＝素材リンク集(H1) / 記載リンク一覧(H2) / フォームのラベル(H3)。いずれも太字
+//   ・URL以外の補足文は載せない（何のURLかを知りたい人はプランニングシートを見る）
+//   ・参考画像の枚数は載せない（フォルダを見れば分かる）
+// 収集対象：種別ごとの長文欄すべて（素材元欄・制作内容・プロトタイプ等）に書かれたURL
+function buildSourceDocHtml(data, notionUrl) {
+  const rows = [];
+  for (const [key, label] of sectionsFor(String(data.category || "").trim())) {
+    const urls = extractUrls(data[key]);
+    if (urls.length) rows.push({ label, urls });
+  }
+
+  const p = [];
+  p.push("<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>");
+  p.push("<h1><strong>素材リンク集</strong></h1>");
+  p.push("<p>プランニングシートの記入内容から自動生成</p>");
+  if (notionUrl) {
+    p.push("<p>プランニングシート：<a href='" + escHtml(notionUrl) + "'>" + escHtml(notionUrl) + "</a></p>");
+  }
+  p.push("<hr>");
+  p.push("<h2><strong>記載リンク一覧</strong></h2>");
+  if (!rows.length) {
+    p.push("<p>記載リンクなし</p>");
+  }
+  for (const r of rows) {
+    p.push("<h3><strong>" + escHtml(r.label) + "</strong></h3>");
+    p.push("<ul>");
+    for (const u of r.urls) p.push("<li><a href='" + escHtml(u) + "'>" + escHtml(u) + "</a></li>");
+    p.push("</ul>");
+  }
+  p.push("</body></html>");
+  return p.join("\n");
+}
+
+// data:image/... base64 → { mime, bytes, filename }
+function decodeImageDataUrl(dataUrl, index) {
+  const m = IMAGE_DATA_RE.exec(dataUrl);
+  if (!m) return null;
+  const mime = m[1] === "image/jpg" ? "image/jpeg" : m[1];
+  const bin = atob(m[2]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return {
+    mime,
+    bytes,
+    filename: "参考画像-" + String(index + 1).padStart(2, "0") + "." + (IMAGE_EXT[mime] || "bin"),
+  };
+}
+
+// 01_支給素材 に「素材元リンク集」＋参考画像を置く。
+// 例外は投げない（依頼そのものは応答時点で成立済み。ここは付加価値）。
+// 戻り値: { uploaded, failed, docCreated }
+async function fillShikyuFolder(shikyuId, data, images, notionUrl, token) {
+  const out = { uploaded: 0, failed: 0, docCreated: false };
+  const enc = new TextEncoder();
+
+  try {
+    await uploadFileToDrive({
+      name: "00_素材リンク集",
+      parentId: shikyuId,
+      mimeType: "text/html",
+      bytes: enc.encode(buildSourceDocHtml(data, notionUrl)),
+      convertTo: "application/vnd.google-apps.document",
+    }, token);
+    out.docCreated = true;
+  } catch {}
+
+  const results = await Promise.all(images.map((img, i) => (async () => {
+    const dec = decodeImageDataUrl(img, i);
+    if (!dec) return false;
+    await uploadFileToDrive({
+      name: dec.filename, parentId: shikyuId, mimeType: dec.mime, bytes: dec.bytes,
+    }, token);
+    return true;
+  })().catch(() => false)));
+  out.uploaded = results.filter(Boolean).length;
+  out.failed = results.length - out.uploaded;
+  return out;
 }
 
 // 作ったフォルダのURL等を Notion のプロパティに書き戻す。
@@ -1170,6 +1335,21 @@ async function finishSubmitInBackground(data, images, notion, env) {
         });
       } catch {
         // 書き戻し失敗はフォルダURLがNotionに残らないだけ。フォルダ自体は作られている
+      }
+
+      // 【V1-8】支給素材の格納。失敗しても依頼・フォルダは成立しているので握りつぶす。
+      // 画像0枚でもリンク集は作る（素材元URLだけの依頼が多いため）。
+      if (drive.shikyuId) {
+        try {
+          const filled = await fillShikyuFolder(drive.shikyuId, data, images, notion.notionUrl, await getDriveAccessToken(env));
+          if (filled.failed) {
+            await appendNotionNote(
+              notion.pageId,
+              "⚠️ 参考画像のうち" + filled.failed + "枚を 01_支給素材 に置けませんでした（Notion本文の画像は有効です）",
+              env,
+            );
+          }
+        } catch {}
       }
     } else if (data.category === "改訂" && !drive.created) {
       // フォルダを作れなかったことをページ本文に残す（ユウキが後から手で対処できるように）
@@ -1455,6 +1635,45 @@ export default {
         return json({ ok: false, 診断: steps, 次の一手: "読めるが書けない状態です。共有ドライブでの権限を「コンテンツ管理者」にしてください（STEP4）" }, 200, request, env);
       }
 
+      // 【V1-8・検証】フォルダは作れてもファイル本体を置けるとは限らない。
+      // サービスアカウントは個人ドライブの容量を持たないため、置き場所が共有ドライブで
+      // ない場合はここで storageQuotaExceeded になる。実ファイルを1つ書いて確かめる。
+      try {
+        const enc = new TextEncoder();
+        const f1 = await uploadFileToDrive({
+          name: "_接続テスト_テキスト.txt",
+          parentId: tempId,
+          mimeType: "text/plain",
+          bytes: enc.encode("creative-process 接続テスト"),
+        }, token);
+        note("⑤-b ファイル本体のアップロード", true, f1.name);
+
+        // Googleドキュメントへの変換（HTML→ドキュメント）まで通るか
+        const f2 = await uploadFileToDrive({
+          name: "_接続テスト_ドキュメント",
+          parentId: tempId,
+          mimeType: "text/html",
+          bytes: enc.encode("<h1>接続テスト</h1><p><a href='https://example.com'>リンク</a></p>"),
+          convertTo: "application/vnd.google-apps.document",
+        }, token);
+        note("⑤-c Googleドキュメントへの変換", true, f2.name);
+      } catch (e) {
+        const msg = String(e.message || e);
+        note("⑤-b ファイル本体のアップロード", false, msg);
+        const hint = /storageQuota|quotaExceeded/.test(msg)
+          ? "置き場所が共有ドライブではありません。サービスアカウントは個人ドライブに容量を持たないため、02_案件管理が共有ドライブ配下にあるか確認してください"
+          : "フォルダは作れるがファイルを置けない状態です。共有ドライブでの権限を「コンテンツ管理者」以上にしてください（STEP4）";
+        // 後片付けだけは実行してから返す
+        try {
+          await fetch(DRIVE_API + "/" + tempId + "?supportsAllDrives=true", {
+            method: "PATCH",
+            headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+            body: JSON.stringify({ trashed: true }),
+          });
+        } catch {}
+        return json({ ok: false, 診断: steps, 次の一手: hint }, 200, request, env);
+      }
+
       try {
         // 共有ドライブでは DELETE（完全削除）は「管理者」権限が要る。
         // 「コンテンツ管理者」でもできる “ゴミ箱に入れる”（trashed:true）を使う。
@@ -1518,4 +1737,10 @@ export {
   // 【V1-5.7】改訂の親フォルダを02_案件管理内に限定
   DRIVE_KANRI_FOLDER_ID,
   brandFromShortName,
+  // 【V1-8】01_支給素材への自動格納
+  DRIVE_SHIKYU,
+  buildMultipartRelated,
+  extractUrls,
+  buildSourceDocHtml,
+  decodeImageDataUrl,
 };

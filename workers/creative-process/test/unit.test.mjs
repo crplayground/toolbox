@@ -37,6 +37,11 @@ import {
   looksLikeShelf,
   DRIVE_KANRI_FOLDER_ID,
   brandFromShortName,
+  DRIVE_SHIKYU,
+  buildMultipartRelated,
+  extractUrls,
+  buildSourceDocHtml,
+  decodeImageDataUrl,
 } from "../src/worker.js";
 
 let pass = 0, fail = 0;
@@ -573,6 +578,96 @@ if (!ssotPath) {
   t("正本に差し込み口 {{BRAND_OPTIONS}} が残っている", parsed.base.indexOf("{{BRAND_OPTIONS}}") !== -1);
   t("★生成物がドライブの正本と一致している（ズレていたら node tools/build-prompt.mjs を実行）",
     renderModule(parsed) === genSrc);
+}
+
+// ============================================================
+// 【V1-8】01_支給素材 への自動格納
+// ============================================================
+const TINY_JPEG =
+  "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==";
+
+section("V1-8. 支給素材の自動格納（01_支給素材）");
+{
+  t("01_支給素材 は3点セットの1つ目と一致する", DRIVE_SHIKYU === DRIVE_SUBFOLDERS[0]);
+
+  // ---- multipart/related の組み立て ----
+  {
+    const bytes = new Uint8Array([0x00, 0xff, 0x0d, 0x0a, 0x80, 0x7f]);
+    const body = buildMultipartRelated({ name: "a.jpg", parents: ["P"] }, "image/jpeg", bytes, "BB");
+    const tail = "\r\n--BB--\r\n";
+    const start = body.length - tail.length - bytes.length;
+    t("バイナリが1バイトも変質しない",
+      Array.from(body.slice(start, start + bytes.length)).join() === Array.from(bytes).join());
+    const utf8 = new TextDecoder("utf-8").decode(body);
+    t("multipart/related の境界で始まる", utf8.startsWith("--BB\r\nContent-Type: application/json"));
+    t("終端境界で終わる", utf8.endsWith(tail));
+    t("メディア部のContent-Typeが載る", utf8.includes("Content-Type: image/jpeg"));
+  }
+  {
+    const body = buildMultipartRelated({ name: "参考画像-01.jpg" }, "image/jpeg", new Uint8Array([1]), "BB");
+    t("日本語ファイル名がUTF-8で壊れない",
+      new TextDecoder("utf-8").decode(body).includes('"name":"参考画像-01.jpg"'));
+  }
+
+  // ---- data URL のデコード ----
+  {
+    const d = decodeImageDataUrl(TINY_JPEG, 0);
+    t("JPEGのSOIマーカーで始まる", d.bytes[0] === 0xff && d.bytes[1] === 0xd8);
+    t("ファイル名は0埋め2桁", d.filename === "参考画像-01.jpg");
+    t("10枚目は参考画像-10.jpg", decodeImageDataUrl(TINY_JPEG, 9).filename === "参考画像-10.jpg");
+    t("svg+xmlは拒否", decodeImageDataUrl("data:image/svg+xml;base64,AAAA", 0) === null);
+    t("data:以外は拒否", decodeImageDataUrl("javascript:alert(1)", 0) === null);
+  }
+
+  // ---- URL抽出 ----
+  {
+    const sample = "https://a.com/x　https://b.com/y、https://a.com/x\nhttps://c.com/z（メモ）";
+    t("全角スペース・読点・かっこで切れ、重複は落ちる",
+      extractUrls(sample).join() === "https://a.com/x,https://b.com/y,https://c.com/z");
+    t("空文字は空配列", extractUrls("").length === 0);
+    t("nullでも落ちない", extractUrls(null).length === 0);
+  }
+
+  // ---- 素材リンク集HTML（2026-08-14 文言・構成の確定） ----
+  {
+    const html = buildSourceDocHtml({
+      category: "転用",
+      title: "テスト",
+      sourceUrls: "https://drive.google.com/drive/folders/ABC 去年のデータです",
+      reviseManuscript: "テストテストテスト 参考URL：https://ooharadensen.shop/",
+    }, "https://app.notion.com/p/3bc6d45");
+    t("H1は固定文言「素材リンク集」（案件タイトルではない）",
+      html.includes("<h1><strong>素材リンク集</strong></h1>") && !html.includes("テスト</h1>"));
+    t("H1直下の説明文", html.includes("<p>プランニングシートの記入内容から自動生成</p>"));
+    t("「依頼ページ」ではなく「プランニングシート」", html.includes("<p>プランニングシート：<a href="));
+    t("Notionリンクはそのまま残る", html.includes("https://app.notion.com/p/3bc6d45"));
+    t("H2は「記載リンク一覧」（旧「本文に記載されたその他のリンク」は消えた）",
+      html.includes("<h2><strong>記載リンク一覧</strong></h2>") && !html.includes("その他のリンク"));
+    t("フォームのラベルはH3", html.includes("<h3><strong>転用元のデータ</strong></h3>")
+      && html.includes("<h3><strong>制作内容</strong></h3>"));
+    t("URLはリスト表記", html.includes("<li><a href='https://drive.google.com/drive/folders/ABC'>"));
+    t("本文中のURLも拾う", html.includes("<li><a href='https://ooharadensen.shop/'>"));
+    t("URL以外の補足文は載せない",
+      !html.includes("去年のデータです") && !html.includes("テストテストテスト"));
+    t("参考画像の枚数は載せない", !html.includes("参考画像"));
+    t("見出しはすべて太字（strong）", html.split("<strong>").length - 1 === 4);
+  }
+  {
+    const html = buildSourceDocHtml({ category: "新規", title: "<script>alert(1)</script>" }, "");
+    t("URLゼロ件なら「記載リンクなし」",
+      html.includes("<h2><strong>記載リンク一覧</strong></h2>\n<p>記載リンクなし</p>"));
+    t("H3は1つも出ない", !html.includes("<h3>"));
+    t("Notion未取得ならプランニングシート行を出さない", !html.includes("プランニングシート："));
+  }
+  {
+    // URL抽出の時点で < " ' は区切りとして切り落とされる（タグ注入が成立しない）
+    const html = buildSourceDocHtml({ category: "新規", purpose: "https://a.com/<script>alert(1)</script>" }, "");
+    t("URLに続くタグ文字は抽出段階で切り落とされる",
+      !html.includes("<script>") && html.includes("<li><a href='https://a.com/'>"));
+    // & はURLに正当に現れるので切らずにエスケープする
+    const q = buildSourceDocHtml({ category: "新規", purpose: "https://a.com/?x=1&y=2" }, "");
+    t("URL中の & は &amp; にエスケープされる", q.includes("https://a.com/?x=1&amp;y=2") && !q.includes("&y=2"));
+  }
 }
 
 // ---- 結果 ----
