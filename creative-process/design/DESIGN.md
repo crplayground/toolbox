@@ -86,6 +86,9 @@ Figmaのバリアブル名の `/` を `-` に置き換え、**名前空間を省
 | `radius/button-focus`・`radius/button-s-focus` | フォーカス枠は `outline` + `outline-offset` で描くので角丸値が要らない |
 | `color/btn/tertiary/disable`・`color/btn/tertiary-blue/disable`・`color/icon/gray` | 送信ボタン以外にdisableを持たせない方針（§10） |
 | `color/btn/radio/hover`・`color/btn/radio/focus` | カード側で表現するためラジオ単体では使わない（§5-2-2） |
+| `spacing/primitive/*`（xxxs〜xxxl の9段） | **semantic側のエイリアス元**。CSSは `spacing/semantic/*` だけを使う。→ **Figmaから削除してはいけない**（§11） |
+| `spacing/semantic/padding-section` | Figmaに定義があるが、どの画面にもバインドされていない |
+| `spacing/breakpoint/breakpoint`（768） | メディアクエリの条件に `var()` は使えないため、CSSでは直書きする |
 
 **両方向の照合を必ず通す。**「CSSに定義があるのに使っていない変数」と「使っているのに定義がない変数」は
 どちらもゼロにする。片方だけ直すと、次の突き合わせでまた同じ指摘が出る。
@@ -354,9 +357,11 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 
 ## 7. レスポンシブ
 
-**Figmaはデスクトップ1280px幅の1本のみ。以下はコード側で決めた設計。** Figmaにモバイル版が起こされたら、そちらを正にしてこの節を破棄する。
+**Figmaのアートボードはデスクトップ1280px幅の1本のみ。以下はコード側で決めた設計。** Figmaにモバイル版が起こされたら、そちらを正にしてこの節を破棄する。
 
-ブレークポイントは **768px の1段だけ**。
+ブレークポイントは **768px の1段だけ**。この数字自体はFigmaのバリアブル `spacing/breakpoint/breakpoint`（768）に定義がある（＝Figma由来）。
+ただし**縮退の中身**（何を1列にして、どの余白をどこまで詰めるか）はFigmaに描かれていないので、下の表がコード側の決め。
+メディアクエリの条件に `var()` は使えないため、CSSでは768pxを直書きする。
 
 ### 768px以下での縮退
 | 項目 | 1280px時 | 768px以下 |
@@ -435,8 +440,10 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 | 3 | ~~依頼者欄のラベルが画面ごとに不統一~~ → 統一済み（2026-08-01） | 解決 |
 | 4 | ~~`btn/secondary` はどの画面にも置かれていない~~ → STEP3チャットの「フォームに反映する」で使用開始（2026-08-14） | 解決 |
 | 5 | `icon/picture` がどの画面にも置かれていない | 2026-08-11に**意図的に未使用で確定**（放置でよい）。以後の突き合わせで指摘しない |
-| 6 | `space/primitive/space-8`・`space-16` は無関係なデータからのコピーで混入したもの。git側（tokens.json・CSS）からは削除済み | **Figma側のバリアブルも削除する**（ユウキ作業。削除後この行を消す） |
+| 6 | ~~`space/primitive/space-8`・`space-16` は無関係なデータからのコピーで混入したもの~~ → **誤認だった**（2026-08-14に実機確認） | **解決。Figmaからは削除しないこと。** 実体は `spacing/primitive/xxxs〜xxxl` の9段で、`spacing/semantic/*` の23本がこれをエイリアス参照している。消すと余白トークンが全滅する。tokens.json には `inCss:false` で全9段を記録済み |
 | 7 | `card/check`・`btn/checkbox`・`radius/checkbox`・`icon/check` はFigmaに残すが、UIには登場しない | 意図どおり。コードには出さない（§3の表を正とする） |
+| 8 | 同じ役割に**2本のバリアブルがある**箇所が3つ。`btn/tertiary/blue-leftcon` が `tertiary-blue/white`・`tertiary-blue/focus` ではなく `tertiary/white`・`tertiary/focus` を、`btn/checkbox` の hover が `checkbox/hover` ではなく `bg/hover` をバインドしている（いずれも同値なので見た目は同じ） | **Figmaで貼り替えるのを推奨**（各1〜2クリック）。放置でも実害はないが、8/14に直した tertiary-blue の hover と同じ種類のズレなので、また指摘対象になる |
+| 9 | `spacing/primitive/l`（48）はどこからも参照されていない | 将来の改修用に意図して作った枠。使うまでこのまま |
 
 ---
 
@@ -444,7 +451,8 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 
 | 日付 | 内容 |
 |---|---|
-| 2026-08-14 | Figma第4次改修の反映とトークンの整理。①STEP3チャット（ヒアリー）を§5-6として明文化し、`btn/send-circle`・`input/send`・`input/chat`・`icon/arrow-top`・`ill_Heary` を components.json に追加 ②`color/btn/selection-ctrl/*` → **`color/btn/checkbox/*`** の改名を反映 ③Figmaに追加された `color/btn/secondary/disable`・`color/btn/tertiary-blue/hover`・`color/btn/tertiary-blue/disable`・`color/btn/radio/focus`・`color/icon/gray` を tokens.json に追加 ④「CSSに書き出さないトークン」の方針を§3に明記し、未使用CSS変数を全廃（`radius/button-focus`・`radius/button-s-focus`・`radius/checkbox`・`icon/check`・`space/primitive/*`・`btn/tertiary/disable`・`btn/radio/hover`） ⑤「NotionのURLをコピー」のhoverを `btn/tertiary` → **`btn/tertiary-blue/hover`** に修正 ⑥添付サムネイルの削除ボタン（`btn/close-circle`）が旧バリアブルを参照していたのを `color/btn/secondary/*` に修正し、hover・focusを定義どおり実装 ⑦`input/send` の focus に淡青リングを追加し、writing状態を実装 ⑧ラジオhoverの設計意図を§5-2-2に明文化 ⑨完了画面の `done-hero`／`done-actions` の記述を第3次改修後のFigmaへ追従 |
+| 2026-08-14 | **バリアブル全数突き合わせ**。Figmaのローカルバリアブル94本を解決し、3ページ1,894ノードのバインドを走査して tokens.json・index.html と照合。値の食い違い**0件**／tokens.jsonへの記載漏れ7本を追加（`btn/primary/default`・`btn/primary/hover`・`btn/checkbox/hover`・`btn/tertiary-blue/white`・`btn/tertiary-blue/focus`・`text/hover`・`text/disable`＝いずれも未バインド）。監査の手順と結果は tokens.json の `$meta.audit` に記録 |
+| 2026-08-14 | Figma第4次改修の反映とトークンの整理。①STEP3チャット（ヒアリー）を§5-6として明文化し、`btn/send-circle`・`input/send`・`input/chat`・`icon/arrow-top`・`ill_Heary` を components.json に追加 ②`color/btn/selection-ctrl/*` → **`color/btn/checkbox/*`** の改名を反映 ③Figmaに追加された `color/btn/secondary/disable`・`color/btn/tertiary-blue/hover`・`color/btn/tertiary-blue/disable`・`color/btn/radio/focus`・`color/icon/gray` を tokens.json に追加 ④「CSSに書き出さないトークン」の方針を§3に明記し、未使用CSS変数を全廃（`radius/button-focus`・`radius/button-s-focus`・`radius/checkbox`・`icon/check`・`space/primitive/*`・`btn/tertiary/disable`・`btn/radio/hover`） ⑤「NotionのURLをコピー」のhoverを `btn/tertiary` → **`btn/tertiary-blue/hover`** に修正 ⑥添付サムネイルの削除ボタン（`btn/close-circle`）が旧バリアブルを参照していたのを `color/btn/secondary/*` に修正し、hover・focusを定義どおり実装 ⑦`input/send` の focus に淡青リングを追加し、writing状態を実装 ⑧ラジオhoverの設計意図を§5-2-2に明文化 ⑨完了画面の `done-hero`／`done-actions` の記述を第3次改修後のFigmaへ追従 ⑩**`space-8`／`space-16` の「無関係データの混入」は誤認と判明**（Figmaの実体は `spacing/primitive/xxxs〜xxxl` の9段で、semantic23本のエイリアス元）。削除せず tokens.json に `inCss:false` で全段を記録し、semantic側に `aliasOf` を追加。あわせて `spacing/semantic/padding-section`・`spacing/breakpoint/breakpoint` を記録 |
 | 2026-08-11 | 追補：①STEP1ログイン欄キャプション・依頼種別4カードのサブテキストをFigmaの最新文言へ追従 ②`btn/linktext` の下線を2px→**1px**（Figma underbar h-px 実測） ③送信中スピナーを24px→**16px**・地色を `gradation/sunbeam-h-hover` に（Figma btn/primary loading 64:783 実測） ④`icon/link` をG-Drive `icon/link.svg`（Illustrator書き出し）のパスに同期 ⑤絵文字をNoto Animated Emoji（CDN直リンク・16種ランダム・😆フォールバック付き）に変更 ⑥ファビコン🌟を追加 |
 | 2026-08-11 | Figma第3次改修のUI反映。①制作物の種別を `card/check`→`card/radio`（＋`btn/radio-btn`）に置換 ②STEP2依頼種別カードを4枚構成の寸法（gap16・角丸8・padding 16/24）に変更 ③完了画面を全面刷新（絵文字ヒーロー・箇条書きの共有手順・`btn/tertiary-blue/leftcon`「NotionのURLをコピー」＋`btn/tertiary/leftcon`「Notionで編集」の全幅縦積み） ④送信アニメーション新設（`submit-animation`） ⑤`icon/link` 新設・`icon/extend` を12pxに縮小 ⑥`btn/tertiary` のラベルを label-M 12px に修正 ⑦納期・サイズ目安表からKV・アイキャッチ行を削除し文言をFigmaへ追従 |
 | 2026-08-01 | 新規作成。Figmaのコンポーネントページ新設にあわせ、トークン・コンポーネント・状態定義を全面的に整理 |
