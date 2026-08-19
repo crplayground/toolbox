@@ -91,8 +91,10 @@ const CHAT_PRODUCT_TYPES = [
 // 転用で選べない種別（§3-7-6＝該当時は空欄にして会話で言及する）
 const TENYO_EXCLUDED_TYPES = ["イベント・キャンペーン", "その他"];
 
-// 広報チームの企画確認状況（3値のみ・不明なら空欄）
-const PR_STATUS_OPTIONS = ["必要なし", "これから", "共有済み"];
+// リリースカレンダーの記入状況（2値のみ・不明なら空欄）
+// 【2026-08-19】「広報チームの企画確認状況（必要なし／これから／共有済み）」から改称・2値化。
+//   ここを直し忘れるとヒアリーが「記入した」と抽出しても弾かれて空欄になる（沈黙して壊れる）。
+const PR_STATUS_OPTIONS = ["記入した", "必要なし"];
 
 const CHAT_CATEGORIES = ["新規", "改訂", "転用", "相談"];
 
@@ -291,7 +293,7 @@ const GEMINI_RESPONSE_SCHEMA = {
         outcome: { type: "STRING" },
         afterFeeling: { type: "STRING" },
         budget: { type: "STRING" },
-        prStatus: { type: "STRING", description: "必要なし／これから／共有済み のいずれか。不明は空。" },
+        prStatus: { type: "STRING", description: "記入した／必要なし のいずれか。不明は空。" },
         manuscript: { type: "STRING" },
         prototype: { type: "STRING" },
         intent: { type: "STRING" },
@@ -372,7 +374,7 @@ function buildExtractInstruction(nowMs) {
 - draftReady：ヒアリーの最後の発言が記入案の要約を示し、【フォームに反映する】ボタンを案内していればtrue。それ以外はfalse。
 - category：新規＝ゼロから作る／改訂＝既存物の更新かつ元データが02_案件管理の中／転用＝元データをもとに別物を作る・または元データが02_案件管理の外／相談＝何を作るか未定のまま。
 
-キーの対応：title=依頼タイトル／brand=対象事業・部署（下の18件に完全一致）／productTypes=制作物の種別（下の10件から1件）／purpose=依頼背景・課題感／target=ターゲット／useDate=使用開始日／usePlace=使用場所・掲載メディア／outcome=得たい成果／afterFeeling=読後感／budget=予算感／prStatus=広報チームの確認状況（必要なし・これから・共有済み）／manuscript=原稿・素材の状況／prototype=プロトタイプ／intent=プロジェクトへの想い／sourceUrls=元データ・親フォルダのURL／reviseManuscript=修正・差替内容／consultDetail=相談内容／schedule=スケジュール行[{date,text}]
+キーの対応：title=依頼タイトル／brand=対象事業・部署（下の18件に完全一致）／productTypes=制作物の種別（下の10件から1件）／purpose=依頼背景・課題感／target=ターゲット／useDate=使用開始日／usePlace=使用場所・掲載メディア／outcome=得たい成果／afterFeeling=読後感／budget=予算感／prStatus=リリースカレンダーの記入状況（記入した・必要なし）／manuscript=原稿・素材の状況／prototype=プロトタイプ／intent=プロジェクトへの想い／sourceUrls=元データ・親フォルダのURL／reviseManuscript=修正・差替内容／consultDetail=相談内容／schedule=スケジュール行[{date,text}]
 
 対象事業・部署（brand・この文字列に完全一致）：
 ${CHAT_BRAND_OPTIONS.map((b) => "- " + b).join("\n")}

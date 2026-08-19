@@ -63,10 +63,14 @@ t("不明な種別は新規と同じ構成", sectionsFor("").length === SEC_YOKE
 t("与件整理から overview を撤去", !SEC_YOKEN.some(([k]) => k === "overview"));
 t("与件整理の先頭は依頼背景・課題感", SEC_YOKEN[0][0] === "purpose" && SEC_YOKEN[0][1] === "依頼背景・課題感");
 t("与件整理から issue（現状の課題）を撤去", !SEC_YOKEN.some(([k]) => k === "issue"));
-t("制作内容の先頭は広報チームの企画確認状況", SEC_SEISAKU[0][0] === "prStatus" && SEC_SEISAKU[0][1] === "広報チームの企画確認状況");
+// 2026-08-19 改称・2値化・改訂/転用へ展開（Figma第5次改修）
+t("制作内容の先頭はリリースカレンダーの記入状況", SEC_SEISAKU[0][0] === "prStatus" && SEC_SEISAKU[0][1] === "リリースカレンダーの記入状況");
 t("制作内容から reference（参考・インスピレーション）を撤去", !SEC_SEISAKU.some(([k]) => k === "reference"));
-t("改訂の見出しはFigma第4次改修の設問名", SEC_KAITEI[0][1] === "改訂するデータの親フォルダのURL");
-t("転用の見出しはFigma第3次改修の設問名", SEC_TENYO[0][1] === "転用元のデータ");
+t("改訂の先頭はリリースカレンダーの記入状況", SEC_KAITEI[0][0] === "prStatus" && SEC_KAITEI[0][1] === "リリースカレンダーの記入状況");
+t("改訂の2番目はFigma第4次改修の設問名", SEC_KAITEI[1][1] === "改訂するデータの親フォルダのURL");
+t("転用の先頭はリリースカレンダーの記入状況", SEC_TENYO[0][0] === "prStatus" && SEC_TENYO[0][1] === "リリースカレンダーの記入状況");
+t("転用の2番目はFigma第3次改修の設問名", SEC_TENYO[1][1] === "転用元のデータ");
+t("旧名「広報チームの企画確認状況」はどこにも残っていない", JSON.stringify([SEC_YOKEN, SEC_SEISAKU, SEC_KAITEI, SEC_TENYO]).indexOf("広報チーム") === -1);
 // 2026-08-01 見出しの改称（フォームの設問名に合わせる）
 t("prototype の見出しは「プロトタイプ」", SEC_SEISAKU.some(([k, l]) => k === "prototype" && l === "プロトタイプ"));
 t("intent の見出しは「プロジェクトに対する想い」", SEC_SEISAKU.some(([k, l]) => k === "intent" && l === "プロジェクトに対する想い"));
@@ -444,7 +448,8 @@ t("転用はイベント・キャンペーンを空欄に落とす", normalizePr
 t("転用はその他も空欄に落とす", normalizeProductType("その他", "転用") === "");
 t("転用でも他の8種別は通す", normalizeProductType("スライド・ePDF", "転用") === "スライド・ePDF");
 t("マスタに無い種別は空欄", normalizeProductType("KV・アイキャッチ", "新規") === "");
-t("prStatus: 3値を通す", normalizePrStatus("必要なし") === "必要なし" && normalizePrStatus("これから") === "これから" && normalizePrStatus("共有済み") === "共有済み");
+t("prStatus: 2値を通す", normalizePrStatus("記入した") === "記入した" && normalizePrStatus("必要なし") === "必要なし");
+t("prStatus: 旧3値（これから・共有済み）はもう通さない", normalizePrStatus("これから") === "" && normalizePrStatus("共有済み") === "");
 t("prStatus: 不明は空欄", normalizePrStatus("確認中") === "" && normalizePrStatus("") === "");
 
 section("20c. チャット: normalizeSourceUrls / normalizeScheduleRows");
