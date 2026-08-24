@@ -227,7 +227,7 @@ t("1桁の月日はゼロ埋め", formatDateLabelJST(Date.UTC(2026, 0, 5, 0, 0, 
 t("常に6桁", /^\d{6}$/.test(formatDateLabelJST(Date.UTC(2026, 7, 12))));
 
 section("10c. V1-5.10 棚の名前判定（looksLikeShelf）");
-t("正規の棚名は棚", looksLikeShelf("01_イベント・キャンペーン") && looksLikeShelf("10_その他（基本的に使用しない）"));
+t("正規の棚名は棚", looksLikeShelf("01_イベント・キャンペーン") && looksLikeShelf("10_その他"));
 t("番号や補足が変わっても種別名が先頭なら棚", looksLikeShelf("03_バナー・告知画像（SNS含む）"));
 t("日付前置の案件フォルダは棚ではない（6桁日付）", !looksLikeShelf("260812_バナー・告知画像の改訂"));
 t("年号付きの過去データは棚ではない", !looksLikeShelf("2025_周年ロゴ"));
@@ -288,7 +288,7 @@ t("棚は10種別すべてを持つ", shelfKeys.length === 10);
 t("棚名は「数字_種別名」で始まる", shelfKeys.every((k) => DRIVE_TYPE_SHELVES[k].replace(/^\d+_/, "").startsWith(k)));
 t("棚名の番号は01〜10で一意", new Set(shelfKeys.map((k) => DRIVE_TYPE_SHELVES[k].slice(0, 2))).size === 10);
 t("先頭はイベント・キャンペーン", DRIVE_TYPE_SHELVES["イベント・キャンペーン"] === "01_イベント・キャンペーン");
-t("その他の棚は（基本的に使用しない）付き", DRIVE_TYPE_SHELVES["その他"] === "10_その他（基本的に使用しない）");
+t("その他の棚は補足なし", DRIVE_TYPE_SHELVES["その他"] === "10_その他");
 t("旧名KV・アイキャッチは棚に無い", !("KV・アイキャッチ" in DRIVE_TYPE_SHELVES));
 t("逆引き表がCRAZYのIDを正式名に解決する（互換キーに負けない）",
   DRIVE_FOLDER_TO_BRAND[DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・全社会議・自社HP等に関する制作物"]] ===
