@@ -56,11 +56,18 @@ export const fetchBackup = (day: string) => call<Remote>(`/backups/${day}`);
 // 依頼DB（CREATIVE PROCESS が起票するDB）のプロパティ名は workers/creative-process/src/worker.js の buildNotionProperties() が正。
 // 依頼フォームの選択肢は「ANV｜アニバに関する制作物」のように説明つきのため、「｜」より前を値として使う。
 
-/** NotionのURL・ハイフン付きID・生IDのいずれからも32桁のIDを取り出す */
+/**
+ * NotionのURL・ハイフン付きID・生IDのいずれからも32桁のIDを取り出す。
+ * IDはURLの末尾にあるため、英数字（0-9a-f）の連なりの「最後の32文字」を取る。
+ * 先頭から取ると「Bridal-for-Good-3e56…」の Good の d までIDに含めてしまう（2026-09-29 修正）
+ */
 export function extractNotionId(input: string): string {
-  const cleaned = input.trim().split("?")[0].replace(/-/g, "");
-  const matches = cleaned.match(/[0-9a-f]{32}/gi);
-  return matches ? matches[matches.length - 1].toLowerCase() : "";
+  const raw = input.trim();
+  // データベースの中でページを開いたURL（…?v=…&p=<ID>）は p= の値がページID
+  const peek = raw.match(/[?&]p=([0-9a-f-]{32,36})/i);
+  const path = (peek ? peek[1] : raw.split(/[?#]/)[0]).replace(/-/g, "");
+  const runs = path.match(/[0-9a-f]{32,}/gi);
+  return runs ? runs[runs.length - 1].slice(-32).toLowerCase() : "";
 }
 
 const plain = (rich: any[] | undefined) => (rich || []).map((r) => r.plain_text || "").join("");
