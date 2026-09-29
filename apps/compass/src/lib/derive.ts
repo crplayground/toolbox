@@ -1,6 +1,9 @@
 import type { AppEvent, Filter, Project, Task } from "../types";
 import { addDays, diffDays, formatMD, toKey, todayKey, weekStart } from "./date";
 
+/** 一覧・カレンダーに出すタスク名。制作物がある場合は前に付ける */
+export const taskLabel = (t: Pick<Task, "title" | "group">) => (t.group ? `${t.group}｜${t.title}` : t.title);
+
 export const isClosed = (s: Project["status"]) => s === "完了" || s === "中止";
 
 export const isOverdue = (p: { due: string; status: Project["status"] }) =>
@@ -37,8 +40,8 @@ export function buildNotifications(projects: Project[], tasks: Task[], events: A
   for (const t of tasks) {
     if (!t.due || t.status === "完了" || t.status === "中止") continue;
     const n = diffDays(t.due, today);
-    if (n === 0) due.push({ id: `due-${t.id}-${t.due}`, icon: "flag", tone: "orange", title: `「${t.title}」が本日期限です`, detail: nameOf.get(t.projectId) || "", at: new Date().toISOString(), group: "今日" });
-    else if (n < 0) due.push({ id: `over-${t.id}-${t.due}`, icon: "error", tone: "orange", title: `「${t.title}」が期限を${-n}日超過しています`, detail: `${nameOf.get(t.projectId) || ""} / ${formatMD(t.due)}`, at: new Date().toISOString(), group: "今日" });
+    if (n === 0) due.push({ id: `due-${t.id}-${t.due}`, icon: "flag", tone: "orange", title: `「${taskLabel(t)}」が本日期限です`, detail: nameOf.get(t.projectId) || "", at: new Date().toISOString(), group: "今日" });
+    else if (n < 0) due.push({ id: `over-${t.id}-${t.due}`, icon: "error", tone: "orange", title: `「${taskLabel(t)}」が期限を${-n}日超過しています`, detail: `${nameOf.get(t.projectId) || ""} / ${formatMD(t.due)}`, at: new Date().toISOString(), group: "今日" });
   }
   const week = thisWeek().start;
   const logged = events.map((e) => {

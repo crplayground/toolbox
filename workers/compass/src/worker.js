@@ -6,8 +6,11 @@
 // GET  /backups/YYYY-MM-DD        … その日のバックアップ
 // GET  /notion/pages/:id          … 依頼ページの読み取り（Notion API をそのまま中継。GETのみ）
 // GET  /notion/blocks/:id/children
+// POST /plan                      … 依頼ページを全文読み、AI（Gemini）でWBSの提案を作る（src/plan.js）
 //
 // すべて Authorization: Bearer <APP_TOKEN> が必要。
+
+import { handlePlan } from "./plan.js";
 
 const DATA_KEY = "data";
 const BACKUP_TTL = 60 * 60 * 24 * 30;
@@ -71,6 +74,8 @@ export default {
         return new Response(text, { status: res.status, headers: { ...cors, "Content-Type": "application/json; charset=utf-8" } });
       }
 
+      if (path === "/plan" && request.method === "POST") return await handlePlan(request, env, json);
+
       return json({ error: "Not found" }, 404);
     } catch (e) {
       return json({ error: `サーバーエラー：${e.message}` }, 500);
@@ -83,7 +88,7 @@ function corsHeaders(request, env) {
   const allowed = (env.ALLOWED_ORIGIN || "").split(",").map((s) => s.trim()).filter(Boolean);
   return {
     "Access-Control-Allow-Origin": allowed.includes(origin) ? origin : allowed[0] || "",
-    "Access-Control-Allow-Methods": "GET,PUT,OPTIONS",
+    "Access-Control-Allow-Methods": "GET,PUT,POST,OPTIONS",
     "Access-Control-Allow-Headers": "Authorization,Content-Type",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",

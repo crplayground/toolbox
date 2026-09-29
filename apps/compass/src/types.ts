@@ -12,7 +12,11 @@ export type Project = {
   memo: string;
   url: string; // 依頼ページURL
   order: number;
+  proposal?: Proposal; // 依頼ページから作ったAIの提案（登録内容との差分を学習に使う）
 };
+
+export type TaskActor = "self" | "client" | "vendor";
+export type TaskSource = "page" | "ai" | "manual";
 
 export type Task = {
   id: string;
@@ -21,6 +25,18 @@ export type Task = {
   status: Status;
   due: string;
   order: number;
+  group?: string; // 制作物名（空なら案件全体）
+  actor?: TaskActor; // self＝自分／client＝依頼者・受け取り／vendor＝外部
+  source?: TaskSource; // page＝ページ記載／ai＝AI提案／manual＝手で追加
+  completedAt?: string; // 完了にした日時（実績の記録）
+};
+
+/** AIの提案の控え。登録時点の提案をそのまま残す */
+export type Proposal = {
+  at: string;
+  title: string;
+  size: string;
+  tasks: { title: string; group: string; actor: TaskActor; source: TaskSource; due: string }[];
 };
 
 export type Bookmark = {
@@ -32,7 +48,7 @@ export type Bookmark = {
 };
 
 /** Workerに保存するデータ本体 */
-export type AppData = { projects: Project[]; tasks: Task[]; bookmarks: Bookmark[]; userName: string };
+export type AppData = { projects: Project[]; tasks: Task[]; bookmarks: Bookmark[]; userName: string; style?: string };
 
 export type AppEvent = {
   id: string;

@@ -14,7 +14,10 @@ id = "986eb9fa9b604855ab3065aefbffb634"
 # 許可するオリジン（カンマ区切り）。公開版とローカル開発用。
 ALLOWED_ORIGIN = "https://crplayground.github.io,http://localhost:5173"
 NOTION_VERSION = "2022-06-28"
+# WBS提案（/plan）に使うGeminiのモデル。依頼フォーム（creative-process）で品質確認済みのものに揃える
+GEMINI_MODEL = "gemini-3.6-flash"
 
 # --- 機密は toml に書かない。`npx wrangler secret put <名前>` で登録する（SETUP.md 参照） ---
 # APP_TOKEN    … アプリの合言葉。アプリの設定画面に同じ値を入れる
-# NOTION_TOKEN … 依頼ページ読み取り用のNotionトークン（依頼DBに接続済みのインテグレーション）。未登録なら読み込み機能だけ使えない
+# NOTION_TOKEN   … 依頼ページ読み取り用のNotionトークン（読み取り専用インテグレーション「Compass（読み取り）」を依頼DBに接続）。未登録なら読み込み機能だけ使えない
+# GEMINI_API_KEY … WBS提案用。AI Studio の creative-request プロジェクト（有料枠）で発行した Compass 専用キー

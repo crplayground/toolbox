@@ -69,6 +69,33 @@ export function parseLooseDate(text: string): string {
   return "";
 }
 
+// ---- 営業日（土日・祝日・年末年始を除く） --------------------------------------
+// 祝日は内閣府の公表どおり（振替休日・国民の休日を含む）。2028年以降は追記が必要。
+const HOLIDAYS = new Set([
+  "2026-01-01", "2026-01-12", "2026-02-11", "2026-02-23", "2026-03-20", "2026-04-29", "2026-05-03", "2026-05-04", "2026-05-05", "2026-05-06",
+  "2026-07-20", "2026-08-11", "2026-09-21", "2026-09-22", "2026-09-23", "2026-10-12", "2026-11-03", "2026-11-23",
+  "2027-01-01", "2027-01-11", "2027-02-11", "2027-02-23", "2027-03-21", "2027-03-22", "2027-04-29", "2027-05-03", "2027-05-04", "2027-05-05",
+  "2027-07-19", "2027-08-11", "2027-09-20", "2027-09-23", "2027-10-11", "2027-11-03", "2027-11-23",
+]);
+
+export function isBusinessDay(key: string): boolean {
+  const day = fromKey(key).getDay();
+  if (day === 0 || day === 6 || HOLIDAYS.has(key)) return false;
+  const md = key.slice(5);
+  return !(md >= "12-29" || md <= "01-03"); // 年末年始
+}
+
+/** 営業日で n 日ずらす（正＝後ろへ、負＝前へ）。0 のときはそのまま */
+export function addBusinessDays(key: string, n: number): string {
+  let d = key;
+  const step = n < 0 ? -1 : 1;
+  for (let left = Math.abs(n); left > 0; ) {
+    d = addDays(d, step);
+    if (isBusinessDay(d)) left--;
+  }
+  return d;
+}
+
 export const timeAgo = (iso: string) => {
   const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (min < 1) return "たった今";

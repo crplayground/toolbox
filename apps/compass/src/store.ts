@@ -4,6 +4,7 @@
 
 import { useSyncExternalStore } from "react";
 import type { AppData, AppEvent, Bookmark, Project, Task } from "./types";
+import { DEFAULT_STYLE } from "./lib/style";
 import { todayKey } from "./lib/date";
 import * as api from "./lib/api";
 
@@ -104,7 +105,7 @@ function logEvent(e: Omit<AppEvent, "id" | "at">) {
 
 // ---- Workerとの保存・読み込み ---------------------------------------------
 
-const dataOf = (s: State): AppData => ({ projects: s.projects, tasks: s.tasks, bookmarks: s.bookmarks, userName: s.userName });
+const dataOf = (s: State): AppData => ({ projects: s.projects, tasks: s.tasks, bookmarks: s.bookmarks, userName: s.userName, style: s.style });
 
 function adopt(remote: api.Remote) {
   setState((s) => ({
@@ -324,9 +325,12 @@ export function duplicateDraft(projectId: string): Draft | null {
   };
 }
 
+/** 完了にした日時を記録する（実績として学習に使う） */
+const stamp = (t: Task): Task => (t.status === "完了" ? { ...t, completedAt: t.completedAt || new Date().toISOString() } : { ...t, completedAt: undefined });
+
 export function saveDraft(draft: Draft) {
   const project = { ...draft.project, title: draft.project.title.trim() || "（無題）" };
-  const tasks = draft.tasks.map((t, i) => ({ ...t, projectId: project.id, order: i }));
+  const tasks = draft.tasks.map((t, i) => stamp({ ...t, projectId: project.id, order: i }));
   commit((s) => ({
     ...s,
     projects: s.projects.some((p) => p.id === project.id) ? s.projects.map((p) => (p.id === project.id ? project : p)) : [...s.projects, project],
@@ -339,7 +343,7 @@ export function updateProject(id: string, patch: Partial<Project>) {
 }
 
 export function updateTask(id: string, patch: Partial<Task>) {
-  commit((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) }));
+  commit((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === id ? stamp({ ...t, ...patch }) : t)) }));
 }
 
 export function deleteProject(id: string) {
@@ -368,3 +372,14 @@ export function markRead(ids: string[]) {
 }
 
 export const importFromRequest = (url: string) => api.importRequestPage(url);
+
+// ---- 作業スタイル（WBS提案でAIに渡すルール） ------------------------------------
+
+export const styleOf = (s: State) => s.style?.trim() || DEFAULT_STYLE;
+
+export function setStyle(text: string) {
+  // 初期値と同じなら保存しない（初期値の更新に追従させるため）
+  commit((s) => ({ ...s, style: text.trim() === DEFAULT_STYLE.trim() ? undefined : text }));
+}
+
+export const planFromRequest = (url: string) => api.planRequestPage(url, styleOf(state));

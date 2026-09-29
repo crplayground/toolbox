@@ -3,7 +3,8 @@
 
 import type { AppData } from "../types";
 import { DEPARTMENTS, PRODUCT_TYPES } from "../types";
-import { parseLooseDate } from "./date";
+import { parseLooseDate, todayKey } from "./date";
+import { buildPlan, type Plan, type RawPlan } from "./plan";
 
 export const WORKER_URL = "https://compass.yukimiyakawa.workers.dev";
 const TOKEN_KEY = "compass_app_token";
@@ -83,20 +84,39 @@ export type ImportedRequest = {
   tasks: { title: string; due: string }[];
 };
 
-export async function importRequestPage(pageUrl: string): Promise<ImportedRequest> {
-  const id = extractNotionId(pageUrl);
-  if (!id) throw new ApiError("NotionページのURLを読み取れませんでした", 400);
-  let page: any;
-  try {
-    page = await call(`/notion/pages/${id}`);
-  } catch (e) {
-    if ((e as ApiError).status === 404) throw new ApiError("ページが見つかりません。依頼DBにインテグレーションが接続されているか確認してください", 404);
-    throw e;
-  }
+/** 依頼ページのプロパティ（案件名・部署・種別・依頼者など）を読む */
+function readRequestProps(page: any, pageUrl: string): Omit<ImportedRequest, "tasks"> {
   const titleProp = Object.keys(page.properties).find((k) => page.properties[k].type === "title") || "";
   const category = read(page, "依頼種別") || "";
   const requester = read(page, "依頼者") || "";
   const requesterDept = read(page, "所属部署") || "";
+
+  // 選択肢に無い値は「その他」に寄せ、元の値はメモに残す
+  const rawDept = head(read(page, "対象事業・部署") || "");
+  const department = !rawDept ? "" : DEPARTMENTS.includes(rawDept) ? rawDept : "その他";
+  const rawTypes: string[] = (read(page, "制作物の種別") || []).map(head);
+  const types = Array.from(new Set(rawTypes.map((t) => (PRODUCT_TYPES.includes(t) ? t : "その他"))));
+  const unknown = [rawDept && department === "その他" && rawDept !== "その他" ? rawDept : "", ...rawTypes.filter((t) => !PRODUCT_TYPES.includes(t))].filter(Boolean);
+
+  const memoLines = [
+    category && `依頼種別：${category}`,
+    (requester || requesterDept) && `依頼者：${[requesterDept, requester].filter(Boolean).join(" ")}`,
+    unknown.length && `依頼時の表記：${unknown.join("、")}`,
+  ].filter(Boolean);
+
+  return { title: read(page, titleProp) || "", department, types, memo: memoLines.join("\n"), url: page.url || pageUrl };
+}
+
+const notFound = (e: unknown) => {
+  if ((e as ApiError).status === 404) throw new ApiError("ページが見つかりません。依頼DBにインテグレーション「Compass（読み取り）」が接続されているか確認してください", 404);
+  throw e;
+};
+
+/** AIなしの読み込み（予備）。本文の「スケジュール」見出し直下の箇条書きだけをタスク候補にする */
+export async function importRequestPage(pageUrl: string): Promise<ImportedRequest> {
+  const id = extractNotionId(pageUrl);
+  if (!id) throw new ApiError("NotionページのURLを読み取れませんでした", 400);
+  const page: any = await call(`/notion/pages/${id}`).catch(notFound);
 
   // 本文の「スケジュール」見出し配下の箇条書きをタスク候補にする（例：「2026-10-01　初稿提出」）
   const tasks: ImportedRequest["tasks"] = [];
@@ -112,33 +132,26 @@ export async function importRequestPage(pageUrl: string): Promise<ImportedReques
         const line = plain(b[b.type].rich_text).trim();
         if (!line) continue;
         const due = parseLooseDate(line);
-        const title = line.replace(/^[\d\s\-/.年月日()（）]+/, "").trim() || line;
+        // 先頭の日付だけを外す（「2026-10-01　3案提出」の「3」まで消さないように）
+        const title = line.replace(/^\s*(\d{4}\s*[-/.年]\s*\d{1,2}\s*[-/.月]\s*\d{1,2}日?|\d{1,2}\s*[/月]\s*\d{1,2}日?)\s*(\([^)]*\)|（[^）]*）)?\s*[:：\-–]?\s*/, "").trim() || line;
         tasks.push({ title, due });
       }
     }
   } catch {
     // 本文が読めなくてもプロパティだけで登録できるようにする
   }
+  return { ...readRequestProps(page, pageUrl), tasks };
+}
 
-  // 選択肢に無い値は「その他」に寄せ、元の値はメモに残す
-  const rawDept = head(read(page, "対象事業・部署") || "");
-  const department = !rawDept ? "" : DEPARTMENTS.includes(rawDept) ? rawDept : "その他";
-  const rawTypes: string[] = (read(page, "制作物の種別") || []).map(head);
-  const types = Array.from(new Set(rawTypes.map((t) => (PRODUCT_TYPES.includes(t) ? t : "その他"))));
-  const unknown = [rawDept && department === "その他" && rawDept !== "その他" ? rawDept : "", ...rawTypes.filter((t) => !PRODUCT_TYPES.includes(t))].filter(Boolean);
+export type PlannedRequest = Omit<ImportedRequest, "tasks"> & { plan: Plan; text: string };
 
-  const memoLines = [
-    category && `依頼種別：${category}`,
-    (requester || requesterDept) && `依頼者：${[requesterDept, requester].filter(Boolean).join(" ")}`,
-    unknown.length && `依頼時の表記：${unknown.join("、")}`,
-  ].filter(Boolean);
-
-  return {
-    title: read(page, titleProp) || "",
-    department,
-    types,
-    memo: memoLines.join("\n"),
-    url: page.url || pageUrl,
-    tasks,
-  };
+/** 依頼ページを全文読み、AIにWBSの提案を作らせる（Worker /plan）。日付の計算は lib/plan.ts */
+export async function planRequestPage(pageUrl: string, style: string): Promise<PlannedRequest> {
+  const id = extractNotionId(pageUrl);
+  if (!id) throw new ApiError("NotionページのURLを読み取れませんでした", 400);
+  const res = await call<{ page: any; text: string; plan: RawPlan }>("/plan", {
+    method: "POST",
+    body: JSON.stringify({ pageId: id, style, today: todayKey() }),
+  }).catch(notFound);
+  return { ...readRequestProps(res.page, pageUrl), plan: buildPlan(res.plan), text: res.text };
 }

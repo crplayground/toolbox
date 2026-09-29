@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Bookmark } from "../types";
 import { deleteBookmark, getState, refresh, uid, updateTask, useStore } from "../store";
-import { byDue, isClosed, isOverdue, progressOf, statusTone, thisWeek } from "../lib/derive";
+import { byDue, isClosed, isOverdue, progressOf, statusTone, taskLabel, thisWeek } from "../lib/derive";
 import { addDays, diffDays, formatLongJa, formatMD, formatSlash, relativeDue, todayKey, weekStart } from "../lib/date";
 import { useActions } from "../components/layout";
 import { BookmarkModal } from "../components/modals";
@@ -178,7 +178,7 @@ export default function Dashboard() {
               <label key={t.id}>
                 <input type="checkbox" checked={t.status === "完了"} onChange={(e) => updateTask(t.id, { status: e.target.checked ? "完了" : "進行中" })} />
                 <span className={t.status === "完了" ? "is-done" : ""}>
-                  <strong>{t.title}</strong>
+                  <strong>{taskLabel(t)}</strong>
                   <small>{projectName(t.projectId)}</small>
                 </span>
                 <time>{relativeDue(t.due)}</time>

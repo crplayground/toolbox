@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { updateProject, updateTask, useStore } from "../store";
-import { applyFilter, statusTone } from "../lib/derive";
+import { applyFilter, statusTone, taskLabel } from "../lib/derive";
 import { addDays, fromKey, todayKey, weekStart } from "../lib/date";
 import { useActions, ViewHeader } from "../components/layout";
 
@@ -26,7 +26,7 @@ export default function Schedule() {
   for (const t of tasks) {
     if (!t.due || !visibleIds.has(t.projectId)) continue;
     const p = byId.get(t.projectId)!;
-    push(t.due, { kind: "task", id: t.id, projectId: t.projectId, title: t.title, business: p.title, tone: "task", done: t.status === "完了" });
+    push(t.due, { kind: "task", id: t.id, projectId: t.projectId, title: taskLabel(t), business: p.title, tone: "task", done: t.status === "完了" });
   }
 
   const d = fromKey(cursor);
