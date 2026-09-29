@@ -1,0 +1,20 @@
+# Cloudflare Worker 設定ファイル（Project Management Board: Compass）
+# 個人用プロジェクト管理アプリのデータ保存先。Notionは使わない（依頼ページの読み取りのみ）。
+
+name = "compass"
+main = "src/worker.js"
+compatibility_date = "2025-06-01"
+
+# KVストア。data＝アプリの全データ（JSON 1件）、backup:YYYY-MM-DD＝日ごとのバックアップ（30日で自動削除）
+[[kv_namespaces]]
+binding = "DATA"
+id = "986eb9fa9b604855ab3065aefbffb634"
+
+[vars]
+# 許可するオリジン（カンマ区切り）。公開版とローカル開発用。
+ALLOWED_ORIGIN = "https://crplayground.github.io,http://localhost:5173"
+NOTION_VERSION = "2022-06-28"
+
+# --- 機密は toml に書かない。`npx wrangler secret put <名前>` で登録する（SETUP.md 参照） ---
+# APP_TOKEN    … アプリの合言葉。アプリの設定画面に同じ値を入れる
+# NOTION_TOKEN … 依頼ページ読み取り用のNotionトークン（依頼DBに接続済みのインテグレーション）。未登録なら読み込み機能だけ使えない

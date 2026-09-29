@@ -1,6 +1,7 @@
 .DS_Store
 .wrangler/
 node_modules/
+.vite/
 .claude/
 .fuse_hidden*
 

@@ -1,0 +1,54 @@
+# Project Management Board: Compass — Worker セットアップ手順
+
+ターミナルで上から順に実行します。1コマンドずつコピーしてください。
+
+```
+cd ~/メインデータ_GitHub/toolbox/workers/compass
+```
+
+## 0. Cloudflareにログイン（済んでいれば不要）
+
+```
+npx wrangler login
+```
+
+## 1. データの倉庫（KV）を作る
+
+```
+npx wrangler kv namespace create DATA
+```
+
+出てきた `id = "..."` の値をコピーし、`wrangler.toml` の `ここに手順1で出たIDを貼り付け` と置き換えて保存します。
+
+## 2. 合言葉を登録する
+
+合言葉＝アプリからデータを読み書きするための鍵。20文字以上のランダムな文字列にしてください（パスワード管理ツールで生成するのがおすすめ）。聞かれたら値を貼り付けます（画面には残りません）。
+
+```
+npx wrangler secret put APP_TOKEN
+```
+
+## 3. 依頼ページ読み取り用のNotionトークンを登録する（任意）
+
+依頼フォームのDBに接続済みのインテグレーションのトークンを使います。登録しなければ「Notionページから」の読み込みだけが使えません。
+
+```
+npx wrangler secret put NOTION_TOKEN
+```
+
+## 4. 公開する
+
+```
+npx wrangler deploy
+```
+
+最後に表示される `https://compass.<サブドメイン>.workers.dev` がWorkerのURLです。アプリの `src/lib/api.ts` の `WORKER_URL` と一致しているか確認してください。
+
+## 5. アプリ側
+
+アプリ右上の歯車（接続設定）を開き、手順2の合言葉を入力して保存します。
+
+## 補足
+
+- バックアップ：その日の最初の保存時に、直前の状態を `backup:YYYY-MM-DD` として30日間保存します
+- 無料プランのKV書き込み上限は1日1,000回。アプリは変更後1.5秒まとめてから保存するため、通常の使い方では届きません
