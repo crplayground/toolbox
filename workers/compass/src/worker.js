@@ -7,10 +7,12 @@
 // GET  /notion/pages/:id          … 依頼ページの読み取り（Notion API をそのまま中継。GETのみ）
 // GET  /notion/blocks/:id/children
 // POST /plan                      … 依頼ページを全文読み、AI（Gemini）でWBSの提案を作る（src/plan.js）
+// GET  /learning                  … 作業スタイルの学習レポート（src/learning.js）。LEARN_TOKEN でも読める
 //
-// すべて Authorization: Bearer <APP_TOKEN> が必要。
+// すべて Authorization: Bearer <APP_TOKEN> が必要（/learning だけは LEARN_TOKEN も可）。
 
 import { handlePlan } from "./plan.js";
+import { handleLearning } from "./learning.js";
 
 const DATA_KEY = "data";
 const BACKUP_TTL = 60 * 60 * 24 * 30;
@@ -24,11 +26,20 @@ export default {
       new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json; charset=utf-8" } });
 
     if (!env.APP_TOKEN) return json({ error: "サーバー設定が未完了です（APP_TOKEN）" }, 500);
-    const auth = request.headers.get("Authorization") || "";
-    if (!(await safeEqual(auth, `Bearer ${env.APP_TOKEN}`))) return json({ error: "合言葉が違います" }, 401);
-
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, "");
+    const auth = request.headers.get("Authorization") || "";
+
+    // 学習レポートは、Claudeの定期タスク用の読み取り専用トークン（LEARN_TOKEN）でも読める。
+    // APP_TOKEN（全データの書き換えができる）をパソコン上のファイルに置かないため
+    if (path === "/learning" && request.method === "GET" && env.LEARN_TOKEN && (await safeEqual(auth, `Bearer ${env.LEARN_TOKEN}`))) {
+      try {
+        return await handleLearning(url, env, json);
+      } catch (e) {
+        return json({ error: `サーバーエラー：${e.message}` }, 500);
+      }
+    }
+    if (!(await safeEqual(auth, `Bearer ${env.APP_TOKEN}`))) return json({ error: "合言葉が違います" }, 401);
 
     try {
       if (path === "/data" && request.method === "GET") {
@@ -75,6 +86,7 @@ export default {
       }
 
       if (path === "/plan" && request.method === "POST") return await handlePlan(request, env, json);
+      if (path === "/learning" && request.method === "GET") return await handleLearning(url, env, json);
 
       return json({ error: "Not found" }, 404);
     } catch (e) {

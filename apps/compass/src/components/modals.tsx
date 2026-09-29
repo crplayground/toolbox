@@ -268,7 +268,8 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
   const applyPlan = () => {
     if (!planned) return;
     const { plan } = planned;
-    const picked = plan.tasks.filter((t) => t.include);
+    // pk＝提案の控え（proposal.tasks）での番号。学習時に提案と登録内容を対応づける
+    const picked = plan.tasks.map((t, pk) => ({ ...t, pk })).filter((t) => t.include);
     const title = plan.title || planned.title;
     const memo = [
       planned.memo,
@@ -303,6 +304,7 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
           group: t.group || undefined,
           actor: t.actor,
           source: t.source,
+          pk: t.pk,
         })),
       ],
     }));

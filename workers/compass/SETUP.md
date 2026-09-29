@@ -44,6 +44,14 @@ AI Studio で、プロジェクト `creative-request`（有料枠）に Compass 
 npx wrangler secret put GEMINI_API_KEY
 ```
 
+## 3-3. 学習レポート用の読み取りトークンを登録する（任意）
+
+Claudeデスクトップの定期タスク（平日19時の学習レポート）が使う、`GET /learning` 専用のトークンです。手順は G-Drive `tool/compass/学習ループ_定期タスク.md` を参照。
+
+```
+cat ~/.config/compass/learn_token | npx wrangler secret put LEARN_TOKEN
+```
+
 ## 4. 公開する
 
 ```

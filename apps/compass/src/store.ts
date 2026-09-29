@@ -320,8 +320,9 @@ export function duplicateDraft(projectId: string): Draft | null {
   const base = newDraft();
   const id = base.project.id;
   return {
-    project: { ...src.project, id, title: `${src.project.title}（コピー）`, status: "未着", order: base.project.order, start: todayKey() },
-    tasks: src.tasks.map((t) => ({ ...t, id: uid(), projectId: id, status: "未着" })),
+    // 提案の控え・提案番号・完了日時は引き継がない（学習の記録が二重に数えられるため）
+    project: { ...src.project, id, title: `${src.project.title}（コピー）`, status: "未着", order: base.project.order, start: todayKey(), proposal: undefined },
+    tasks: src.tasks.map((t) => ({ ...t, id: uid(), projectId: id, status: "未着" as const, pk: undefined, completedAt: undefined, source: "manual" as const })),
   };
 }
 

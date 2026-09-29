@@ -20,4 +20,5 @@ GEMINI_MODEL = "gemini-3.6-flash"
 # --- 機密は toml に書かない。`npx wrangler secret put <名前>` で登録する（SETUP.md 参照） ---
 # APP_TOKEN    … アプリの合言葉。アプリの設定画面に同じ値を入れる
 # NOTION_TOKEN   … 依頼ページ読み取り用のNotionトークン（読み取り専用インテグレーション「Compass（読み取り）」を依頼DBに接続）。未登録なら読み込み機能だけ使えない
+# LEARN_TOKEN    … 学習レポート（GET /learning）専用の読み取りトークン。Claudeデスクトップの定期タスクが使う。APP_TOKENとは別の値にする
 # GEMINI_API_KEY … WBS提案用。AI Studio の creative-request プロジェクト（有料枠）で発行した Compass 専用キー

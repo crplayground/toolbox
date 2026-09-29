@@ -29,6 +29,7 @@ export type Task = {
   actor?: TaskActor; // self＝自分／client＝依頼者・受け取り／vendor＝外部
   source?: TaskSource; // page＝ページ記載／ai＝AI提案／manual＝手で追加
   completedAt?: string; // 完了にした日時（実績の記録）
+  pk?: number; // 対応する提案（Project.proposal.tasks）の番号。名前を変えても提案と対応づけられるように
 };
 
 /** AIの提案の控え。登録時点の提案をそのまま残す */
