@@ -9,6 +9,8 @@
 // クエリ
 //   ?commit=1 … 今回提案したパターンを「提案済み」として記録する（定期タスクが1日1回だけ付ける）
 //
+// 返り値の report は、定期タスクがそのまま表示する日本語のレポート（書式をコードで固定し、実行ごとの揺れを無くす。2026-09-30）
+//
 // 認証：APP_TOKEN または LEARN_TOKEN（このエンドポイント専用・読み取りのみ）
 
 const DATA_KEY = "data";
@@ -26,7 +28,7 @@ export async function handleLearning(url, env, json) {
   const today = jstToday();
 
   const records = collect(data);
-  const patterns = findPatterns(records);
+  const { patterns, watch } = findPatterns(records);
 
   const reported = (await env.DATA.get(REPORTED_KEY, "json")) || {};
   for (const p of patterns) {
@@ -43,25 +45,30 @@ export async function handleLearning(url, env, json) {
   }
 
   const used = records.projects.filter((p) => !p.excluded);
+  const totals = {
+    projectsWithProposal: records.projects.length,
+    projectsUsed: used.length,
+    projectsExcluded: records.projects.length - used.length,
+    proposedTasks: used.reduce((n, p) => n + p.proposed, 0),
+    keptTasks: used.reduce((n, p) => n + p.kept, 0),
+    completedTasks: records.completions.length,
+  };
+  const todayProjects = records.projects.filter((p) => p.proposedAt && toJstDate(p.proposedAt) === today);
+  const todayCompleted = records.completions.filter((c) => c.completedOn === today).length;
+  const report = buildReport({ today, decision, fresh, watch, totals, todayProjects, todayCompleted, records });
+
   return json({
+    report,
     generatedAt: new Date().toISOString(),
     today,
     decision,
     thresholds: { MIN_SAMPLES, SAME_DIRECTION, MIN_ADOPTION, REPROPOSE_GROWTH },
     style: { customized: !!data.style, text: data.style || "" },
-    totals: {
-      projectsWithProposal: records.projects.length,
-      projectsUsed: used.length,
-      projectsExcluded: records.projects.length - used.length,
-      proposedTasks: used.reduce((n, p) => n + p.proposed, 0),
-      keptTasks: used.reduce((n, p) => n + p.kept, 0),
-      completedTasks: records.completions.length,
-    },
-    todayActivity: {
-      registered: records.projects.filter((p) => p.proposedAt.slice(0, 10) === today).map((p) => p.title),
-      completed: records.completions.filter((c) => c.completedOn === today).length,
-    },
+    totals,
+    todayActivity: { registered: todayProjects.map((p) => p.title), completed: todayCompleted },
     patterns: fresh,
+    watch,
+    duplicates: records.duplicates,
     alreadyReported: patterns.filter((p) => p.status === "reported").map((p) => ({ id: p.id, count: p.count, lastReportedAt: p.lastReportedAt })),
     projects: records.projects,
   });
@@ -79,6 +86,15 @@ function collect(data) {
   const events = []; // { kind, type, step, value, project }
   const completions = [];
 
+  // 同じ依頼ページから作った案件が複数あるとき（登録し直し）は、提案が新しい方だけを学習に使う
+  const latestByUrl = new Map();
+  for (const p of data.projects || []) {
+    if (!p.proposal || !p.url) continue;
+    const prev = latestByUrl.get(p.url);
+    if (!prev || (p.proposal.at || "") > (prev.proposal.at || "")) latestByUrl.set(p.url, p);
+  }
+  const duplicates = [];
+
   for (const p of data.projects || []) {
     const tasks = byProject.get(p.id) || [];
     const type = (p.types && p.types[0]) || "その他";
@@ -92,6 +108,10 @@ function collect(data) {
     }
 
     if (!p.proposal || p.status === "中止") continue;
+    if (p.url && latestByUrl.get(p.url) !== p) {
+      duplicates.push(p.title);
+      continue;
+    }
     const proposed = p.proposal.tasks || [];
     // 比較の相手は「登録時の控え」。控えの無い古い案件だけ、現在のタスクで代用する
     const final = p.proposal.registered
@@ -141,7 +161,7 @@ function collect(data) {
     for (const s of rows.shifted) if (s.source === "ai") events.push({ kind: "shift", type, step: norm(s.title), label: s.title, value: s.days, project: p.title });
     for (const a of rows.actorFixed) events.push({ kind: "actor", type: "（全種別）", step: norm(a.title), label: a.title, value: `${a.from}→${a.to}`, project: p.title });
   }
-  return { projects, events, completions };
+  return { projects, events, completions, duplicates };
 }
 
 function findPatterns({ events }) {
@@ -151,17 +171,26 @@ function findPatterns({ events }) {
     groups.set(id, [...(groups.get(id) || []), e]);
   }
   const patterns = [];
+  const watch = []; // 判定には届かないが近いもの（学習の進み具合として見せる。提案はしない）
+  const KIND_LABEL = { shift: "日付の調整", late: "実績のずれ", removed: "削除", added: "手で追加", actor: "主体の修正" };
   for (const [id, list] of groups) {
     const { kind, type, label } = list[0];
     const evidence = list.map((e) => ({ project: e.project, value: e.value }));
     const base = { id, kind, type, step: label, count: list.length, evidence };
-    if (list.length < MIN_SAMPLES) continue;
+    const need = kind === "actor" ? 2 : MIN_SAMPLES;
+    if (list.length < need) {
+      if (list.length === need - 1 || (need - list.length === 1)) watch.push({ ...base, need, note: `${KIND_LABEL[kind]}：${list.length}/${need}件` });
+      continue;
+    }
 
     if (kind === "shift" || kind === "late") {
       const values = list.map((e) => e.value).sort((a, b) => a - b);
       const median = values[Math.floor(values.length / 2)];
       const sameSign = values.filter((v) => Math.sign(v) === Math.sign(median)).length / values.length;
-      if (median === 0 || sameSign < SAME_DIRECTION) continue;
+      if (median === 0 || sameSign < SAME_DIRECTION) {
+        watch.push({ ...base, need: MIN_SAMPLES, note: `${KIND_LABEL[kind]}：${list.length}件あるが向きがそろっていない` });
+        continue;
+      }
       patterns.push({
         ...base,
         medianDays: median,
@@ -179,7 +208,60 @@ function findPatterns({ events }) {
       patterns.push({ ...base, summary: `「${label}」の主体を${list.length}件で修正（${list[0].value}）` });
     }
   }
-  return patterns.sort((a, b) => b.count - a.count);
+  return { patterns: patterns.sort((a, b) => b.count - a.count), watch: watch.sort((a, b) => b.count - a.count) };
+}
+
+// ---- レポート（日本語・書式固定） ------------------------------------------------
+
+function buildReport({ today, decision, fresh, watch, totals, todayProjects, todayCompleted, records }) {
+  const L = [];
+  const [, m, d] = today.split("-").map(Number);
+  L.push(`## Compass 学習レポート（${m}/${d}）`);
+  L.push("");
+  L.push(decision === "propose" ? `**作業スタイルの修正提案：あり（${fresh.length}件）**` : "**作業スタイルの修正提案：なし**（条件を満たす傾向がまだないため、学習を続けます）");
+  L.push("");
+
+  L.push("### 今日の記録");
+  if (!todayProjects.length && !todayCompleted) L.push("- 登録・完了ともにありませんでした");
+  for (const p of todayProjects) {
+    const diffs = [
+      p.removed.length && `削除${p.removed.length}`,
+      p.added.length && `追加${p.added.length}`,
+      p.shifted.length && `日付調整${p.shifted.length}`,
+      p.renamed.length && `名前変更${p.renamed.length}`,
+      p.actorFixed.length && `主体修正${p.actorFixed.length}`,
+    ].filter(Boolean);
+    L.push(`- ${p.title}（${p.type}）：提案${p.proposed}件中${p.kept}件を採用${diffs.length ? `／${diffs.join("・")}` : "／修正なし"}${p.excluded ? "　※採用率が低いため集計から除外" : ""}`);
+  }
+  if (todayCompleted) L.push(`- 完了したタスク：${todayCompleted}件`);
+  L.push("");
+
+  if (fresh.length) {
+    L.push("### 見つかった傾向（提案の対象）");
+    fresh.forEach((p, i) => L.push(`${i + 1}. ${p.summary}　根拠：${p.evidence.map((e) => e.project).join("、")}`));
+    L.push("");
+  }
+
+  L.push("### 学習の進み具合");
+  L.push(`- 集計に使った案件：${totals.projectsUsed}件（提案${totals.proposedTasks}件中${totals.keptTasks}件を採用・採用率${totals.proposedTasks ? Math.round((totals.keptTasks / totals.proposedTasks) * 100) : 0}%）／完了タスク：${totals.completedTasks}件`);
+  if (watch.length) {
+    L.push("- あと少しで判定される傾向：");
+    for (const w of watch.slice(0, 5)) L.push(`  - ${w.type}の「${w.step}」— ${w.note}`);
+  } else {
+    L.push("- あと少しで判定される傾向：まだありません");
+  }
+  L.push("");
+
+  const notes = [];
+  if (records.duplicates.length) notes.push(`同じ依頼ページから作った案件が複数あります（古い方を集計から除外）：${records.duplicates.join("、")}。不要なら削除してください`);
+  const noSnapshot = records.projects.filter((p) => p.comparedWith === "current").length;
+  if (noSnapshot) notes.push(`登録時の控えが無い案件が${noSnapshot}件あり、現在の内容で比べています（アプリを開くと自動で控えが付きます）`);
+  if (totals.projectsExcluded) notes.push(`採用率が低い案件${totals.projectsExcluded}件は、作り直したとみなして集計から外しています`);
+  if (notes.length) {
+    L.push("### 注意");
+    for (const n of notes) L.push(`- ${n}`);
+  }
+  return L.join("\n").trim();
 }
 
 // ---- 日付（日本時間・営業日） --------------------------------------------------

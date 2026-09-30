@@ -355,6 +355,25 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
     onClose();
   };
 
+  // 外側のクリック・×で閉じたときは、変更があれば保存する（2026-09-30。書きかけが消えないように）
+  // 「キャンセル」だけは破棄。AIの提案を確認中のときは、確認を通さずに登録しない（CLAUDE.md ルール8）
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  const closeAndSave = () => {
+    if (planned) {
+      if (window.confirm("読み込んだ提案はまだフォームに入れていません。破棄して閉じますか？")) onClose();
+      return;
+    }
+    if (dirty) {
+      saveDraft(draft);
+      toast(mode === "new" ? `「${p.title.trim() || "（無題）"}」を登録しました` : "変更を保存しました", "success");
+    }
+    onClose();
+  };
+  const cancel = () => {
+    if (dirty && !window.confirm("変更を破棄して閉じますか？")) return;
+    onClose();
+  };
+
   const remove = () => {
     if (!window.confirm(`「${p.title}」と紐づくタスクを削除します。よろしいですか？`)) return;
     deleteProject(p.id);
@@ -362,7 +381,7 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
   };
 
   return (
-    <Modal eyebrow={mode === "new" ? "NEW PROJECT" : "EDIT PROJECT"} title={mode === "new" ? "新規プロジェクト" : "プロジェクトを編集"} wide onClose={onClose}>
+    <Modal eyebrow={mode === "new" ? "NEW PROJECT" : "EDIT PROJECT"} title={mode === "new" ? "新規プロジェクト" : "プロジェクトを編集"} wide onClose={closeAndSave}>
       {mode === "new" && (
         <div className="segmented">
           <button className={source === "manual" ? "is-active" : ""} onClick={() => setSource("manual")}>
@@ -519,7 +538,7 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
               )}
             </div>
           )}
-          <button className="button button--secondary" onClick={onClose}>
+          <button className="button button--secondary" onClick={cancel}>
             キャンセル
           </button>
           <button className="button button--primary" onClick={submit}>
