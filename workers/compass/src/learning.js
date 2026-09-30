@@ -1,6 +1,7 @@
 // GET /learning … 作業スタイルの学習レポート（学習ループ④の材料）
 //
-// 「AIの提案（project.proposal）」と「ユウキが実際に登録・完了した内容（tasks）」の差分をコードで集計し、
+// 「AIの提案（proposal.tasks）」と「登録ボタンを押した時点の内容（proposal.registered）」の差分をコードで集計し、
+// （登録後の日程変更は依頼者都合のことが多いため、作業スタイルの学習には混ぜない。実績＝期限と完了日のずれ、としてだけ扱う）
 // 同じ傾向が何度も繰り返されたものだけを「パターン」として返す。
 // 提案するかどうか（decision）はここで決める。レポートを書く側（Claudeの定期タスク）は、この判定を覆さない。
 // → 記録が薄い日に、AIが想像で修正案を作ることを防ぐため（2026-09-29 ユウキ指定）
@@ -92,14 +93,18 @@ function collect(data) {
 
     if (!p.proposal || p.status === "中止") continue;
     const proposed = p.proposal.tasks || [];
+    // 比較の相手は「登録時の控え」。控えの無い古い案件だけ、現在のタスクで代用する
+    const final = p.proposal.registered
+      ? p.proposal.registered.tasks.map((t, i) => ({ ...t, id: `r${i}` }))
+      : tasks;
     const used = new Set();
     const rows = { kept: 0, removed: [], added: [], shifted: [], renamed: [], actorFixed: [] };
 
     proposed.forEach((pt, i) => {
       // 提案番号（pk）で対応づける。無ければ制作物＋タスク名で探す
       const match =
-        tasks.find((t) => t.pk === i && !used.has(t.id)) ||
-        tasks.find((t) => !used.has(t.id) && t.pk === undefined && (t.group || "") === (pt.group || "") && norm(t.title) === norm(pt.title));
+        final.find((t) => t.pk === i && !used.has(t.id)) ||
+        final.find((t) => !used.has(t.id) && (t.pk === undefined || t.pk === null) && (t.group || "") === (pt.group || "") && norm(t.title) === norm(pt.title));
       if (!match) {
         rows.removed.push(pt.title);
         return;
@@ -110,7 +115,7 @@ function collect(data) {
       if (match.actor && pt.actor && match.actor !== pt.actor) rows.actorFixed.push({ title: pt.title, from: pt.actor, to: match.actor });
       if (match.due && pt.due && match.due !== pt.due) rows.shifted.push({ title: pt.title, days: bizDiff(pt.due, match.due), source: pt.source });
     });
-    for (const t of tasks) if (!used.has(t.id) && (t.source === "manual" || t.source === undefined)) rows.added.push(t.title);
+    for (const t of final) if (!used.has(t.id) && (t.source === "manual" || t.source === undefined)) rows.added.push(t.title);
 
     const adoption = proposed.length ? rows.kept / proposed.length : 0;
     const excluded = adoption < MIN_ADOPTION;
@@ -119,6 +124,7 @@ function collect(data) {
       type,
       size: p.proposal.size,
       proposedAt: p.proposal.at || "",
+      comparedWith: p.proposal.registered ? "registered" : "current",
       proposed: proposed.length,
       kept: rows.kept,
       adoption: Math.round(adoption * 100) / 100,

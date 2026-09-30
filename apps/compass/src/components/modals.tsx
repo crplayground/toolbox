@@ -237,8 +237,11 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
   const addTask = (title = "", due = "") =>
     setDraft((d) => ({
       ...d,
-      tasks: [...d.tasks, { id: uid(), projectId: d.project.id, title, status: "未着" as Status, due, order: d.tasks.length, source: "manual" }],
+      tasks: [...d.tasks, { id: uid(), projectId: d.project.id, title, status: "未着" as Status, due, order: d.tasks.length, source: "manual", actor: "self" }],
     }));
+  // 日付順（期限なしは最後）。同じ日は制作物名順
+  const sortByDue = () => setDraft((d) => ({ ...d, tasks: byDueThenGroup(d.tasks) }));
+  const groups = Array.from(new Set(draft.tasks.map((t) => t.group || "").filter(Boolean)));
   const moveTask = (from: number, to: number) =>
     setDraft((d) => {
       const tasks = [...d.tasks];
@@ -292,7 +295,7 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
           tasks: plan.tasks.map((t) => ({ title: t.title, group: t.group, actor: t.actor, source: t.source, due: t.due })),
         },
       },
-      tasks: [
+      tasks: byDueThenGroup([
         ...d.tasks,
         ...picked.map((t, i) => ({
           id: uid(),
@@ -306,7 +309,7 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
           source: t.source,
           pk: t.pk,
         })),
-      ],
+      ]),
     }));
     setSource("manual");
     setPlanned(null);
@@ -442,10 +445,18 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
                 <strong>タスク</strong>
                 <small>プロジェクトに必要な作業を追加</small>
               </div>
-              <button type="button" className="text-button" onClick={() => addTask()}>
-                <Icon name="add" />
-                タスクを追加
-              </button>
+              <div className="task-builder__actions">
+                {draft.tasks.length > 1 && (
+                  <button type="button" className="text-button text-button--muted" onClick={sortByDue}>
+                    <Icon name="sort" />
+                    日付順に並べる
+                  </button>
+                )}
+                <button type="button" className="text-button" onClick={() => addTask()}>
+                  <Icon name="add" />
+                  タスクを追加
+                </button>
+              </div>
             </div>
             {draft.tasks.map((t, i) => (
               <div
@@ -467,7 +478,7 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
                   onChange={(e) => setTask(i, { status: e.target.checked ? "完了" : "未着" })}
                   aria-label="完了"
                 />
-                <TaskTags task={t} onActor={(actor) => setTask(i, { actor })} />
+                <TaskMeta task={t} groups={groups} onChange={(patch) => setTask(i, patch)} />
                 <input type="text" value={t.title} onChange={(e) => setTask(i, { title: e.target.value })} placeholder="タスク名（例：初稿デザイン）" />
                 <label className="date-control" title={t.due ? formatMD(t.due) : "期限"}>
                   <Icon name="calendar_today" />
@@ -527,29 +538,52 @@ export function ProjectModal({ draft: initial, mode, onClose, onDuplicate }: { d
 const ACTOR_LABEL: Record<TaskActor, string> = { self: "", client: "受け取り", vendor: "外部" };
 const SIZE_LABEL = { light: "軽い", standard: "標準", heavy: "重い" } as const;
 
-const ACTOR_ORDER: TaskActor[] = ["self", "client", "vendor"];
+const ACTOR_OPTIONS: { value: TaskActor; label: string }[] = [
+  { value: "self", label: "自分" },
+  { value: "client", label: "受け取り" },
+  { value: "vendor", label: "外部" },
+];
+const NEW_GROUP = "__new__";
 
-/** フォームのタスク行のタグ。依頼ページから読み込んだタスクは、主体のタグを押して切り替えられる（AIの判定の修正用） */
-function TaskTags({ task, onActor }: { task: Pick<Task, "group" | "actor" | "source">; onActor?: (a: TaskActor) => void }) {
-  const imported = task.source === "page" || task.source === "ai";
+/** 日付順（期限なしは最後）。同じ日は制作物名順 */
+function byDueThenGroup<T extends { due: string; group?: string }>(tasks: T[]): T[] {
+  return [...tasks].sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999") || (a.group || "").localeCompare(b.group || "", "ja"));
+}
+
+/**
+ * フォームのタスク行の「制作物」と「主体」。全行で同じ選択式にそろえる（2026-09-30）。
+ * 出どころ（AI提案・ページ記載）はフォームには出さない（確認画面でだけ見せる。学習用のデータとしては残す）
+ */
+function TaskMeta({ task, groups, onChange }: { task: Task; groups: string[]; onChange: (patch: Partial<Task>) => void }) {
   const actor = task.actor || "self";
-  if (!task.group && !imported && !task.actor) return null;
+  const group = task.group || "";
   return (
-    <span className="task-tags">
-      {task.group && <span className="task-tag">{task.group}</span>}
-      {imported && onActor ? (
-        <button
-          type="button"
-          className={`task-tag task-tag--${actor} task-tag--button`}
-          title="押して切り替え（自分 → 受け取り → 外部）"
-          onClick={() => onActor(ACTOR_ORDER[(ACTOR_ORDER.indexOf(actor) + 1) % ACTOR_ORDER.length])}
-        >
-          {ACTOR_LABEL[actor] || "自分"}
-        </button>
-      ) : (
-        ACTOR_LABEL[actor] && <span className={`task-tag task-tag--${actor}`}>{ACTOR_LABEL[actor]}</span>
-      )}
-      {task.source === "ai" && <span className="task-tag task-tag--ai">AI</span>}
+    <span className="task-meta">
+      <select
+        className={`task-select ${group ? "" : "is-empty"}`}
+        value={group}
+        title="制作物"
+        onChange={(e) => {
+          if (e.target.value !== NEW_GROUP) return onChange({ group: e.target.value || undefined });
+          const name = window.prompt("制作物の名前（例：フロント幕）")?.trim();
+          if (name) onChange({ group: name });
+        }}
+      >
+        <option value="">全体</option>
+        {groups.map((g) => (
+          <option key={g} value={g}>
+            {g}
+          </option>
+        ))}
+        <option value={NEW_GROUP}>＋新しい制作物…</option>
+      </select>
+      <select className={`task-select task-select--${actor}`} value={actor} title="主体" onChange={(e) => onChange({ actor: e.target.value as TaskActor })}>
+        {ACTOR_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
     </span>
   );
 }

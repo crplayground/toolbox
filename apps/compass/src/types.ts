@@ -38,6 +38,8 @@ export type Proposal = {
   title: string;
   size: string;
   tasks: { title: string; group: string; actor: TaskActor; source: TaskSource; due: string }[];
+  /** 最初に登録ボタンを押した時点のタスク。作業スタイルの学習は提案とこれを比べる（その後の日程変更は学習に混ぜない） */
+  registered?: { at: string; tasks: { pk?: number; title: string; group: string; actor: TaskActor; source?: TaskSource; due: string }[] };
 };
 
 export type Bookmark = {

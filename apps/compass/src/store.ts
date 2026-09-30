@@ -186,9 +186,11 @@ export async function refresh(opts: { silent?: boolean } = {}): Promise<boolean>
     }
     if (remote.version !== state.version) {
       adopt(remote);
+      backfillRegistered();
       if (!opts.silent) logEvent({ icon: "sync", tone: "blue", title: "最新の内容を読み込みました", detail: `プロジェクト${remote.data.projects.length}件・タスク${remote.data.tasks.length}件` });
     } else {
       setState((s) => ({ ...s, saveStatus: "saved" }));
+      backfillRegistered();
     }
     return true;
   } catch (e) {
@@ -197,6 +199,23 @@ export async function refresh(opts: { silent?: boolean } = {}): Promise<boolean>
     if (!opts.silent) toast(err.message, "error");
     return false;
   }
+}
+
+/**
+ * 登録時の控えが無い案件（2026-09-30 より前に登録したもの）に、現在の内容を控えとして付ける。
+ * Workerの最新を読み込んだ直後にだけ実行する（古いキャッシュに付けて上書きしないため）
+ */
+function backfillRegistered() {
+  const missing = state.projects.filter((p) => p.proposal && !p.proposal.registered);
+  if (!missing.length) return;
+  commit((s) => ({
+    ...s,
+    projects: s.projects.map((p) =>
+      p.proposal && !p.proposal.registered
+        ? { ...p, proposal: { ...p.proposal, registered: snapshotOf(s.tasks.filter((t) => t.projectId === p.id).sort((a, b) => a.order - b.order)) } }
+        : p,
+    ),
+  }));
 }
 
 /** 起動時とウィンドウに戻ったときに最新を確認する（別端末での更新を拾う） */
@@ -329,9 +348,17 @@ export function duplicateDraft(projectId: string): Draft | null {
 /** 完了にした日時を記録する（実績として学習に使う） */
 const stamp = (t: Task): Task => (t.status === "完了" ? { ...t, completedAt: t.completedAt || new Date().toISOString() } : { ...t, completedAt: undefined });
 
+/** 登録時の控え（Proposal.registered）を作る */
+const snapshotOf = (tasks: Task[]) => ({
+  at: new Date().toISOString(),
+  tasks: tasks.map((t) => ({ pk: t.pk, title: t.title, group: t.group || "", actor: t.actor || "self", source: t.source, due: t.due })),
+});
+
 export function saveDraft(draft: Draft) {
-  const project = { ...draft.project, title: draft.project.title.trim() || "（無題）" };
+  let project = { ...draft.project, title: draft.project.title.trim() || "（無題）" };
   const tasks = draft.tasks.map((t, i) => stamp({ ...t, projectId: project.id, order: i }));
+  // 提案から作った案件は、最初の登録時点の内容を控えておく。以後の編集では上書きしない
+  if (project.proposal && !project.proposal.registered) project = { ...project, proposal: { ...project.proposal, registered: snapshotOf(tasks) } };
   commit((s) => ({
     ...s,
     projects: s.projects.some((p) => p.id === project.id) ? s.projects.map((p) => (p.id === project.id ? project : p)) : [...s.projects, project],

@@ -577,3 +577,13 @@ button:disabled { cursor: default; opacity: .6; }
 .settings-row--end { justify-content: flex-end; border-top: 0; }
 .task-tag--button { border: 0; cursor: pointer; font-family: inherit; }
 .task-tag--button:hover { outline: 1px solid currentColor; }
+
+/* ---- タスク行の制作物・主体（2026-09-30 選択式にそろえた） ---- */
+.task-builder__actions { display: flex; align-items: center; gap: 4px; }
+.text-button--muted { color: var(--text-muted); }
+.task-meta { display: inline-flex; flex: none; gap: 4px; }
+.task-select { height: 28px; max-width: 128px; padding: 0 22px 0 8px; border: 1px solid transparent; border-radius: 6px; color: var(--text-muted); background: #eef1f5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236e798c' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 7px center; font: 600 11px/1 "Noto Sans JP", sans-serif; text-overflow: ellipsis; cursor: pointer; appearance: none; }
+.task-select:hover, .task-select:focus { border-color: var(--line-strong); outline: none; }
+.task-select.is-empty { color: var(--text-soft); background-color: var(--surface-muted); }
+.task-select--client { color: var(--green); background-color: var(--green-soft); }
+.task-select--vendor { color: var(--orange); background-color: var(--orange-soft); }
