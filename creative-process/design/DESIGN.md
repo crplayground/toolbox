@@ -1,26 +1,25 @@
 # CREATIVE PROCESS — DESIGN.md（UIデザイン仕様書）
 
 > **このファイルの役割**
-> **UIデザインの正はFigma『CREATIVE PROCESS』**（`https://www.figma.com/design/paEvn9ugpEQoYRPBWF3fc6/CREATIVE-PROCESS`／セクション `27:3284`）。
-> このファイルは **Figmaにない部分を補完するときの基準**であり、Figmaと食い違ったら**必ずFigmaが勝つ**。
-> 見た目を変えるときはFigmaを先に直し、そこから反映する。コードだけを先に変えることはしない。
+> **UIデザインの正はコード（`index.html`）**。このファイルは、その見た目のルール（トークンの使い方・状態の見せ方・縮退）を説明する基準（2026-10-04決定）。
+> Figma『CREATIVE PROCESS』（`https://www.figma.com/design/paEvn9ugpEQoYRPBWF3fc6/CREATIVE-PROCESS`／セクション `27:3284`）は**初期設計の記録**として残すが、更新しない。見た目の変更はClaude Codeへの指示で直接コードに入れる。
+> 本文中の「Figmaの◯◯」「実測」は、その値の当初の出どころを示す記録として読む。
 
 **扱う範囲**：色・タイポグラフィ・余白・角丸・影・コンポーネント・レイアウト・モーションといった**見た目のこと**。
 **扱わない範囲**：設問構成・画面フロー・Worker／Notionのデータ設計は [`../SPEC.md`](../SPEC.md)、インフラ・セキュリティ・運用は Google Drive の `creative-process/開発/BRIEF.md`。
 
-- 最終更新: 2026-08-14（Figma第4次改修＝STEP3チャットの反映と、トークン名の整理）
 - 対象コード: `creative-process/index.html`
-- 関連ファイル: [`tokens.json`](./tokens.json)（トークン定義）／[`components.json`](./components.json)（コンポーネント定義）
+- 関連ファイル: [`tokens.json`](./tokens.json)（トークン定義）／[`components.json`](./components.json)（コンポーネント定義）。**どちらも2026-08-14時点のFigmaの写しで凍結**。現行値の正は `index.html` の `:root`
 
 ---
 
 ## 1. 前提ルール
 
-1. **UIデザインの正はFigma。** 変更はFigma → コードの順。
+1. **UIデザインの正はコード（`index.html`）。** 変更はClaude Codeへの指示で直接コードに入れる。Figmaは初期設計の記録で、更新しない（2026-10-04決定）。
 2. **CUS（CRAZY UI SYSTEM）は取り込まない**（2026-07-27 決定・恒久）。明示的な許可がない限り、提案・検討候補としても挙げない。
 3. **他ツール（print-check / revision-request / project-board）とのトーン統一はしない。** 「他ツールと見た目が揃わない」ことを変更の理由にしない。
-4. **CSS変数名はFigmaのバリアブル名をそのまま写す。** 詳細は §3。
-5. **アイコンの正はFigmaの書き出し** ＝ Google Drive `04_ツールボックス/creative-process/icon/`。Figmaで描き直したらこのフォルダを更新し、コードに写す。
+4. **CSS変数名は既存の命名規則（Figmaバリアブル名のフルパス由来）を守る。** 新しい変数も同じ形で足す。詳細は §3。
+5. **アイコンのマスターは** Google Drive `00_メンバー/miyakawa/tool/creative-process/icon/`（ロゴは `symbol/`、イラストは `ill/`）。差し替え・追加はこのフォルダにSVGを置き、コードに写す。
 6. **フォームは単一HTMLで完結させる。** 画像・アイコン・フォント以外の外部リソースを増やさない。
 
 ---
@@ -357,7 +356,7 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 
 ## 7. レスポンシブ
 
-**Figmaのアートボードはデスクトップ1280px幅の1本のみ。以下はコード側で決めた設計。** Figmaにモバイル版が起こされたら、そちらを正にしてこの節を破棄する。
+**Figmaのアートボードはデスクトップ1280px幅の1本のみ。以下はコード側で決めた設計。** この節がモバイル表示の正。
 
 ブレークポイントは **768px の1段だけ**。この数字自体はFigmaのバリアブル `spacing/breakpoint/breakpoint`（768）に定義がある（＝Figma由来）。
 ただし**縮退の中身**（何を1列にして、どの余白をどこまで詰めるか）はFigmaに描かれていないので、下の表がコード側の決め。
@@ -444,17 +443,3 @@ Figmaに定義がないため、以下はコード側で決めた値。`tokens.j
 | 7 | `card/check`・`btn/checkbox`・`radius/checkbox`・`icon/check` はFigmaに残すが、UIには登場しない | 意図どおり。コードには出さない（§3の表を正とする） |
 | 8 | ~~同じ役割に2本のバリアブルがある箇所が3つ~~ → **2026-08-14にユウキがFigmaで貼り替え済み**（`btn/tertiary/blue-leftcon` の地色・フォーカスを tertiary-blue系へ／`btn/checkbox` の hover を checkbox/hover へ。※hoverの実際の誤参照は `bg/hover` ではなく `checkbox/focus` だった） | 解決。コードも `--color-btn-tertiary-blue-white`・`--color-btn-tertiary-blue-focus` を追加して追従済み（値は同じなので見た目は不変） |
 | 9 | `spacing/primitive/l`（48）はどこからも参照されていない | 将来の改修用に意図して作った枠。使うまでこのまま |
-
----
-
-## 12. 変更履歴
-
-| 日付 | 内容 |
-|---|---|
-| 2026-08-14 | 貼り替えへの追従。ユウキがFigmaで `btn/tertiary/blue-leftcon` の地色・フォーカスを `tertiary-blue/white`・`tertiary-blue/focus` に、`btn/checkbox` の hover を `checkbox/hover` に貼り替え（hoverの誤参照は当初の見立ての `bg/hover` ではなく `checkbox/focus` だった）。コードに `--color-btn-tertiary-blue-white`・`--color-btn-tertiary-blue-focus` を追加して `.btn-leftcon-blue` を追従。**値はいずれも従来と同じなので見た目は不変**。再走査で未バインド変数は18→15本、重複参照は解消 |
-| 2026-08-14 | **バリアブル全数突き合わせ**。Figmaのローカルバリアブル94本を解決し、3ページ1,894ノードのバインドを走査して tokens.json・index.html と照合。値の食い違い**0件**／tokens.jsonへの記載漏れ7本を追加（`btn/primary/default`・`btn/primary/hover`・`btn/checkbox/hover`・`btn/tertiary-blue/white`・`btn/tertiary-blue/focus`・`text/hover`・`text/disable`＝いずれも未バインド）。監査の手順と結果は tokens.json の `$meta.audit` に記録 |
-| 2026-08-14 | Figma第4次改修の反映とトークンの整理。①STEP3チャット（ヒアリー）を§5-6として明文化し、`btn/send-circle`・`input/send`・`input/chat`・`icon/arrow-top`・`ill_Heary` を components.json に追加 ②`color/btn/selection-ctrl/*` → **`color/btn/checkbox/*`** の改名を反映 ③Figmaに追加された `color/btn/secondary/disable`・`color/btn/tertiary-blue/hover`・`color/btn/tertiary-blue/disable`・`color/btn/radio/focus`・`color/icon/gray` を tokens.json に追加 ④「CSSに書き出さないトークン」の方針を§3に明記し、未使用CSS変数を全廃（`radius/button-focus`・`radius/button-s-focus`・`radius/checkbox`・`icon/check`・`space/primitive/*`・`btn/tertiary/disable`・`btn/radio/hover`） ⑤「NotionのURLをコピー」のhoverを `btn/tertiary` → **`btn/tertiary-blue/hover`** に修正 ⑥添付サムネイルの削除ボタン（`btn/close-circle`）が旧バリアブルを参照していたのを `color/btn/secondary/*` に修正し、hover・focusを定義どおり実装 ⑦`input/send` の focus に淡青リングを追加し、writing状態を実装 ⑧ラジオhoverの設計意図を§5-2-2に明文化 ⑨完了画面の `done-hero`／`done-actions` の記述を第3次改修後のFigmaへ追従 ⑩**`space-8`／`space-16` の「無関係データの混入」は誤認と判明**（Figmaの実体は `spacing/primitive/xxxs〜xxxl` の9段で、semantic23本のエイリアス元）。削除せず tokens.json に `inCss:false` で全段を記録し、semantic側に `aliasOf` を追加。あわせて `spacing/semantic/padding-section`・`spacing/breakpoint/breakpoint` を記録 |
-| 2026-08-11 | 追補：①STEP1ログイン欄キャプション・依頼種別4カードのサブテキストをFigmaの最新文言へ追従 ②`btn/linktext` の下線を2px→**1px**（Figma underbar h-px 実測） ③送信中スピナーを24px→**16px**・地色を `gradation/sunbeam-h-hover` に（Figma btn/primary loading 64:783 実測） ④`icon/link` をG-Drive `icon/link.svg`（Illustrator書き出し）のパスに同期 ⑤絵文字をNoto Animated Emoji（CDN直リンク・16種ランダム・😆フォールバック付き）に変更 ⑥ファビコン🌟を追加 |
-| 2026-08-11 | Figma第3次改修のUI反映。①制作物の種別を `card/check`→`card/radio`（＋`btn/radio-btn`）に置換 ②STEP2依頼種別カードを4枚構成の寸法（gap16・角丸8・padding 16/24）に変更 ③完了画面を全面刷新（絵文字ヒーロー・箇条書きの共有手順・`btn/tertiary-blue/leftcon`「NotionのURLをコピー」＋`btn/tertiary/leftcon`「Notionで編集」の全幅縦積み） ④送信アニメーション新設（`submit-animation`） ⑤`icon/link` 新設・`icon/extend` を12pxに縮小 ⑥`btn/tertiary` のラベルを label-M 12px に修正 ⑦納期・サイズ目安表からKV・アイキャッチ行を削除し文言をFigmaへ追従 |
-| 2026-08-01 | 新規作成。Figmaのコンポーネントページ新設にあわせ、トークン・コンポーネント・状態定義を全面的に整理 |
-| 2026-08-01 | フォーカスリングの2系統・アイコンの表示サイズ・`input/add` の扱い・`card/check` の選択表現とそろえ方・モーダルの影の当て方を追記 |

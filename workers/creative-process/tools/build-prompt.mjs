@@ -3,7 +3,7 @@
 // ヒアリーのシステム指示ビルダー（2026-08-13）
 // ------------------------------------------------------------
 // Googleドライブの
-//   CRAZY CREATIVE/04_ツールボックス/creative-process/開発/ヒアリー設定資料/
+//   CRAZY CREATIVE/00_メンバー/miyakawa/tool/creative-process/開発/ヒアリー設定資料/
 //     00_ヒアリー_システム指示.md          ← ここが【正本（SSOT）】
 // を読み、Workerに載るデータファイル
 //   workers/creative-process/src/prompt.generated.js
@@ -36,7 +36,7 @@ const OUT = resolve(HERE, "../src/prompt.generated.js");
 const DEFAULT_SSOT = join(
   homedir(),
   "Library/CloudStorage/GoogleDrive-yukimiyakawa@crazy.co.jp/共有ドライブ",
-  "CRAZY CREATIVE/04_ツールボックス/creative-process/開発/ヒアリー設定資料",
+  "CRAZY CREATIVE/00_メンバー/miyakawa/tool/creative-process/開発/ヒアリー設定資料",
   "00_ヒアリー_システム指示.md"
 );
 
@@ -94,7 +94,7 @@ export function renderModule({ base, notes }) {
 // 【自動生成ファイル・直接編集しないこと】
 // ------------------------------------------------------------
 // 正本＝Googleドライブ
-//   CRAZY CREATIVE/04_ツールボックス/creative-process/開発/ヒアリー設定資料/
+//   CRAZY CREATIVE/00_メンバー/miyakawa/tool/creative-process/開発/ヒアリー設定資料/
 //     00_ヒアリー_システム指示.md
 //
 // 文言を直すときは上のMarkdownを編集し、次を実行してこのファイルを作り直す：
