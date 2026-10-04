@@ -17,7 +17,7 @@ CR室の業務効率化Webツールの**コード**をまとめたリポジト�
 | **compass** | 🟢 稼働中（個人用） | https://crplayground.github.io/toolbox/compass/ | `workers/compass/` |
 | **creative-process** | 🟢 稼働中（全社） | https://crplayground.github.io/toolbox/creative-process/ | `workers/creative-process/` |
 
-- ランディング `index.html`（https://crplayground.github.io/toolbox/）は creative-process だけを載せている。compass は個人用なので載せていない。
+- ランディング（ツール一覧）は2026-10-04に廃止した。https://crplayground.github.io/toolbox/ は404になる。各ツールのURLを直接開く。
 - 休眠ツール（print-check・revision-request・project-board・draft）は2026-10-04に公開を止めた。画面・Worker のソース・資料は Drive `toolbox/_archive/` にある。
 
 ---
@@ -28,7 +28,6 @@ CR室の業務効率化Webツールの**コード**をまとめたリポジト�
 toolbox/
 ├── README.md            ← このファイル（人間向けの地図）
 ├── CLAUDE.md            ← Claude向けの作業ルール
-├── index.html           ランディング（ツール一覧）
 ├── compass/             🟢 公開物（ビルドで生成。手で編集しない）
 ├── creative-process/    🟢 公開物＋SPEC.md・design/
 ├── apps/
