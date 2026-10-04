@@ -10,15 +10,14 @@
 - Worker のソースは `workers/<tool>/`。デプロイは各フォルダで `npx wrangler deploy`。
 - 公開URLは `https://crplayground.github.io/toolbox/<tool>/`。HTML内では絶対URLを避け、相対パスを使う。
 - **稼働中は compass と creative-process の2つ。** この2つの `index.html`・Worker・フォルダ名・リポジトリ名は、ユウキの明示的な指示なしに変更・移動しない。
-- 休眠ツール（print-check・revision-request・project-board）は公開ページを残している。削除・移動は社内影響の確認後にユウキが判断する。
+- 休眠ツール（print-check・revision-request・project-board）は2026-10-04に公開を止め、資料一式を Drive `toolbox/_archive/` へ移した。リポジトリには戻さない（復活させるときは `_archive/README.md` の手順に従う）。
 
 ## 構成
 ```
-compass/ creative-process/                    ← 稼働中のフロント（Pages配信）
-print-check/ revision-request/ project-board/ ← 休眠中のフロント（Pages配信・公開のまま）
-apps/<tool>/                                  ← ビルドが必要なツールのソース
-workers/<tool>/                               ← Worker（別デプロイ）
-_to_delete/                                   ← 削除待ち（gitignore済み）
+compass/ creative-process/   ← 稼働中のフロント（Pages配信）
+apps/<tool>/                 ← ビルドが必要なツールのソース
+workers/<tool>/              ← Worker（別デプロイ）
+_to_delete/                  ← 削除待ち（gitignore済み）
 ```
 
 ## デプロイ

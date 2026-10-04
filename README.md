@@ -16,13 +16,9 @@ CR室の業務効率化Webツールの**コード**をまとめたリポジト�
 |---|---|---|---|
 | **compass** | 🟢 稼働中（個人用） | https://crplayground.github.io/toolbox/compass/ | `workers/compass/` |
 | **creative-process** | 🟢 稼働中（全社） | https://crplayground.github.io/toolbox/creative-process/ | `workers/creative-process/` |
-| print-check | 💤 休眠（ページは公開のまま） | https://crplayground.github.io/toolbox/print-check/ | なし |
-| revision-request | 💤 休眠（ページは公開のまま） | https://crplayground.github.io/toolbox/revision-request/ | `workers/revision-request/` |
-| project-board | 💤 休眠（ページは公開のまま） | https://crplayground.github.io/toolbox/project-board/ | `workers/project-board/` |
-| draft | 💤 休眠・未公開（コードはDriveの `_archive/draft/` のみ） | — | — |
 
-- 休眠ツールは**消していない**。URLを知っている人が開けば今も動く。資料は Drive の `_archive/` に移した。
-- ランディング `index.html`（https://crplayground.github.io/toolbox/）は休眠ツールへのリンクのまま。compass は個人用なので載せていない。
+- ランディング `index.html`（https://crplayground.github.io/toolbox/）は creative-process だけを載せている。compass は個人用なので載せていない。
+- 休眠ツール（print-check・revision-request・project-board・draft）は2026-10-04に公開を止めた。画面・Worker のソース・資料は Drive `toolbox/_archive/` にある。
 
 ---
 
@@ -35,16 +31,11 @@ toolbox/
 ├── index.html           ランディング（ツール一覧）
 ├── compass/             🟢 公開物（ビルドで生成。手で編集しない）
 ├── creative-process/    🟢 公開物＋SPEC.md・design/
-├── print-check/         💤 公開物
-├── revision-request/    💤 公開物
-├── project-board/       💤 公開物
 ├── apps/
 │   └── compass/         compass のソース（React＋Vite）。ビルドすると compass/index.html ができる
 ├── workers/             Cloudflare Worker のソース（GitHubとは別に wrangler でデプロイ）
 │   ├── compass/
-│   ├── creative-process/
-│   ├── revision-request/
-│   └── project-board/
+│   └── creative-process/
 ├── .github/workflows/   GitHub Pages の自動公開
 └── _to_delete/          削除待ち（Gitに載らない。中身を確認したら捨ててよい）
 ```
