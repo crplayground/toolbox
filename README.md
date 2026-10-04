@@ -1,49 +1,77 @@
-# toolbox
+# toolbox（コード置き場）
 
-株式会社CRAZY クリエイティブ室（CR室）の業務効率化Webツールを集約したモノレポ。
-旧「1ツール=1リポジトリ」（`Yuki-M-15/*`）から、この単一リポジトリ `crplayground/toolbox` に統合。
+CR室の業務効率化Webツールの**コード**をまとめたリポジトリ（GitHub `crplayground/toolbox`）。
+資料・仕様・履歴は Google Drive `00_メンバー/miyakawa/toolbox/` にある。**同じ名前の2つのフォルダで、中身の役割が違う。**
 
-## 公開URL（GitHub Pages・ルート配信）
-
-| ツール | パス | 公開URL |
+| 置き場 | 入っているもの | 正（本体） |
 |---|---|---|
-| ランディング | `/` | https://crplayground.github.io/toolbox/ |
-| 入稿前チェック | `/print-check/` | https://crplayground.github.io/toolbox/print-check/ |
-| 修正依頼 | `/revision-request/` | https://crplayground.github.io/toolbox/revision-request/ |
-| タスクボード | `/project-board/` | https://crplayground.github.io/toolbox/project-board/ |
-| 制作依頼フォーム | `/creative-process/` | https://crplayground.github.io/toolbox/creative-process/ |
+| このリポジトリ（`メインデータ_GitHub/toolbox`） | コード・公開ページ・Worker | GitHub `crplayground/toolbox` |
+| Drive `00_メンバー/miyakawa/toolbox/` | CLAUDE.md・仕様・素材・履歴（コードは置かない） | Drive |
 
-## 構成
+---
+
+## ツールの状態（2026-10-04）
+
+| ツール | 状態 | 公開URL | Worker |
+|---|---|---|---|
+| **compass** | 🟢 稼働中（個人用） | https://crplayground.github.io/toolbox/compass/ | `workers/compass/` |
+| **creative-process** | 🟢 稼働中（全社） | https://crplayground.github.io/toolbox/creative-process/ | `workers/creative-process/` |
+| print-check | 💤 休眠（ページは公開のまま） | https://crplayground.github.io/toolbox/print-check/ | なし |
+| revision-request | 💤 休眠（ページは公開のまま） | https://crplayground.github.io/toolbox/revision-request/ | `workers/revision-request/` |
+| project-board | 💤 休眠（ページは公開のまま） | https://crplayground.github.io/toolbox/project-board/ | `workers/project-board/` |
+| draft | 💤 休眠・未公開（コードはDriveの `_archive/draft/` のみ） | — | — |
+
+- 休眠ツールは**消していない**。URLを知っている人が開けば今も動く。資料は Drive の `_archive/` に移した。
+- ランディング `index.html`（https://crplayground.github.io/toolbox/）は休眠ツールへのリンクのまま。compass は個人用なので載せていない。
+
+---
+
+## フォルダ構成
 
 ```
 toolbox/
-├── index.html            ランディング（ツール一覧）
-├── .nojekyll             Jekyll処理を無効化（素の静的配信）
-├── print-check/          入稿前チェック（静的のみ・Workerなし）
-├── revision-request/     修正依頼（Worker: revision-share）
-├── project-board/        タスクボード（Worker: notion-proxy）
-├── creative-process/      制作依頼フォーム（Worker: creative-process）
-└── workers/              Cloudflare Worker のソース（Pages配信対象外・wranglerで別デプロイ）
-    ├── revision-request/
-    ├── project-board/
-    └── creative-process/
+├── README.md            ← このファイル（人間向けの地図）
+├── CLAUDE.md            ← Claude向けの作業ルール
+├── index.html           ランディング（ツール一覧）
+├── compass/             🟢 公開物（ビルドで生成。手で編集しない）
+├── creative-process/    🟢 公開物＋SPEC.md・design/
+├── print-check/         💤 公開物
+├── revision-request/    💤 公開物
+├── project-board/       💤 公開物
+├── apps/
+│   └── compass/         compass のソース（React＋Vite）。ビルドすると compass/index.html ができる
+├── workers/             Cloudflare Worker のソース（GitHubとは別に wrangler でデプロイ）
+│   ├── compass/
+│   ├── creative-process/
+│   ├── revision-request/
+│   └── project-board/
+├── .github/workflows/   GitHub Pages の自動公開
+└── _to_delete/          削除待ち（Gitに載らない。中身を確認したら捨ててよい）
 ```
 
-フロント（各 `index.html`）は GitHub Pages が配信。バックエンドの Worker は Cloudflare 上で
-`*.yukimiyakawa.workers.dev` として独立稼働しており、リポジトリ移設の影響を受けない。
+---
 
-## 移設後に必要な対応（重要）
+## 公開のしくみ（止めないために知っておくこと）
 
-1. **creative-process の Worker を再デプロイ**：`workers/creative-process/wrangler.toml` の `ALLOWED_ORIGIN` を
-   新オリジン `https://crplayground.github.io` を含む値に更新済み。`cd workers/creative-process && npx wrangler deploy` で反映する。
-   （更新しないと新URLからの依頼フォーム送信がCORSで拒否される）
-2. **GitHub Pages を有効化**：Settings → Pages → Source: `main` / root。
+| 部分 | どこで動くか | 反映のしかた |
+|---|---|---|
+| 画面（各 `index.html`） | GitHub Pages | `main` に push すると自動で公開 |
+| Worker（保存・Notion連携・AI） | Cloudflare（`*.yukimiyakawa.workers.dev`） | 各 `workers/<tool>/` で `npx wrangler deploy`（手動） |
+
+- **公開URLは「リポジトリ名＋フォルダ名」で決まる。** `toolbox` というリポジトリ名と、`compass/`・`creative-process/` のフォルダ名は変えないこと（変えるとURLが変わり、ツールが止まる）。
+- このローカルフォルダの名前（`メインデータ_GitHub/toolbox`）も変えない。Compass の学習ルーティンがここを作業フォルダにしている。
+- Worker は push では更新されない。コードを変えても `wrangler deploy` するまで本番は旧版のまま。
 
 ## セキュリティ
 
-APIキー・トークン・Webhook URL はコードに書かない。Cloudflare Worker Secrets / GitHub Secrets で管理する。
-各 Worker のセットアップは `workers/<tool>/SETUP*.md` を参照。
+APIキー・トークン・Webhook URL はコードに書かない。Cloudflare Worker Secrets で管理する。手順は各 `workers/<tool>/SETUP*.md`。
 
-## 命名
+## 名前の対応（旧称）
 
-旧リポジトリ名との対応：print-checklist → print-check、revision-request（維持）、project-board（維持）、request → creative-process（2026-08-05改称）。
+| 現在 | 旧称 |
+|---|---|
+| creative-process | request（2026-08-05改称） |
+| compass | CR Board・project-management-board（2026-09-29改称） |
+| print-check | print-checklist |
+| revision-request | Drive側の旧フォルダ名は review（2026-10-04に revision-request へ統一） |
+| リポジトリ `crplayground/toolbox` | 旧 `Yuki-M-15/*`（1ツール1リポジトリ。2026-07-20統合） |

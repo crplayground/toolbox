@@ -2,7 +2,7 @@
 
 > **このファイルの役割**
 > 設問構成・画面フロー・Worker／Notionのデータマッピングの**単一の情報源**。
-> **棲み分け**：見た目（色・余白・コンポーネント）は [`design/DESIGN.md`](./design/DESIGN.md)、インフラ・セキュリティ・運用手順は Google Drive `00_メンバー/miyakawa/tool/creative-process/開発/BRIEF.md` が担当する。
+> **棲み分け**：見た目（色・余白・コンポーネント）は [`design/DESIGN.md`](./design/DESIGN.md)、インフラ・セキュリティ・運用手順は Google Drive `00_メンバー/miyakawa/toolbox/creative-process/開発/BRIEF.md` が担当する。
 > **UIの正はコード（`index.html`）とこの仕様書**（2026-10-04決定）。Figma『CREATIVE PROCESS』は初期設計の記録として残すが更新しない。本文中の「Figma ◯◯（node）」は、その部分の当初の設計元を示す参照。
 
 - 対象コード: `creative-process/index.html`（フォーム）／`workers/creative-process/src/worker.js`（Worker）／`workers/creative-process/test/unit.test.mjs`（テスト）

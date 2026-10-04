@@ -19,7 +19,7 @@
 2. **CUS（CRAZY UI SYSTEM）は取り込まない**（2026-07-27 決定・恒久）。明示的な許可がない限り、提案・検討候補としても挙げない。
 3. **他ツール（print-check / revision-request / project-board）とのトーン統一はしない。** 「他ツールと見た目が揃わない」ことを変更の理由にしない。
 4. **CSS変数名は既存の命名規則（Figmaバリアブル名のフルパス由来）を守る。** 新しい変数も同じ形で足す。詳細は §3。
-5. **アイコンのマスターは** Google Drive `00_メンバー/miyakawa/tool/creative-process/icon/`（ロゴは `symbol/`、イラストは `ill/`）。差し替え・追加はこのフォルダにSVGを置き、コードに写す。
+5. **アイコンのマスターは** Google Drive `00_メンバー/miyakawa/toolbox/creative-process/icon/`（ロゴは `symbol/`、イラストは `ill/`）。差し替え・追加はこのフォルダにSVGを置き、コードに写す。
 6. **フォームは単一HTMLで完結させる。** 画像・アイコン・フォント以外の外部リソースを増やさない。
 
 ---

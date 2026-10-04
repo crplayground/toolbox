@@ -41,7 +41,7 @@
 // ============================================================
 
 // ---- システム指示（Googleドライブの正本から自動生成） ---------------
-// 文言の正本＝ CRAZY CREATIVE/00_メンバー/miyakawa/tool/creative-process/開発/ヒアリー設定資料/
+// 文言の正本＝ CRAZY CREATIVE/00_メンバー/miyakawa/toolbox/creative-process/開発/ヒアリー設定資料/
 //              00_ヒアリー_システム指示.md
 // 直すときはそのMarkdownを編集し `node tools/build-prompt.mjs` を実行する。
 // prompt.generated.js を手で書き換えないこと（次の生成で消える）。

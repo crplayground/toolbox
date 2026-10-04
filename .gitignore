@@ -10,3 +10,6 @@ node_modules/
 
 # P3会話品質検証のログ（ローカル作業ファイル）
 workers/creative-process/test/p3-logs/
+
+# 削除待ちの退避フォルダ（ローカル専用。ユウキが中身を確認してから捨てる）
+_to_delete/

@@ -3,7 +3,7 @@
 // ヒアリーのシステム指示ビルダー（2026-08-13）
 // ------------------------------------------------------------
 // Googleドライブの
-//   CRAZY CREATIVE/00_メンバー/miyakawa/tool/creative-process/開発/ヒアリー設定資料/
+//   CRAZY CREATIVE/00_メンバー/miyakawa/toolbox/creative-process/開発/ヒアリー設定資料/
 //     00_ヒアリー_システム指示.md          ← ここが【正本（SSOT）】
 // を読み、Workerに載るデータファイル
 //   workers/creative-process/src/prompt.generated.js
@@ -33,17 +33,18 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(HERE, "../src/prompt.generated.js");
 
 // 既定の探索先（Googleドライブ デスクトップのマウント）。見つからなければ環境変数で指定する。
-const DEFAULT_SSOT = join(
+// 2026-10-04 ドライブの `tool/` を `toolbox/` に改名。改名前の環境でも動くよう旧パスも探す。
+const SSOT_CANDIDATES = ["toolbox", "tool"].map((dir) => join(
   homedir(),
   "Library/CloudStorage/GoogleDrive-yukimiyakawa@crazy.co.jp/共有ドライブ",
-  "CRAZY CREATIVE/00_メンバー/miyakawa/tool/creative-process/開発/ヒアリー設定資料",
+  `CRAZY CREATIVE/00_メンバー/miyakawa/${dir}/creative-process/開発/ヒアリー設定資料`,
   "00_ヒアリー_システム指示.md"
-);
+));
 
 // ---- 正本の場所を解決する（テストからも使う） ----------------------
 export function resolveSsotPath() {
-  const p = process.env.HEARY_SSOT || DEFAULT_SSOT;
-  return existsSync(p) ? p : "";
+  if (process.env.HEARY_SSOT) return existsSync(process.env.HEARY_SSOT) ? process.env.HEARY_SSOT : "";
+  return SSOT_CANDIDATES.find((p) => existsSync(p)) || "";
 }
 
 // ---- Markdown → { base, notes } に分解する（純粋関数・テスト対象） --
@@ -94,7 +95,7 @@ export function renderModule({ base, notes }) {
 // 【自動生成ファイル・直接編集しないこと】
 // ------------------------------------------------------------
 // 正本＝Googleドライブ
-//   CRAZY CREATIVE/00_メンバー/miyakawa/tool/creative-process/開発/ヒアリー設定資料/
+//   CRAZY CREATIVE/00_メンバー/miyakawa/toolbox/creative-process/開発/ヒアリー設定資料/
 //     00_ヒアリー_システム指示.md
 //
 // 文言を直すときは上のMarkdownを編集し、次を実行してこのファイルを作り直す：
@@ -122,7 +123,7 @@ function main() {
   const ssot = resolveSsotPath();
   if (!ssot) {
     console.error("正本のMarkdownが見つかりません。");
-    console.error("探した場所: " + (process.env.HEARY_SSOT || DEFAULT_SSOT));
+    console.error("探した場所: " + (process.env.HEARY_SSOT || SSOT_CANDIDATES.join(" または ")));
     console.error("");
     console.error("Googleドライブ デスクトップが起動しているか確認してください。");
     console.error("場所が違う場合は次のように指定できます:");

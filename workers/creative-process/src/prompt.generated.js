@@ -2,7 +2,7 @@
 // 【自動生成ファイル・直接編集しないこと】
 // ------------------------------------------------------------
 // 正本＝Googleドライブ
-//   CRAZY CREATIVE/00_メンバー/miyakawa/tool/creative-process/開発/ヒアリー設定資料/
+//   CRAZY CREATIVE/00_メンバー/miyakawa/toolbox/creative-process/開発/ヒアリー設定資料/
 //     00_ヒアリー_システム指示.md
 //
 // 文言を直すときは上のMarkdownを編集し、次を実行してこのファイルを作り直す：

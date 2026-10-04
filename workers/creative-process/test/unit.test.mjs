@@ -573,7 +573,7 @@ t("組み立て後の指示に18件が差し込まれている",
 const { resolveSsotPath, parseSsot, renderModule } = await import("../tools/build-prompt.mjs");
 const ssotPath = resolveSsotPath();
 if (!ssotPath) {
-  console.log("  ⏭️  ドライブの正本が見つからないため、ズレ検査はスキップ（Googleドライブ デスクトップ未起動、またはフォルダ移動で tools/build-prompt.mjs の DEFAULT_SSOT が古い）");
+  console.log("  ⏭️  ドライブの正本が見つからないため、ズレ検査はスキップ（Googleドライブ デスクトップ未起動、またはフォルダ移動で tools/build-prompt.mjs の SSOT_CANDIDATES が古い）");
 } else {
   const parsed = parseSsot(readFileSync(ssotPath, "utf8"));
   t("正本の基本指示は9,000字以内（毎リクエストに乗るため）", parsed.base.length <= 9000,
