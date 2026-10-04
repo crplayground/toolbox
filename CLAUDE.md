@@ -22,4 +22,4 @@ workers/<tool>/                                          ← Worker（別デプ�
 
 ## 注意
 - `creative-process` の `ALLOWED_ORIGIN`（wrangler.toml）を変えたら Worker の再デプロイが必要。
-- 詳細な構想・運用ルールは Google Drive `00_メンバー/miyakawa/tool/CLAUDE.md` が正（旧 `04_ツールボックス/` は2026-09-26に移動）。
+- 詳細な運用ルールの置き場所：**creative-process** は Google Drive `00_メンバー/miyakawa/tool/creative-process/CLAUDE.md` が正。その他のツールの構想・運用ルールは Google Drive `00_メンバー/miyakawa/tool/CLAUDE.md` が正（旧 `04_ツールボックス/` は2026-09-26に移動）。
