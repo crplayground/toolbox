@@ -1,34 +1,14 @@
-# toolbox — CLAUDE.md（リポジトリ作業ルール）
+# toolbox — CLAUDE.md
 
-このリポジトリ `crplayground/toolbox` は CR室ツールのモノレポ。ローカルクローンで作業する際の要点。
+このリポジトリ `crplayground/toolbox` は CR室ツールのモノレポ。**公開リポジトリで、GitHub Pages がリポジトリ全体を配信している＝ここに置いたものはすべて世界に公開される。**
+
+作業ルールの本体は `CLAUDE.local.md`（Drive 上の非公開の CLAUDE.md へのシンボリックリンク。gitignore 済み）で、Claude Code が起動時に自動で読む。
+**`CLAUDE.local.md` が読み込まれていない・開けないときは、作業を始めずにユウキに知らせる。**
+
+本体が読めない場合でも、次の3つは必ず守る。
+
+1. **公開してよいものだけを置く。** 個人情報（氏名・メールアドレス・名簿・個人の作業記録など）・秘密情報（APIキー・トークン・Webhook URL）は一切コミットしない。公開してよいか迷ったら、置く前にユウキに確認する。
+2. **Claude は git コマンドを実行しない。** commit・push はユウキが GitHub Desktop で行う。変更した作業の終わりに Push サマリーを出す。
+3. **稼働中の `compass/`・`creative-process/` のフォルダ名とリポジトリ名を変えない**（公開URLが変わり、ツールが止まる）。
+
 人間向けの地図は `README.md`。
-
-## 原則
-- **秘密情報（APIキー・トークン・Webhook URL）はコミットしない。** Worker Secrets / GitHub Secrets で管理する。
-- フロントは各ツール直下の `index.html`（GitHub Pages がルート配信）。単一HTML完結。
-- ビルドが必要なツール（Figma起点・React＋Vite）は、ソースを `apps/<tool>/` に置き、`npm run build` で `<tool>/index.html` を生成してコミットする。`node_modules/` はコミットしない。
-- Worker のソースは `workers/<tool>/`。デプロイは各フォルダで `npx wrangler deploy`。
-- 公開URLは `https://crplayground.github.io/toolbox/<tool>/`。HTML内では絶対URLを避け、相対パスを使う。
-- **稼働中は compass と creative-process の2つ。** この2つの `index.html`・Worker・フォルダ名・リポジトリ名は、ユウキの明示的な指示なしに変更・移動しない。
-- 休眠ツール（print-check・revision-request・project-board）は2026-10-04に公開を止め、資料一式を Drive `toolbox/_archive/` へ移した。リポジトリには戻さない（復活させるときは `_archive/README.md` の手順に従う）。
-
-## 構成
-```
-compass/ creative-process/   ← 稼働中のフロント（Pages配信）
-apps/<tool>/                 ← ビルドが必要なツールのソース
-workers/<tool>/              ← Worker（別デプロイ）
-_to_delete/                  ← 削除待ち（gitignore済み）
-```
-
-## デプロイ
-- フロント：`main` に push → GitHub Pages が自動配信。
-- Worker：`cd workers/<tool> && npx wrangler deploy`（ユウキが手動）。
-
-## 注意
-- `creative-process` の `ALLOWED_ORIGIN`（wrangler.toml）を変えたら Worker の再デプロイが必要。
-- ローカルフォルダ名 `メインデータ_GitHub/toolbox` は変えない（Compass学習ルーティンの作業フォルダ）。
-- 詳細な運用ルールの置き場所：Google Drive `00_メンバー/miyakawa/toolbox/`（2026-10-04に `tool/` から改名）。
-  - **creative-process** は `toolbox/creative-process/CLAUDE.md` が正
-  - **compass** は `toolbox/compass/CLAUDE.md` が正
-  - その他・共通ルールは `toolbox/CLAUDE.md` が正
-- ヒアリーのシステム指示の正本はDrive側。`workers/creative-process/tools/build-prompt.mjs` は `toolbox/` → 旧 `tool/` の順で探す。

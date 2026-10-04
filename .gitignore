@@ -5,6 +5,9 @@ node_modules/
 .claude/
 .fuse_hidden*
 
+# Claude の作業ルール本体（Drive の toolbox/CLAUDE.md へのシンボリックリンク。非公開情報を含むので絶対にコミットしない）
+CLAUDE.local.md
+
 # APIキー等のローカル秘密情報（wrangler dev / chat-repl が読む。絶対にコミットしない）
 .dev.vars
 

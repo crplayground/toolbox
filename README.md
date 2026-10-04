@@ -6,7 +6,9 @@ CR室の業務効率化Webツールの**コード**をまとめたリポジト�
 | 置き場 | 入っているもの | 正（本体） |
 |---|---|---|
 | このリポジトリ（`メインデータ_GitHub/toolbox`） | コード・公開ページ・Worker | GitHub `crplayground/toolbox` |
-| Drive `00_メンバー/miyakawa/toolbox/` | CLAUDE.md・仕様・素材・履歴（コードは置かない） | Drive |
+| Drive `00_メンバー/miyakawa/toolbox/` | Claudeの作業ルール（CLAUDE.md）・仕様・素材・履歴・非公開資料（コードは置かない） | Drive |
+
+**このリポジトリは公開されている**（GitHub Pages がリポジトリ全体を配信）。個人情報・秘密情報は置かない。
 
 ---
 
@@ -27,7 +29,8 @@ CR室の業務効率化Webツールの**コード**をまとめたリポジト�
 ```
 toolbox/
 ├── README.md            ← このファイル（人間向けの地図）
-├── CLAUDE.md            ← Claude向けの作業ルール
+├── CLAUDE.md            ← Claude向けの最低限のルール（公開されてよい内容だけ）
+├── CLAUDE.local.md      ← Drive の CLAUDE.md へのシンボリックリンク（Gitに載らない。Claude Code が自動で読む作業ルール本体）
 ├── compass/             🟢 公開物（ビルドで生成。手で編集しない）
 ├── creative-process/    🟢 公開物＋SPEC.md・design/
 ├── apps/
