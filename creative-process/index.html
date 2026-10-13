@@ -1081,7 +1081,7 @@
               <!-- 対象事業・部署：全種別（選択肢と並び順はNotion「対象事業・部署」に一致させる） -->
               <div class="input f-brand" data-types="新規,転用,相談">
                 <div class="subhead-group">
-                  <div class="subhead-row"><span class="fl">対象事業・部署</span><span class="badge-required">必須</span></div>
+                  <div class="subhead-row"><span class="fl">発信元の事業・部署</span><span class="badge-required">必須</span></div>
                   <div class="caption">受け手から見た時にどのブランド発信かを基準に選択してください。</div>
                 </div>
                 <div class="field-select">
@@ -1771,7 +1771,7 @@
     if (!current) miss.push("依頼種別を選択してください。");
     else {
       if (!val("title")) miss.push((current === "相談" ? "相談タイトル" : "依頼タイトル") + "を入力してください。");
-      if (current !== "改訂" && !val("brand")) miss.push("対象事業・部署を選択してください。");
+      if (current !== "改訂" && !val("brand")) miss.push("発信元の事業・部署を選択してください。");
       if ((current === "新規" || current === "転用") && collectProdTypes().length === 0) miss.push("制作物の種別を選択してください。");
       if (current === "改訂" && collectSrcUrls().length === 0) miss.push("改訂するデータの親フォルダのURLを入力してください。");
       if (current === "相談" && !val("consultDetail")) miss.push("相談内容を入力してください。");
