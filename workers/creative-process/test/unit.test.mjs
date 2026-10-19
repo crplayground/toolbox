@@ -72,10 +72,10 @@ t("転用の先頭はリリースカレンダーの記入状況", SEC_TENYO[0][0
 t("転用の2番目はFigma第3次改修の設問名", SEC_TENYO[1][1] === "転用元のデータ");
 t("旧名「広報チームの企画確認状況」はどこにも残っていない", JSON.stringify([SEC_YOKEN, SEC_SEISAKU, SEC_KAITEI, SEC_TENYO]).indexOf("広報チーム") === -1);
 // 2026-08-01 見出しの改称（フォームの設問名に合わせる）
-t("prototype の見出しは「プロトタイプ」", SEC_SEISAKU.some(([k, l]) => k === "prototype" && l === "プロトタイプ"));
+t("prototype の見出しは「構成ラフ」", SEC_SEISAKU.some(([k, l]) => k === "prototype" && l === "構成ラフ"));
 t("intent の見出しは「プロジェクトに対する想い」", SEC_SEISAKU.some(([k, l]) => k === "intent" && l === "プロジェクトに対する想い"));
 t("旧見出しは残っていない", JSON.stringify(SEC_YOKEN.concat(SEC_SEISAKU)).indexOf("抱えている課題感") === -1
-  && JSON.stringify(SEC_SEISAKU).indexOf("構成ラフ") === -1
+  && JSON.stringify(SEC_SEISAKU).indexOf("プロトタイプ") === -1
   && JSON.stringify(SEC_SEISAKU).indexOf("意気込み") === -1);
 
 // ---- 2. asImageList（画像の厳密検証・XSS対策の継続確認） ----
@@ -284,11 +284,12 @@ t("サブフォルダ名は番号順に並ぶ", [...DRIVE_SUBFOLDERS].sort().joi
 
 section("14b. V1-5.6 種別フォルダ（棚）対応表");
 const shelfKeys = Object.keys(DRIVE_TYPE_SHELVES);
-t("棚は10種別すべてを持つ", shelfKeys.length === 10);
+t("棚は11種別すべてを持つ", shelfKeys.length === 11);
 t("棚名は「数字_種別名」で始まる", shelfKeys.every((k) => DRIVE_TYPE_SHELVES[k].replace(/^\d+_/, "").startsWith(k)));
-t("棚名の番号は01〜10で一意", new Set(shelfKeys.map((k) => DRIVE_TYPE_SHELVES[k].slice(0, 2))).size === 10);
+t("棚名の番号は01〜11で一意", new Set(shelfKeys.map((k) => DRIVE_TYPE_SHELVES[k].slice(0, 2))).size === 11);
 t("先頭はイベント・キャンペーン", DRIVE_TYPE_SHELVES["イベント・キャンペーン"] === "01_イベント・キャンペーン");
 t("その他の棚は補足なし", DRIVE_TYPE_SHELVES["その他"] === "10_その他");
+t("非デザイナー用フォーマットの棚は11番", DRIVE_TYPE_SHELVES["非デザイナー用フォーマット"] === "11_非デザイナー用フォーマット");
 t("旧名KV・アイキャッチは棚に無い", !("KV・アイキャッチ" in DRIVE_TYPE_SHELVES));
 t("逆引き表がCRAZYのIDを正式名に解決する（互換キーに負けない）",
   DRIVE_FOLDER_TO_BRAND[DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・全社会議・自社HP等に関する制作物"]] ===
@@ -422,12 +423,12 @@ t("対象事業・部署は18件", CHAT_BRAND_OPTIONS.length === 18);
 t("worker.jsの正式名18件と過不足なく一致（互換キーは含まない）",
   CHAT_BRAND_OPTIONS.length === Object.keys(DRIVE_FOLDER_TO_BRAND).length &&
   Object.values(DRIVE_FOLDER_TO_BRAND).every((b) => CHAT_BRAND_OPTIONS.includes(b)));
-t("制作物の種別は10件", CHAT_PRODUCT_TYPES.length === 10);
+t("制作物の種別は11件", CHAT_PRODUCT_TYPES.length === 11);
 t("worker.jsの棚マスタのキーと過不足なく一致",
   CHAT_PRODUCT_TYPES.length === Object.keys(DRIVE_TYPE_SHELVES).length &&
   Object.keys(DRIVE_TYPE_SHELVES).every((k) => CHAT_PRODUCT_TYPES.includes(k)));
 t("転用の除外種別＝イベント・キャンペーンとその他",
-  JSON.stringify(TENYO_EXCLUDED_TYPES) === JSON.stringify(["イベント・キャンペーン", "その他"]));
+  JSON.stringify(TENYO_EXCLUDED_TYPES) === JSON.stringify(["イベント・キャンペーン", "その他", "非デザイナー用フォーマット"]));
 
 // ---- 20. 事業名の正規化（P2検品指定＝18件のいずれかに正規化） ----
 section("20. チャット: normalizeBrand（事業名は18件に完全一致へ正規化）");
@@ -442,7 +443,7 @@ t("18件すべてが自分自身に正規化される", CHAT_BRAND_OPTIONS.every
 t("18件すべてが略称からも正規化される", CHAT_BRAND_OPTIONS.every((b) => normalizeBrand(b.split("｜")[0]) === b));
 
 section("20b. チャット: normalizeProductType / normalizePrStatus");
-t("10件マスタの完全一致を通す", normalizeProductType("バナー・告知画像", "新規") === "バナー・告知画像");
+t("11件マスタの完全一致を通す", normalizeProductType("バナー・告知画像", "新規") === "バナー・告知画像");
 t("新規はイベント・キャンペーンを選べる", normalizeProductType("イベント・キャンペーン", "新規") === "イベント・キャンペーン");
 t("転用はイベント・キャンペーンを空欄に落とす", normalizeProductType("イベント・キャンペーン", "転用") === "");
 t("転用はその他も空欄に落とす", normalizeProductType("その他", "転用") === "");
@@ -527,7 +528,7 @@ const sysBanner = buildSystemInstruction({ productType: "バナー・告知画�
 t("二段構成: 種別が決まるとカテゴリ要点が足される", sysBanner.length > sysBase.length && sysBanner.indexOf("ストーリーズ1080×1920") !== -1);
 t("二段構成: 未知の種別は何も足さない", buildSystemInstruction({ productType: "未知" }).length === sysBase.length);
 t("wrapUpで打ち切り指示が足される", buildSystemInstruction({ wrapUp: true }).indexOf("ここまでの内容で反映しましょう") !== -1);
-t("全10種別ぶんのカテゴリ要点が用意されている", CHAT_PRODUCT_TYPES.every((p) => buildSystemInstruction({ productType: p }).length > sysBase.length));
+t("全11種別ぶんのカテゴリ要点が用意されている", CHAT_PRODUCT_TYPES.every((p) => buildSystemInstruction({ productType: p }).length > sysBase.length));
 
 // ---- 24. ソース検査（/chat・chat.js） ----
 section("24. ソース検査（チャット機能P2）");
@@ -578,7 +579,7 @@ if (!ssotPath) {
   const parsed = parseSsot(readFileSync(ssotPath, "utf8"));
   t("正本の基本指示は9,000字以内（毎リクエストに乗るため）", parsed.base.length <= 9000,
     parsed.base.length + "字");
-  t("正本のカテゴリ別要点は制作物の種別10件をすべて備える",
+  t("正本のカテゴリ別要点は制作物の種別11件をすべて備える",
     CHAT_PRODUCT_TYPES.every((k) => typeof parsed.notes[k] === "string" && parsed.notes[k].length > 0));
   t("正本に差し込み口 {{BRAND_OPTIONS}} が残っている", parsed.base.indexOf("{{BRAND_OPTIONS}}") !== -1);
   t("★生成物がドライブの正本と一致している（ズレていたら node tools/build-prompt.mjs を実行）",

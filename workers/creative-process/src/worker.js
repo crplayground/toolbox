@@ -100,7 +100,7 @@ const SEC_YOKEN = [
 const SEC_SEISAKU = [
   ["prStatus", "リリースカレンダーの記入状況"],
   ["manuscript", "制作物の概要"],
-  ["prototype", "プロトタイプ"],
+  ["prototype", "構成ラフ"],
   ["intent", "プロジェクトに対する想い"],
 ];
 const SEC_SOUDAN = [
@@ -659,6 +659,7 @@ const DRIVE_TYPE_SHELVES = {
   "ペーパーアイテム": "08_ペーパーアイテム",
   "招待状・紙袋・ノベルティ": "09_招待状・紙袋・ノベルティ",
   "その他": "10_その他",
+  "非デザイナー用フォーマット": "11_非デザイナー用フォーマット",
 };
 
 // 【V1-5.10】種別フォルダ（棚）の名前判定。
@@ -1159,7 +1160,7 @@ function extractUrls(text) {
 //   ・見出し＝素材リンク集(H1) / 記載リンク一覧(H2) / フォームのラベル(H3)。いずれも太字
 //   ・URL以外の補足文は載せない（何のURLかを知りたい人はプランニングシートを見る）
 //   ・参考画像の枚数は載せない（フォルダを見れば分かる）
-// 収集対象：種別ごとの長文欄すべて（素材元欄・制作内容・プロトタイプ等）に書かれたURL
+// 収集対象：種別ごとの長文欄すべて（素材元欄・制作内容・構成ラフ等）に書かれたURL
 function buildSourceDocHtml(data, notionUrl) {
   const rows = [];
   for (const [key, label] of sectionsFor(String(data.category || "").trim())) {

@@ -14,7 +14,7 @@
 //     既存の送信ボタン・バリデーション・/submit がそのまま使われる。
 //   - 画像はチャットでは受け取らない＝添付は反映後のフォームで行う（§3-7-3）。
 //   - ドラフトのキーは /submit のフォームキーと同名（§3-7-6のマッピング表）。
-//     値の正規化（事業名18件への完全一致・種別10件・改訂→転用の落とし込み）は
+//     値の正規化（事業名18件への完全一致・種別11件・改訂→転用の落とし込み）は
 //     Geminiの出力を信用せず、このファイルの normalizeDraft() が最終責任を持つ。
 //
 // API契約（P4のフロント実装が従う）：
@@ -74,7 +74,7 @@ const CHAT_BRAND_OPTIONS = [
   "その他｜AI推進・BD・食企画・経営企画等に関する制作物",
 ];
 
-// 制作物の種別（Notion選択肢と完全一致・10件）
+// 制作物の種別（Notion選択肢と完全一致・11件）
 const CHAT_PRODUCT_TYPES = [
   "イベント・キャンペーン",
   "スライド・ePDF",
@@ -86,10 +86,11 @@ const CHAT_PRODUCT_TYPES = [
   "ペーパーアイテム",
   "招待状・紙袋・ノベルティ",
   "その他",
+  "非デザイナー用フォーマット",
 ];
 
 // 転用で選べない種別（§3-7-6＝該当時は空欄にして会話で言及する）
-const TENYO_EXCLUDED_TYPES = ["イベント・キャンペーン", "その他"];
+const TENYO_EXCLUDED_TYPES = ["イベント・キャンペーン", "その他", "非デザイナー用フォーマット"];
 
 // リリースカレンダーの記入状況（2値のみ・不明なら空欄）
 // 【2026-08-19】「広報チームの企画確認状況（必要なし／これから／共有済み）」から改称・2値化。
@@ -187,7 +188,7 @@ function normalizeBrand(v) {
   return CHAT_BRAND_OPTIONS.find((b) => b.split("｜")[0] === short) || "";
 }
 
-// 制作物の種別：10件への完全一致。転用では「イベント・キャンペーン」「その他」を空欄に落とす。
+// 制作物の種別：11件への完全一致。転用では「イベント・キャンペーン」「その他」「非デザイナー用フォーマット」を空欄に落とす。
 function normalizeProductType(v, category) {
   const s = String(v || "").trim();
   if (!CHAT_PRODUCT_TYPES.includes(s)) return "";
@@ -374,7 +375,7 @@ function buildExtractInstruction(nowMs) {
 - draftReady：ヒアリーの最後の発言が記入案の要約を示し、【フォームに反映する】ボタンを案内していればtrue。それ以外はfalse。
 - category：新規＝ゼロから作る／改訂＝既存物の更新かつ元データが02_案件管理の中／転用＝元データをもとに別物を作る・または元データが02_案件管理の外／相談＝何を作るか未定のまま。
 
-キーの対応：title=依頼タイトル／brand=対象事業・部署（下の18件に完全一致）／productTypes=制作物の種別（下の10件から1件）／purpose=依頼背景・課題感／target=ターゲット／useDate=使用開始日／usePlace=使用場所・掲載メディア／outcome=得たい成果／afterFeeling=読後感／budget=予算感／prStatus=リリースカレンダーの記入状況（記入した・必要なし）／manuscript=原稿・素材の状況／prototype=プロトタイプ／intent=プロジェクトへの想い／sourceUrls=元データ・親フォルダのURL／reviseManuscript=修正・差替内容／consultDetail=相談内容／schedule=スケジュール行[{date,text}]
+キーの対応：title=依頼タイトル／brand=対象事業・部署（下の18件に完全一致）／productTypes=制作物の種別（下の11件から1件）／purpose=依頼背景・課題感／target=ターゲット／useDate=使用開始日／usePlace=使用場所・掲載メディア／outcome=得たい成果／afterFeeling=読後感／budget=予算感／prStatus=リリースカレンダーの記入状況（記入した・必要なし）／manuscript=原稿・素材の状況／prototype=構成ラフ／intent=プロジェクトへの想い／sourceUrls=元データ・親フォルダのURL／reviseManuscript=修正・差替内容／consultDetail=相談内容／schedule=スケジュール行[{date,text}]
 
 対象事業・部署（brand・この文字列に完全一致）：
 ${CHAT_BRAND_OPTIONS.map((b) => "- " + b).join("\n")}

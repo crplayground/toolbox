@@ -542,7 +542,7 @@
     color:var(--color-text-default);}
   .radio-labels .name{font-weight:var(--typo-weight-label-j);font-size:var(--typo-size-label-l);line-height:1;}
   .radio-labels .sub{font-weight:var(--typo-weight-caption);font-size:var(--typo-size-caption);line-height:1.6;}
-  /* 転用では「イベント・キャンペーン」「その他」を出さない（V1-5.6） */
+  /* 転用では「イベント・キャンペーン」「その他」「非デザイナー用フォーマット」を出さない（V1-5.6） */
   .checks.hide-only-new .only-new{display:none;}
 
   /* ==========================================================================
@@ -924,8 +924,8 @@
                 <a href="https://crazyincworkspace.slack.com/" target="_blank" rel="noopener noreferrer">Slackチャンネル</a>
                 に貼り付け。</div>
               <ul class="done-mentions">
-                <li>ANV含む婚礼全般に関する制作依頼・相談は、<b>@笹原光 / Hikari Sasahara</b> 宛に投稿してください。</li>
-                <li>それ以外（食・CBX・採用）の制作依頼・相談は、<b>@宮川雄気 / Miyakawa Yuki</b> 宛に投稿してください。</li>
+                <li>ANV含む婚礼全般に関する制作依頼は、<b>@笹原光 / Hikari Sasahara</b> 宛に投稿してください。</li>
+                <li>それ以外の制作依頼（フォーマット化含む）は、<b>@宮川雄気 / Miyakawa Yuki</b> 宛に投稿してください。</li>
               </ul>
               <div class="caption">依頼内容の確認・修正はNotionから行えます。</div>
             </div>
@@ -1112,7 +1112,7 @@
               <!-- 制作物の種別：新規・転用（V1-5.6で単一選択のラジオに変更。Driveの種別フォルダ振り分けの根拠になる）
                    value はNotion「制作物の種別」の選択肢と完全一致させること。
                    ラベルを変えるとNotionに同名の新選択肢が生成され既存データと分裂する。
-                   only-new ＝ 転用では表示しない選択肢（イベント・キャンペーン／その他） -->
+                   only-new ＝ 転用では表示しない選択肢（イベント・キャンペーン／その他／非デザイナー用フォーマット） -->
               <div class="input f-prodtypes" data-types="新規,転用">
                 <div class="subhead-group">
                   <div class="subhead-row"><span class="fl">制作物の種別</span><span class="badge-required">必須</span></div>
@@ -1128,6 +1128,7 @@
                   <label class="radio-card"><input type="radio" name="prodType" value="ペーパーアイテム"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">ペーパーアイテム</span><span class="sub">メニュー表・手紙・ポストカードなど</span></span></label>
                   <label class="radio-card"><input type="radio" name="prodType" value="招待状・紙袋・ノベルティ"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">招待状・紙袋・ノベルティ</span><span class="sub">招待状・紙袋・書籍・ステッカーなどのグッズ類</span></span></label>
                   <label class="radio-card only-new"><input type="radio" name="prodType" value="その他"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">その他</span><span class="sub">足拭きマット・ネームプレートなど迷ったらこちら</span></span></label>
+                  <label class="radio-card only-new"><input type="radio" name="prodType" value="非デザイナー用フォーマット"><span class="radio-btn" aria-hidden="true"></span><span class="radio-labels"><span class="name">非デザイナー用フォーマット</span><span class="sub">次回以降も転用できる制作物の型化はこちら</span></span></label>
                 </div>
               </div>
 
@@ -1201,12 +1202,12 @@
                   <div class="subhead-row"><span class="fl">制作物の概要</span><button type="button" class="btn-linktext" id="szOpen">サイズ目安表をみる</button></div>
                   <div class="caption">印刷費の見積りには「サイズ・ページ数・部数」の3点が最低限必須になります。</div>
                 </div>
-                <div class="field-textarea"><textarea class="ctl" name="manuscript" placeholder="アウトプットのサイズ・ページ数・部数・掲載テキスト・使用写真など"></textarea></div>
+                <div class="field-textarea"><textarea class="ctl" name="manuscript" placeholder="使用ツール、アウトプットのサイズ・ページ数・部数・掲載テキスト、使用写真など"></textarea></div>
               </div>
 
-              <!-- プロトタイプ：新規 -->
+              <!-- 構成ラフ：新規（内部キーは prototype のまま） -->
               <div class="input f-prototype" data-types="新規">
-                <div class="subhead-group"><div class="subhead-row"><span class="fl">プロトタイプ</span></div></div>
+                <div class="subhead-group"><div class="subhead-row"><span class="fl">構成ラフ</span></div></div>
                 <div class="field-textarea"><textarea class="ctl" name="prototype" placeholder="Canva・Figma・KeynoteなどのURLを記入、または「参考資料・画像を添付」に添付"></textarea></div>
               </div>
 
@@ -1434,7 +1435,7 @@
       show(el, t.indexOf(current) !== -1);
     });
     applyOrder(current);
-    // 転用では「イベント・キャンペーン」「その他」を選択肢から外す（V1-5.6）
+    // 転用では「イベント・キャンペーン」「その他」「非デザイナー用フォーマット」を選択肢から外す（V1-5.6）
     var pt = $("prodTypes");
     if (pt){
       pt.classList.toggle("hide-only-new", current === "転用");
@@ -1686,7 +1687,7 @@
       var pt = d.productTypes && d.productTypes[0];
       if (pt){
         var radio = document.querySelector('#prodTypes input[value="' + pt.replace(/"/g, '\\"') + '"]');
-        // 転用で選べない種別（イベント・キャンペーン／その他）は非表示なので入れない
+        // 転用で選べない種別（イベント・キャンペーン／その他／非デザイナー用フォーマット）は非表示なので入れない
         if (radio && radio.closest(".radio-card").offsetParent !== null) radio.checked = true;
       }
     }
