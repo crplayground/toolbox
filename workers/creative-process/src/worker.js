@@ -34,7 +34,7 @@
 //   GOOGLE_CLIENT_ID  （必須）GoogleのOAuthクライアントID。IDトークンの aud 検証に使用
 //   GOOGLE_CLIENT_SECRET（必須）同クライアントのシークレット。認可コード→IDトークンの交換に使用
 //                      ※Secretsにのみ置く。フォームHTMLやリポジトリには絶対に書かない
-//   ALLOWED_ORIGIN    （任意）許可するフォームのオリジン。カンマ区切り可。未設定なら全許可
+//   ALLOWED_ORIGIN    （必須）許可するフォームのオリジン。カンマ区切り可。未設定なら全拒否（2026-10-22 変更）
 //   NOTION_VERSION    （任意）Notion APIバージョン。未設定なら "2022-06-28"
 //   GOOGLE_SA_EMAIL   （任意・V1-5）Driveサービスアカウントのメールアドレス
 //   GOOGLE_SA_PRIVATE_KEY（任意・V1-5）同アカウントの秘密鍵（PKCS#8 PEM）
@@ -147,7 +147,8 @@ const CORS_BASE = {
 
 function resolveCorsOrigin(request, env) {
   const allow = (env.ALLOWED_ORIGIN || "").trim();
-  if (!allow) return "*";
+  // 未設定のときは "*" にせず、どのオリジンも許可しない（設定が消えても無制限にならないように）
+  if (!allow) return "";
   const origin = request.headers.get("Origin") || "";
   const list = allow.split(",").map((s) => s.trim()).filter(Boolean);
   return list.includes(origin) ? origin : list[0];
@@ -173,7 +174,7 @@ function htmlResponse(html, status = 200) {
 
 function isAllowedOrigin(request, env) {
   const allow = (env.ALLOWED_ORIGIN || "").trim();
-  if (!allow) return true; // 未設定＝制限なし（開発初期）
+  if (!allow) return false; // 未設定＝全拒否（wrangler.toml の ALLOWED_ORIGIN を必ず設定する）
   const origin = request.headers.get("Origin") || "";
   const list = allow.split(",").map((s) => s.trim()).filter(Boolean);
   return list.includes(origin);
