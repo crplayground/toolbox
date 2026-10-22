@@ -586,8 +586,8 @@ Figmaのemojiセクションと同じ16種から**送信のたびにランダム
 あと1ステップで、依頼を起票できます!
 
 NotionページのURLをコピーして [Slackチャンネル] に貼り付け。
- ・ ANV含む婚礼全般に関する制作依頼は、@笹原光 / Hikari Sasahara 宛に投稿してください。
- ・ それ以外の制作依頼（フォーマット化含む）は、@宮川雄気 / Miyakawa Yuki 宛に投稿してください。
+ ・ 依頼は「83_creative_クリ室依頼」チャネルに、@宮川雄気 / Miyakawa Yuki 宛に投稿してください。
+ ・ 不明点やリクエストのある方は林宛にお問い合わせください。
 依頼内容の確認・修正はNotionから行えます。
 
 [🔗 NotionのURLをコピー]   ← 全幅・青枠（btn/tertiary-blue/leftcon・icon/link）
