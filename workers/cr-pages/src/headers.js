@@ -30,7 +30,7 @@ export function jsonResponse(body, status = 200) {
 // 期限切れ・削除済み・存在しないページは、すべて同じ画面にする（理由を区別して見せない）。
 export function notFoundResponse() {
   const html = '<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<meta name="robots" content="noindex"><title>CR PAGES</title>'
+    + '<meta name="robots" content="noindex"><title>HELLO PAGES</title>'
     + '<body style="font-family:\'Noto Sans JP\',\'Hiragino Kaku Gothic ProN\',sans-serif;color:#333;background:#f5f5f5;display:grid;place-items:center;min-height:100vh;margin:0;text-align:center;line-height:2">'
     + '<div><p style="font-weight:700;font-size:18px;margin:0">このページは見つかりません。</p><p style="margin:0;color:#595959">期限が切れた可能性があります。</p></div></body></html>';
   const headers = contentHeaders('text/html; charset=utf-8');

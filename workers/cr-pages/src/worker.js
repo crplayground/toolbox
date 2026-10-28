@@ -1,4 +1,4 @@
-// CR PAGES Worker。
+// HELLO PAGES Worker。
 //   /api/*   公開者向け API（Googleログイン必須）
 //   /s/<id>/ 共有URLの入口（パスワードのロック画面）
 //   /v/<id>/<token>/… ロック解除後の閲覧（sandbox 付きで配信）
@@ -7,6 +7,8 @@ import {jsonResponse, notFoundResponse} from './headers.js';
 import {errorResponse, HttpError} from './errors.js';
 import {exchangeCode, requireSameOrigin, requireUser} from './auth.js';
 import {completeBundle, createBundle, putFile} from './api.js';
+import {deletePage, listPages, reissuePassword} from './pages.js';
+import {runCleanup} from './cleanup.js';
 import {handleShare, handleView} from './view.js';
 
 // R2・D1 のバインドが生きているかの確認（デプロイ後の動作確認用。中身は返さない）。
@@ -32,6 +34,10 @@ async function api(request, env, pathname) {
     const user = await requireUser(request, env);
     return jsonResponse({name: user.name, email: user.email, exp: user.exp});
   }
+  if (pathname === '/api/pages' && method === 'GET') return listPages(env, await requireUser(request, env));
+  const p = /^\/api\/pages\/([^/]+)(\/password)?$/.exec(pathname);
+  if (p && !p[2] && method === 'DELETE') return deletePage(request, env, await requireUser(request, env), p[1]);
+  if (p && p[2] && method === 'POST') return reissuePassword(request, env, await requireUser(request, env), p[1]);
   if (pathname === '/api/bundles' && method === 'POST') return createBundle(request, env, await requireUser(request, env));
   const m = /^\/api\/bundles\/([^/]+)\/(file|complete)$/.exec(pathname);
   if (m && ((m[2] === 'file' && method === 'PUT') || (m[2] === 'complete' && method === 'POST'))) {
@@ -58,5 +64,9 @@ export default {
     } catch (e) {
       return errorResponse(e);
     }
+  },
+  // 1時間ごと（wrangler.toml の [triggers]）。期限切れページのファイル削除と、古い記録の整理。
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runCleanup(env));
   },
 };

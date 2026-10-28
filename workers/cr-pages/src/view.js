@@ -24,11 +24,11 @@ function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<':
 function lockPage(id, code) {
   const message = MESSAGES[code];
   const html = '<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<meta name="robots" content="noindex,nofollow"><title>CR PAGES</title>'
+    + '<meta name="robots" content="noindex,nofollow"><title>HELLO PAGES</title>'
     + '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">'
     + '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">'
     + '<link rel="stylesheet" href="/app.css"></head><body class="lock-body"><main class="lock">'
-    + '<h1>CR PAGES</h1><p class="lead">このページはパスワードで保護されています。</p>'
+    + '<h1>HELLO PAGES</h1><p class="lead">このページはパスワードで保護されています。</p>'
     + '<form method="post" action="/s/' + esc(id) + '/unlock" class="lock-form">'
     + '<label class="fl" for="password">パスワード</label>'
     + '<input class="ctl lock-input" id="password" name="password" type="text" maxlength="32" autocomplete="off" autocapitalize="characters" spellcheck="false" autofocus required>'

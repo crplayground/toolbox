@@ -1,4 +1,4 @@
-// CR PAGES の画面。
+// HELLO PAGES の画面。
 // ログイン（Creative Process と同じ方式）→ ファイルの受け取りと検証 → 公開（URLとパスワードの発行）。
 import {EXPIRY_OPTIONS, DEFAULT_EXPIRY_HOURS, MAX_FILES, validateEntries} from './js/bundle.js';
 
@@ -45,12 +45,15 @@ function applySignedIn(p) {
   $('userBox').classList.remove('hidden');
   setLoginHint('');
   refreshPublish();
+  void loadMine();
 }
 
 function signOut() {
   auth = {idToken: null, name: '', email: '', exp: 0};
   $('userBox').classList.add('hidden');
   $('loginBox').classList.remove('hidden');
+  $('mine').classList.add('hidden');
+  $('pageList').replaceChildren();
   // 自動ログインを切る。これをしないと「別のアカウント」を押しても同じ人で入り直してしまう。
   try { window.google?.accounts.id.disableAutoSelect(); } catch { /* 無視 */ }
   refreshPublish();
@@ -181,11 +184,15 @@ async function accept(collect, folderName) {
     selected = {files, title: await pageTitle(files, folderName)};
     selectedEl.textContent = '選択中：' + selected.title + '（' + files.length + 'ファイル・' + formatSize(total) + '）';
     selectedEl.classList.remove('hidden');
+    // 読み込みが終わった合図として、次の入力（STEP 3）まで自動でスクロールする
+    $('box3').scrollIntoView({behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start'});
   } catch (e) {
     showError(errorEl, e instanceof Error ? e.message : 'ファイルを読み込めませんでした。もう一度お試しください。');
   }
   refreshPublish();
 }
+
+function reducedMotion() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
 
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('over'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('over'));
@@ -219,11 +226,22 @@ $('htmlInput').addEventListener('change', e => {
   e.target.value = '';
 });
 
+// ── HTMLの貼り付け ──
+// 貼り付けた文章を、1つの index.html として扱う（ファイルを選んだときと同じ検証を通す）。
+function usePaste() {
+  const text = $('pasteHtml').value;
+  if (!text.trim()) { showError(errorEl, 'HTMLを貼り付けてください。'); return; }
+  void accept(async () => [{file: new File([text], 'index.html', {type: 'text/html'}), path: 'index.html'}], '貼り付けたHTML');
+}
+$('usePaste').addEventListener('click', usePaste);
+// 貼り付けた直後は、ボタンを押さなくても次へ進む（貼り付けが反映されてから処理する）
+$('pasteHtml').addEventListener('paste', () => setTimeout(usePaste, 0));
+
 // ===== 公開（URLとパスワードの発行）=======================================
 async function api(url, init) {
   const response = await fetch(url, {...init, headers: {...(init.headers || {}), Authorization: 'Bearer ' + auth.idToken}});
   if (!response.ok) {
-    let message = '公開に失敗しました。もう一度お試しください。';
+    let message = '処理に失敗しました。もう一度お試しください。';
     try { message = (await response.json()).error || message; } catch { /* 既定の文言 */ }
     if (response.status === 401) { signOut(); message = 'ログインの有効期限が切れました。もう一度ログインしてください。'; }
     throw new Error(message);
@@ -231,9 +249,17 @@ async function api(url, init) {
   return response.json();
 }
 
-function formatDate(epochSeconds) {
+function formatStamp(epochSeconds) {
   const d = new Date(epochSeconds * 1000), p = n => String(n).padStart(2, '0');
-  return d.getFullYear() + '/' + p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ' まで';
+  return d.getFullYear() + '/' + p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function formatDate(epochSeconds) { return formatStamp(epochSeconds) + ' まで'; }
+
+function remaining(epochSeconds) {
+  const s = epochSeconds - Date.now() / 1000;
+  if (s >= 86400) return '残り約' + Math.floor(s / 86400) + '日';
+  if (s >= 3600) return '残り約' + Math.floor(s / 3600) + '時間';
+  return '残り' + Math.max(1, Math.floor(s / 60)) + '分';
 }
 
 let lastResult = null;
@@ -283,11 +309,105 @@ function showResult(r) {
   $('result').classList.remove('hidden');
   selected = null;
   selectedEl.classList.add('hidden');
-  $('result').scrollIntoView({behavior: 'smooth', block: 'start'});
+  $('pasteHtml').value = '';
+  $('result').scrollIntoView({behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start'});
+  void loadMine();
+}
+
+// ===== 自分の公開ページ（一覧・URLコピー・パスワード再発行・削除）=============
+async function loadMine() {
+  if (!auth.idToken) return;
+  $('mine').classList.remove('hidden');
+  try {
+    const {pages} = await api('/api/pages', {method: 'GET', headers: {}});
+    showError($('mineError'), '');
+    renderMine(pages);
+  } catch (e) { showError($('mineError'), e instanceof Error ? e.message : '一覧を読み込めませんでした。'); }
+}
+
+function button(label, className, onClick) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'btn-tertiary ' + className;
+  b.textContent = label;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+function renderMine(pages) {
+  const list = $('pageList');
+  list.replaceChildren();
+  $('pageListEmpty').classList.toggle('hidden', pages.length > 0);
+  for (const p of pages) {
+    const url = location.origin + '/s/' + p.id + '/';
+    const li = document.createElement('li');
+    li.className = 'page-item';
+    const title = document.createElement('h3');
+    title.textContent = p.title;
+    const meta = document.createElement('p');
+    meta.className = 'page-meta';
+    meta.textContent = '公開 ' + formatStamp(p.createdAt) + ' ／ 期限 ' + formatDate(p.expiresAt) + '（' + remaining(p.expiresAt) + '）／ ' + p.files + 'ファイル';
+    const actions = document.createElement('div');
+    actions.className = 'page-actions';
+    const copy = button('URLをコピー', 'btn-tertiary-blue', async () => {
+      try { await navigator.clipboard.writeText(url); copy.textContent = 'コピーしました ✓'; setTimeout(() => { copy.textContent = 'URLをコピー'; }, 2200); }
+      catch { showError($('mineError'), 'コピーできませんでした。URL：' + url); }
+    });
+    const reissue = button('パスワードを再発行', '', async () => {
+      if (!confirm('新しいパスワードを発行します。いまのパスワードは使えなくなります。よろしいですか？')) return;
+      reissue.disabled = true;
+      try {
+        const {password} = await api('/api/pages/' + p.id + '/password', {method: 'POST', headers: {}});
+        showNewPassword(li, p, url, password);
+      } catch (e) { showError($('mineError'), e instanceof Error ? e.message : '再発行できませんでした。'); }
+      reissue.disabled = false;
+    });
+    const remove = button('削除', 'btn-danger', async () => {
+      if (!confirm('「' + p.title + '」を削除します。URLはすぐに開けなくなり、元に戻せません。よろしいですか？')) return;
+      remove.disabled = true;
+      try { await api('/api/pages/' + p.id, {method: 'DELETE', headers: {}}); await loadMine(); }
+      catch (e) { showError($('mineError'), e instanceof Error ? e.message : '削除できませんでした。'); remove.disabled = false; }
+    });
+    actions.append(copy, reissue, remove);
+    li.append(title, meta, actions);
+    list.append(li);
+  }
+}
+
+function showNewPassword(li, p, url, password) {
+  li.querySelector('.page-newpw')?.remove();
+  const box = document.createElement('div');
+  box.className = 'page-newpw';
+  const label = document.createElement('span');
+  label.className = 'caption';
+  label.textContent = '新しいパスワード（この画面でしか表示されません）';
+  const pw = document.createElement('p');
+  pw.className = 'result-password';
+  pw.textContent = password;
+  const copy = button('URLとパスワードをまとめてコピー', 'btn-tertiary-blue', async () => {
+    try { await navigator.clipboard.writeText('【' + p.title + '】\nURL: ' + url + '\nパスワード: ' + password + '\n期限: ' + formatDate(p.expiresAt)); copy.textContent = 'コピーしました ✓'; setTimeout(() => { copy.textContent = 'URLとパスワードをまとめてコピー'; }, 2200); }
+    catch { showError($('mineError'), 'コピーできませんでした。'); }
+  });
+  box.append(label, pw, copy);
+  li.append(box);
 }
 
 $('publishBtn').addEventListener('click', () => void publish());
-$('resultUrl').addEventListener('focus', e => e.target.select());
+// URL欄は、クリック（キーボードなら Enter）でコピーする。コピーできない環境では、選択だけして案内を出す。
+let urlCopiedTimer;
+async function copyUrl() {
+  const input = $('resultUrl'), note = $('urlCopied');
+  if (!input.value) return;
+  input.select();
+  let message = '選択しました。Ctrl+C（Macは ⌘C）でコピーしてください。';
+  try { await navigator.clipboard.writeText(input.value); message = 'コピーしました ✓'; } catch { /* 案内の文言のまま */ }
+  note.textContent = message;
+  note.classList.remove('hidden');
+  clearTimeout(urlCopiedTimer);
+  urlCopiedTimer = setTimeout(() => note.classList.add('hidden'), 2200);
+}
+$('resultUrl').addEventListener('click', () => void copyUrl());
+$('resultUrl').addEventListener('keydown', e => { if (e.key === 'Enter') void copyUrl(); });
 $('copyAll').addEventListener('click', async () => {
   if (!lastResult) return;
   const text = '【' + lastResult.title + '】\nURL: ' + lastResult.url + '\nパスワード: ' + lastResult.password + '\n期限: ' + formatDate(lastResult.expiresAt);
@@ -303,6 +423,7 @@ $('again').addEventListener('click', () => {
   $('result').classList.add('hidden');
   $('resultPassword').textContent = '';
   $('resultUrl').value = '';
+  $('urlCopied').classList.add('hidden');
   window.scrollTo({top: 0, behavior: 'smooth'});
 });
 

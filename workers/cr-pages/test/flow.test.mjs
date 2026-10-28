@@ -1,4 +1,4 @@
-// CR PAGES 通しテスト：ログイン検証 → 公開 → ロック画面 → 閲覧 → 上限・期限。
+// HELLO PAGES 通しテスト：ログイン検証 → 公開 → ロック画面 → 閲覧 → 上限・期限。
 // 本物のD1・R2・Googleの代わりに、メモリ上の代用品（node:sqlite・Map・自前のJWT）で動かす。
 // 実行：cd workers/cr-pages && node test/flow.test.mjs
 import {DatabaseSync} from 'node:sqlite';
@@ -19,7 +19,8 @@ const wrap = (sql, params = []) => ({
   _sql: sql, _params: params,
   bind: (...p) => wrap(sql, p.map(v => v === undefined ? null : v)),
   first: async () => db.prepare(sql).get(...params) ?? null,
-  run: async () => { db.prepare(sql).run(...params); return {success: true}; },
+  run: async () => { const r = db.prepare(sql).run(...params); return {success: true, meta: {changes: Number(r.changes)}}; },
+  all: async () => ({results: db.prepare(sql).all(...params)}),
 });
 const DB = {
   prepare: sql => wrap(sql),
@@ -30,6 +31,7 @@ const BUCKET = {
   head: async key => store.has(key) ? {size: store.get(key).bytes.byteLength} : null,
   put: async (key, bytes, opts) => { store.set(key, {bytes: new Uint8Array(bytes), contentType: opts?.httpMetadata?.contentType}); },
   list: async ({prefix}) => ({objects: [...store.entries()].filter(([k]) => k.startsWith(prefix)).map(([key, v]) => ({key, size: v.bytes.byteLength})), truncated: false}),
+  delete: async keys => { for (const k of [].concat(keys)) store.delete(k); },
   get: async (key, opts) => {
     const v = store.get(key);
     if (!v) return null;
@@ -219,6 +221,67 @@ t('全体容量が9GBに達していたら507', cap.status === 507);
 db.exec('DELETE FROM pages');
 db.prepare("INSERT INTO pages (id, title, status, owner_hash, files_json, file_count, total_bytes, created_at, expires_at, purge_at) VALUES (?, 't', 'active', 'x', '[]', 1, ?, ?, ?, ?)").run(crypto.randomUUID(), LIMITS.capacityBytes, now - 7200, now - 10, now + 99999999);
 t('期限切れのページは容量に数えない', (await call('/api/bundles', json(alice, manifest))).status === 200);
+
+// ── 一覧・パスワード再発行・削除 ──
+db.exec('DELETE FROM pages');
+store.clear();
+const pA = await publish(alice);
+const pB = await publish(alice);
+const pC = await publish(bob);
+const list = async headers => call('/api/pages', {headers});
+const listed = await (await list(alice)).json();
+t('ログインなしでは一覧を見られない', (await call('/api/pages')).status === 401);
+t('一覧には自分のページだけが新しい順に並ぶ', listed.pages.length === 2 && listed.pages.every(p => [pA.id, pB.id].includes(p.id)) && !listed.pages.some(p => p.id === pC.id));
+t('一覧にパスワード・メール・内部IDは含まれない', !JSON.stringify(listed).match(/password|email|owner|sub-alice|alice@/i));
+t('一覧に題名・期限・ファイル数が出る', listed.pages[0].title === '資料' && listed.pages[0].files === 2 && listed.pages[0].expiresAt > now);
+
+const reissue = (id, headers) => call('/api/pages/' + id + '/password', {method: 'POST', headers});
+t('他人のページのパスワードは再発行できない（404）', (await reissue(pA.id, bob)).status === 404);
+t('別のオリジンからは再発行できない（403）', (await reissue(pA.id, {...alice, Origin: 'https://evil.example'})).status === 403);
+db.prepare('UPDATE pages SET failed_count = 3, locked_until = ? WHERE id = ?').run(now + 600, pA.id);
+const re = await reissue(pA.id, alice);
+const newPw = (await re.json()).password;
+t('新しいパスワードが発行され、ロックも解除される', re.status === 200 && /^[2-9A-HJ-NP-Z]{8}$/.test(newPw) && newPw !== pA.result.password && db.prepare('SELECT failed_count f, locked_until l FROM pages WHERE id=?').get(pA.id).l === 0);
+t('古いパスワードは使えなくなる', (await unlock(pA.id, pA.result.password)).headers.get('Location').endsWith('?e=wrong'));
+const reUnlock = await unlock(pA.id, newPw);
+t('新しいパスワードで開ける', reUnlock.headers.get('Location').startsWith('/v/' + pA.id + '/'));
+const viewA = reUnlock.headers.get('Location');
+t('開いている間は閲覧できる', (await call(viewA)).status === 200);
+
+const del = (id, headers) => call('/api/pages/' + id, {method: 'DELETE', headers});
+t('他人のページは削除できない（404）', (await del(pA.id, bob)).status === 404 && store.has('bundles/' + pA.id + '/index.html'));
+t('別のオリジンからは削除できない（403）', (await del(pA.id, {...alice, Origin: 'https://evil.example'})).status === 403);
+t('自分のページは削除できる', (await del(pA.id, alice)).status === 200);
+t('削除するとファイルがR2から消える', ![...store.keys()].some(k => k.startsWith('bundles/' + pA.id + '/')) && [...store.keys()].some(k => k.startsWith('bundles/' + pB.id + '/')));
+t('削除したページは、ロック画面も閲覧も404', (await call('/s/' + pA.id + '/')).status === 404 && (await call(viewA)).status === 404);
+const delRow = db.prepare('SELECT status, password_hash FROM pages WHERE id=?').get(pA.id);
+t('削除済みの記録はパスワードのハッシュを持たない', delRow.status === 'deleted' && delRow.password_hash === null);
+t('一覧から消える・二重削除は404', (await (await list(alice)).json()).pages.length === 1 && (await del(pA.id, alice)).status === 404);
+t('削除しても他人のページには影響しない', (await call('/s/' + pC.id + '/')).status === 200);
+
+// ── 期限切れの後始末（Cron） ──
+const {runCleanup, CLEANUP} = await import('../src/cleanup.js');
+db.prepare('UPDATE pages SET expires_at = ? WHERE id = ?').run(now - 5, pB.id);
+const stalePending = crypto.randomUUID(), freshPending = crypto.randomUUID();
+const addPending = (id, createdAt) => { db.prepare("INSERT INTO pages (id, title, status, owner_hash, files_json, file_count, total_bytes, created_at, expires_at, purge_at) VALUES (?, 'p', 'pending', 'x', '[]', 1, 1, ?, ?, ?)").run(id, createdAt, now + 86400, now + 99999999); store.set('bundles/' + id + '/index.html', {bytes: new Uint8Array(3), contentType: 'text/html'}); };
+addPending(stalePending, now - CLEANUP.pendingGraceSeconds - 60);
+addPending(freshPending, now - 60);
+const stats = await runCleanup(env, now);
+t('期限切れのページと、途中で止まった残骸のファイルが消える', stats.expired === 1 && stats.discarded === 1 && !store.has('bundles/' + pB.id + '/index.html') && !store.has('bundles/' + stalePending + '/index.html'));
+t('公開中のページと、作成直後の途中のページは消えない', store.has('bundles/' + pC.id + '/index.html') && store.has('bundles/' + freshPending + '/index.html'));
+t('期限切れの記録は expired になり、ハッシュも消える', db.prepare('SELECT status, password_hash FROM pages WHERE id=?').get(pB.id).status === 'expired' && db.prepare('SELECT password_hash h FROM pages WHERE id=?').get(pB.id).h === null);
+t('二度実行しても何も起きない', JSON.stringify(await runCleanup(env, now)) === JSON.stringify({expired: 0, discarded: 0, purged: 0}));
+db.prepare('UPDATE pages SET purge_at = ? WHERE id IN (?, ?)').run(now - 1, pB.id, pA.id);
+const eventsBefore = db.prepare('SELECT COUNT(*) c FROM events').get().c;
+const purge = await runCleanup(env, now);
+t('期限から90日たった記録は行ごと消える（メールも消える）', purge.purged === 2 && !db.prepare('SELECT 1 x FROM pages WHERE id IN (?, ?)').get(pB.id, pA.id));
+t('集計用の記録は消えない', db.prepare('SELECT COUNT(*) c FROM events').get().c === eventsBefore && eventsBefore >= 3);
+for (let i = 0; i < CLEANUP.pagesPerRun + 2; i++) { const id = crypto.randomUUID(); db.prepare("INSERT INTO pages (id, title, status, owner_hash, files_json, file_count, total_bytes, created_at, expires_at, purge_at) VALUES (?, 'e', 'active', 'x', '[]', 1, 1, ?, ?, ?)").run(id, now - 9999, now - 10, now + 99999999); store.set('bundles/' + id + '/index.html', {bytes: new Uint8Array(1), contentType: 'text/html'}); }
+const first = await runCleanup(env, now), second = await runCleanup(env, now);
+t('1回に片付けるのは10件まで、残りは次回', first.expired === CLEANUP.pagesPerRun && second.expired === 2);
+const queued = [];
+await worker.scheduled({}, env, {waitUntil: p => queued.push(p)});
+t('定期実行の入口が後始末を呼ぶ', queued.length === 1 && JSON.stringify(await queued[0]) === JSON.stringify({expired: 0, discarded: 0, purged: 0}));
 
 // ── その他 ──
 t('未知のAPIは404', (await call('/api/unknown')).status === 404);

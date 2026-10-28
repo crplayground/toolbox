@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>CR PAGES | HTMLを社内に共有</title>
+<title>HELLO PAGES | HTMLを社内に共有</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
   <div class="column">
 
     <div class="header-area">
-      <h1>CR PAGES</h1>
+      <h1>HELLO PAGES</h1>
       <p class="lead">HTMLをドロップするだけで、社内に共有できる</p>
       <p class="sub">作ったHTMLをCSSや画像も含めて、1個のURLにまとめて届けられます。URLごとにパスワードが付き、期限が来たら自動で消えます。</p>
     </div>
@@ -55,11 +55,17 @@
               <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
             </div>
             <p class="caption">最大500ファイル・合計100MB・1ファイル10MBまで。</p>
+            <div class="subhead-group paste">
+              <label class="fl" for="pasteHtml">または、HTMLを貼り付ける</label>
+              <p class="caption">AIが書いたHTMLなどを、そのまま貼り付けて公開できます（CSS・画像は埋め込み済みのもの）。貼り付けると自動で次へ進みます。</p>
+              <textarea class="ctl paste-input" id="pasteHtml" rows="6" spellcheck="false" placeholder="&lt;!doctype html&gt; …"></textarea>
+              <div class="actions"><button type="button" class="btn-tertiary btn-tertiary-blue" id="usePaste">貼り付けた内容を使う</button></div>
+            </div>
             <p class="error-message hidden" id="error" role="alert"></p>
           </div>
         </section>
 
-        <section class="box" aria-labelledby="step3">
+        <section class="box" id="box3" aria-labelledby="step3">
           <div class="section-header" id="step3"><span class="en">STEP 3</span><span class="ja">閲覧できる期間</span></div>
           <div class="input">
             <div class="subhead-group">
@@ -82,13 +88,26 @@
         <div class="section-header" id="resultTitle"><span class="ja">公開しました</span></div>
         <div class="input">
           <div class="subhead-group"><span class="fl">ページ</span><p class="result-title" id="resultPage"></p></div>
-          <div class="subhead-group"><span class="fl">URL</span><input class="ctl result-input" id="resultUrl" readonly aria-label="共有URL"></div>
+          <div class="subhead-group">
+            <span class="fl">URL</span>
+            <p class="caption">クリックするとコピーされます。</p>
+            <input class="ctl result-input" id="resultUrl" readonly aria-label="共有URL（クリックでコピー）">
+            <p class="caption copy-feedback hidden" id="urlCopied" role="status"></p>
+          </div>
           <div class="subhead-group"><span class="fl">パスワード</span><p class="result-password" id="resultPassword"></p></div>
           <div class="subhead-group"><span class="fl">期限</span><p class="result-title" id="resultExpiry"></p></div>
           <p class="caption">パスワードはこの画面でしか表示されません。URLとパスワードを、閲覧してほしい人に一緒に送ってください。</p>
         </div>
         <button type="button" class="btn-primary" id="copyAll">URLとパスワードをまとめてコピー</button>
         <div class="actions"><a class="btn-tertiary btn-tertiary-blue btn-link" id="openPage" target="_blank" rel="noopener">ページを開く</a><button type="button" class="btn-tertiary" id="again">続けて別のページを公開する</button></div>
+      </section>
+
+      <section class="box hidden" id="mine" aria-labelledby="mineTitle">
+        <div class="section-header" id="mineTitle"><span class="ja">自分の公開ページ</span></div>
+        <p class="caption">いま公開中の、あなたのページです。期限が切れたものは自動で消えます。パスワードは表示できません。忘れたときは、再発行してください。</p>
+        <p class="error-message hidden" id="mineError" role="alert"></p>
+        <ul class="page-list" id="pageList"></ul>
+        <p class="caption hidden" id="pageListEmpty">公開中のページはありません。</p>
       </section>
     </div>
 

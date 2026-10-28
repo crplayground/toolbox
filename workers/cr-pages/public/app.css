@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CR PAGES
+   HELLO PAGES
    見た目の基準は CREATIVE PROCESS（creative-process/index.html の :root と design/DESIGN.md）。
    CSS変数名は同じ命名規則（Figmaのバリアブル名のフルパス）を使う。値は CREATIVE PROCESS と同じにする。
    使う変数だけを置く。
@@ -153,9 +153,28 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* 公開結果 */
 .result-title{margin:0;line-height:1.6;overflow-wrap:anywhere}
-.result-input{cursor:text;padding-right:var(--spacing-padding-textarea)}
+.result-input{cursor:copy;padding-right:var(--spacing-padding-textarea)}
+.copy-feedback{color:var(--color-text-accent);font-weight:var(--typo-weight-label-j)}
+.box{scroll-margin-top:24px}
 .result-password{margin:0;font-family:var(--typo-font-font-e);font-weight:var(--typo-weight-head-e);font-size:var(--typo-size-head-3);letter-spacing:.2em;color:var(--color-text-accent);line-height:1.6}
 .btn-link{display:inline-flex;align-items:center;text-decoration:none;cursor:pointer}
+
+/* HTMLの貼り付け欄 */
+.paste{margin-top:var(--spacing-gap-subhead-offset)}
+textarea.ctl.paste-input{height:auto;min-height:160px;resize:vertical;cursor:text;padding:var(--spacing-padding-textarea);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.6}
+
+/* 自分の公開ページ */
+.page-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-offset)}
+.page-item{border:1px solid var(--color-btn-tertiary-border);border-radius:var(--radius-button);padding:var(--spacing-padding-textarea) var(--spacing-padding-button-x-s);display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-group)}
+.page-item h3{margin:0;font-size:var(--typo-size-head-4);font-weight:var(--typo-weight-head-j);line-height:1.4;overflow-wrap:anywhere}
+.page-meta{margin:0;font-size:var(--typo-size-caption);color:var(--color-text-sub);line-height:1.6}
+.page-actions{display:flex;gap:var(--spacing-gap-subhead-group);flex-wrap:wrap}
+.page-actions .btn-tertiary{padding:12px 16px}
+.btn-danger{color:var(--color-warning-text);border-color:var(--color-warning-text)}
+@media(hover:hover){.btn-danger:not(:disabled):hover{background:var(--color-warning-bg)}}
+.btn-danger:focus-visible{outline-color:var(--color-warning-text)}
+.page-newpw{display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-group);background:var(--color-bg-hover);border-radius:var(--radius-button-s);padding:var(--spacing-padding-textarea)}
+.page-newpw .result-password{font-size:var(--typo-size-head-4)}
 
 /* ロック画面（閲覧者が最初に見る画面） */
 .lock-body{min-height:100vh;display:grid;place-items:center}

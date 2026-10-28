@@ -1,4 +1,4 @@
-# Cloudflare Worker 設定ファイル（CR PAGES）
+# Cloudflare Worker 設定ファイル（HELLO PAGES）
 # 設計書：Drive の toolbox/cr-pages/設計書.md
 # 公開リポジトリに置くファイル。秘密情報・メールアドレスは書かない。
 
@@ -26,9 +26,13 @@ database_name = "cr-pages-db"
 database_id = "f745a864-65b9-45cc-bca9-08d825f6df4b"
 migrations_dir = "migrations"
 
+# 期限切れページの後始末（毎時0分）。
+[triggers]
+crons = ["0 * * * *"]
+
 # 非機密の設定。
 [vars]
-# CR PAGES 専用の Google OAuth クライアントID（公開情報なので vars でよい）。
+# HELLO PAGES 専用の Google OAuth クライアントID（公開情報なので vars でよい）。
 # Google Cloud Console で作成したら、ここに貼る（SETUP.md「Googleログインの準備」）。空のままだとログインできない。
 GOOGLE_CLIENT_ID = "667021295506-c0dmplgif4mvvqbvsmn7nivfgee9c71c.apps.googleusercontent.com"
 

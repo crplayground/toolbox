@@ -1,4 +1,4 @@
-# CR PAGES — SETUP.md（セットアップとデプロイ）
+# HELLO PAGES — SETUP.md（セットアップとデプロイ）
 
 設計は Drive の `toolbox/cr-pages/設計書.md`。この手順は `workers/cr-pages/` で実行する。
 
@@ -46,6 +46,20 @@ npx wrangler deploy
 
 `r2` か `d1` が `false` なら、手順1のバケット作成・ID の差し替え・マイグレーションのどれかが済んでいない。
 
+## 期限切れの自動削除（定期実行）
+
+`wrangler.toml` の `[triggers]` で、毎時0分に自動実行される（デプロイすると有効になる。Cloudflare の画面での設定は不要）。
+
+- 期限が切れたページのファイルを R2 から削除する（1回に10件まで。残りは次の時間に回る）。
+- 公開の途中で止まった残骸（1時間以上たった未完了のもの）も削除する。
+- 期限から90日たった記録（公開者のメールを含む）を削除する。集計用の記録は残る。
+
+閲覧は、定期実行を待たず、期限と同時に止まる。動いているかは、次のコマンドでログを見る（`[cr-pages] cleanup {...}` の行）。
+
+```sh
+npx wrangler tail
+```
+
 ## ローカルで動かす
 
 ```sh
@@ -63,7 +77,7 @@ node test/unit.test.mjs
 
 ## Googleログインの準備（Phase 2）
 
-CR PAGES 専用の OAuth クライアントを作る（無料。Creative Process のクライアントには触れない）。
+HELLO PAGES 専用の OAuth クライアントを作る（無料。Creative Process のクライアントには触れない）。
 
 1. https://console.cloud.google.com を開き、プロジェクト `creative-request-503219` を選ぶ。
 2. 「APIとサービス」→「認証情報」→「認証情報を作成」→「OAuth クライアント ID」。

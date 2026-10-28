@@ -1,4 +1,4 @@
--- CR PAGES 初期スキーマ（Phase 1）。Phase 2 以降で必要になれば 0002 以降で足す。
+-- HELLO PAGES 初期スキーマ（Phase 1）。Phase 2 以降で必要になれば 0002 以降で足す。
 
 -- 公開ページ。status: pending（送信中）／active／expired／deleted
 CREATE TABLE pages (

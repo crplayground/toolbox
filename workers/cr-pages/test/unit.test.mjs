@@ -1,4 +1,4 @@
-// CR PAGES ユニットテスト。実行：cd workers/cr-pages && node test/unit.test.mjs
+// HELLO PAGES ユニットテスト。実行：cd workers/cr-pages && node test/unit.test.mjs
 import {readFileSync} from 'node:fs';
 import {
   MAX_FILES, MAX_FILE, MAX_TOTAL, EXPIRY_OPTIONS, DEFAULT_EXPIRY_HOURS, isExpiryHours,
