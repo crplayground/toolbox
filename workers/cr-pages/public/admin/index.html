@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>HELLO PAGES | 管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="column wide">
+
+    <div class="header-area">
+      <h1>HELLO PAGES</h1>
+      <p class="lead">利用状況</p>
+      <p class="sub">公開数・閲覧数・利用者数・コード量の集計です。個人名やメールアドレスは含まれません。</p>
+    </div>
+
+    <section class="box" aria-labelledby="loginTitle">
+      <div class="section-header" id="loginTitle"><span class="ja">ログイン</span></div>
+      <div class="input" id="loginBox">
+        <div class="login-row">
+          <button type="button" class="btn-tertiary btn-tertiary-blue" id="loginBtn">Googleでログイン</button>
+          <p class="caption" id="loginHint">@crazy.co.jp のアカウントでログインしてください。</p>
+        </div>
+      </div>
+      <div class="input hidden" id="userBox">
+        <p class="caption">ログイン済みです。<button type="button" class="btn-linktext" id="switchUser">別のアカウントでログインし直す</button></p>
+      </div>
+    </section>
+
+    <section class="box hidden" id="notFound" role="alert">
+      <p class="result-title">このページは見つかりません。</p>
+    </section>
+    <p class="error-message hidden" id="statsError" role="alert"></p>
+
+    <div class="hidden" id="stats">
+      <section class="box" aria-labelledby="nowTitle">
+        <div class="section-header" id="nowTitle"><span class="ja">現在の状況</span></div>
+        <div class="stats-grid">
+          <div class="stat"><span class="caption">公開中のページ</span><strong id="sActive"></strong></div>
+          <div class="stat"><span class="caption">保存容量</span><strong id="sBytes"></strong><span class="caption" id="sCap"></span></div>
+          <div class="stat"><span class="caption">累計の公開ページ</span><strong id="sPages"></strong></div>
+          <div class="stat"><span class="caption">累計のビュー数</span><strong id="sViews"></strong></div>
+          <div class="stat"><span class="caption">利用ユーザー（累計）</span><strong id="sUsers"></strong></div>
+          <div class="stat"><span class="caption">累計のファイル数</span><strong id="sFiles"></strong><span class="caption" id="sFilesBytes"></span></div>
+        </div>
+        <p class="caption">ビュー数は、パスワードを解除した回数です。利用ユーザーは、重複を除いた公開者の数です。</p>
+      </section>
+
+      <section class="box" aria-labelledby="monthTitle">
+        <div class="section-header" id="monthTitle"><span class="ja">月別（直近12か月）</span></div>
+        <div class="table-wrap"><table class="stats-table" id="monthTable"></table></div>
+      </section>
+
+      <section class="box" aria-labelledby="yearTitle">
+        <div class="section-header" id="yearTitle"><span class="ja">年別</span></div>
+        <div class="table-wrap"><table class="stats-table" id="yearTable"></table></div>
+        <p class="caption">容量の列は、公開されたファイルの合計です（削除・期限切れのあとも、集計には残ります）。HTML・CSS・JS は、作られたコード量の目安です。</p>
+      </section>
+    </div>
+
+  </div>
+</div>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script type="module" src="/admin/admin.js"></script>
+</body>
+</html>

@@ -9,6 +9,7 @@ import {exchangeCode, requireSameOrigin, requireUser} from './auth.js';
 import {completeBundle, createBundle, putFile} from './api.js';
 import {deletePage, listPages, reissuePassword} from './pages.js';
 import {runCleanup} from './cleanup.js';
+import {adminStats} from './admin.js';
 import {handleShare, handleView} from './view.js';
 
 // R2・D1 のバインドが生きているかの確認（デプロイ後の動作確認用。中身は返さない）。
@@ -34,6 +35,7 @@ async function api(request, env, pathname) {
     const user = await requireUser(request, env);
     return jsonResponse({name: user.name, email: user.email, exp: user.exp});
   }
+  if (pathname === '/api/admin/stats' && method === 'GET') return adminStats(env, await requireUser(request, env));
   if (pathname === '/api/pages' && method === 'GET') return listPages(env, await requireUser(request, env));
   const p = /^\/api\/pages\/([^/]+)(\/password)?$/.exec(pathname);
   if (p && !p[2] && method === 'DELETE') return deletePage(request, env, await requireUser(request, env), p[1]);

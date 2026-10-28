@@ -283,6 +283,42 @@ const queued = [];
 await worker.scheduled({}, env, {waitUntil: p => queued.push(p)});
 t('定期実行の入口が後始末を呼ぶ', queued.length === 1 && JSON.stringify(await queued[0]) === JSON.stringify({expired: 0, discarded: 0, purged: 0}));
 
+// ── 管理者ボード ──
+const {lastMonths, isAdmin} = await import('../src/admin.js');
+t('直近12か月は古い順で、年をまたぐ', JSON.stringify(lastMonths(Date.UTC(2026, 1, 15) / 1000, 3)) === '["2025-12","2026-01","2026-02"]' && lastMonths(now, 12).length === 12);
+t('管理者の判定は大文字小文字・空白を無視、未設定なら誰も管理者でない', isAdmin({ADMIN_EMAILS: ' Alice@crazy.co.jp , x@crazy.co.jp'}, {email: 'alice@crazy.co.jp'}) && !isAdmin({ADMIN_EMAILS: 'x@crazy.co.jp'}, {email: 'alice@crazy.co.jp'}) && !isAdmin({}, {email: 'alice@crazy.co.jp'}) && !isAdmin({ADMIN_EMAILS: ''}, {email: ''}));
+env.ADMIN_EMAILS = ' Alice@crazy.co.jp ,other@crazy.co.jp';
+db.exec('DELETE FROM events');
+db.exec('DELETE FROM views');
+const [prevM, thisM] = lastMonths(now, 2);
+const addEvent = (month, year, user, files, bytes, html, css, js, other) => db.prepare('INSERT INTO events (ts, month, year, user_hash, file_count, total_bytes, html_bytes, css_bytes, js_bytes, other_bytes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(now, month, year, user, files, bytes, html, css, js, other);
+addEvent(thisM, thisM.slice(0, 4), 'u1', 2, 100, 60, 20, 10, 10);
+addEvent(thisM, thisM.slice(0, 4), 'u1', 1, 50, 50, 0, 0, 0);
+addEvent(thisM, thisM.slice(0, 4), 'u2', 3, 300, 100, 100, 50, 50);
+addEvent(prevM, prevM.slice(0, 4), 'u1', 1, 10, 10, 0, 0, 0);
+addEvent('2024-05', '2024', 'u3', 4, 400, 100, 100, 100, 100);
+const view = (day, count) => db.prepare('INSERT INTO views (day, count) VALUES (?, ?)').run(day, count);
+view(thisM + '-01', 5); view(thisM + '-02', 3); view(prevM + '-04', 4); view('2024-05-10', 2);
+db.exec('DELETE FROM pages');
+db.prepare("INSERT INTO pages (id, title, status, owner_hash, files_json, file_count, total_bytes, created_at, expires_at, purge_at) VALUES (?, 't', 'active', 'x', '[]', 1, 1000, ?, ?, ?)").run(crypto.randomUUID(), now - 60, now + 3600, now + 99999999);
+db.prepare("INSERT INTO pages (id, title, status, owner_hash, files_json, file_count, total_bytes, created_at, expires_at, purge_at) VALUES (?, 't', 'expired', 'x', '[]', 1, 5000, ?, ?, ?)").run(crypto.randomUUID(), now - 9999, now - 5, now + 99999999);
+
+const statsRes = await call('/api/admin/stats', {headers: alice});
+const board = await statsRes.json();
+const mThis = board.months.find(m => m.key === thisM), mPrev = board.months.find(m => m.key === prevM);
+t('管理者は集計を見られる', statsRes.status === 200 && board.months.length === 12 && board.months.at(-1).key === thisM);
+t('月別：公開数・利用ユーザー数（重複を除く）・ビュー数・容量', mThis.pages === 3 && mThis.users === 2 && mThis.views === 8 && mThis.files === 6 && mThis.bytes === 450 && mThis.html === 210 && mThis.css === 120 && mThis.js === 60 && mThis.other === 60);
+t('月別：前月と、何もない月（0で埋まる）', mPrev.pages === 1 && mPrev.users === 1 && mPrev.views === 4 && board.months[0].pages === 0 && board.months[0].views === 0);
+const y2024 = board.years.find(y => y.key === '2024');
+t('年別：過去の年も並び、今年の行がある', y2024.pages === 1 && y2024.views === 2 && y2024.users === 1 && board.years.some(y => y.key === String(new Date().getFullYear())) && board.years[0].key <= board.years.at(-1).key);
+t('通算：公開数・ビュー・ユーザー数（年をまたいで重複を除く）', board.totals.pages === 5 && board.totals.views === 14 && board.totals.users === 3);
+t('現在の状況：公開中のページ数と容量（期限切れは含めない）', board.current.activePages === 1 && board.current.bytes === 1000 && board.current.capacityBytes === LIMITS.capacityBytes);
+t('集計に個人情報・匿名ハッシュ・メールが含まれない', !JSON.stringify(board).match(/u1|u2|u3|alice|owner|email|sub-/i));
+t('管理者でない人には404（存在も示さない）', (await call('/api/admin/stats', {headers: bob})).status === 404);
+t('ログインなしは401', (await call('/api/admin/stats')).status === 401);
+t('ADMIN_EMAILS が未設定なら、誰も見られない', await (async () => { const saved = env.ADMIN_EMAILS; delete env.ADMIN_EMAILS; const r = (await call('/api/admin/stats', {headers: alice})).status; env.ADMIN_EMAILS = saved; return r === 404; })());
+t('空のデータでも集計できる', await (async () => { db.exec('DELETE FROM events'); db.exec('DELETE FROM views'); db.exec('DELETE FROM pages'); const s = await (await call('/api/admin/stats', {headers: alice})).json(); return s.totals.pages === 0 && s.totals.users === 0 && s.totals.views === 0 && s.months.every(m => m.pages === 0) && s.current.activePages === 0; })());
+
 // ── その他 ──
 t('未知のAPIは404', (await call('/api/unknown')).status === 404);
 t('画面は静的ファイルを返す', await (await call('/')).text() === 'asset');

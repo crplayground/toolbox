@@ -41,4 +41,4 @@ GOOGLE_CLIENT_ID = "667021295506-c0dmplgif4mvvqbvsmn7nivfgee9c71c.apps.googleuse
 #   VIEW_TOKEN_SECRET    … 閲覧用トークンの署名鍵（ランダムな長い文字列）
 #   PASSWORD_PEPPER      … パスワードの保存値を作る鍵（ランダムな長い文字列）
 #   USER_HASH_KEY        … 公開者の匿名ハッシュの鍵（ランダムな長い文字列。変更しない）
-# Phase 4 で追加：ADMIN_EMAILS
+#   ADMIN_EMAILS         … 管理者ボードを見られる人のメール（カンマ区切り）。リポジトリにメールを書かないため Secret にする
