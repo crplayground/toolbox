@@ -63,7 +63,7 @@ t('見つからない画面は404で sandbox 付き', nf.status === 404 && nf.he
 const env = {
   ASSETS: {fetch: async () => new Response('asset')},
   BUCKET: {head: async () => null},
-  DB: {prepare: () => ({first: async () => ({1: 1})})},
+  DB: {prepare: () => ({first: async () => ({1: 1}), bind() { return this; }})},
 };
 const get = path => worker.fetch(new Request('https://example.test' + path), env);
 const health = await get('/api/health');
@@ -72,7 +72,7 @@ const brokenHealth = await worker.fetch(new Request('https://example.test/api/he
 const brokenBody = await brokenHealth.json();
 t('R2 が使えないときは r2:false', brokenBody.r2 === false && brokenBody.d1 === true);
 t('未実装の API は404', (await get('/api/unknown')).status === 404);
-t('共有ページの入口は未実装のあいだ404', (await get('/s/dbb5b25e-802b-42db-a409-9a38069bbd81/')).status === 404 && (await get('/v/x/y/index.html')).status === 404);
+t('公開されていない共有ページ・不正な閲覧URLは404', (await get('/s/dbb5b25e-802b-42db-a409-9a38069bbd81/')).status === 404 && (await get('/v/x/y/index.html')).status === 404);
 t('それ以外は静的ファイルへ渡す', await (await get('/')).text() === 'asset');
 
 // ── 設定ファイル ──

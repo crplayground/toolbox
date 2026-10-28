@@ -26,12 +26,16 @@
 
         <section class="box" aria-labelledby="step1">
           <div class="section-header" id="step1"><span class="en">STEP 1</span><span class="ja">ログイン</span></div>
-          <div class="input">
+          <div class="input" id="loginBox">
             <div class="login-row">
-              <button type="button" class="btn-tertiary btn-tertiary-blue" id="loginBtn" disabled>Googleでログイン</button>
+              <button type="button" class="btn-tertiary btn-tertiary-blue" id="loginBtn">Googleでログイン</button>
               <p class="caption" id="loginHint">@crazy.co.jp のアカウントでログインしてください。</p>
             </div>
             <p class="caption">Slackなどのアプリ内ブラウザでは、Googleログインが使えないことがあります。その場合は、ChromeかSafariでこのページを開いてください。</p>
+          </div>
+          <div class="input hidden" id="userBox">
+            <p class="user-line"><strong id="userName"></strong><span class="caption" id="userEmail"></span></p>
+            <p class="caption">ログイン済みです。<button type="button" class="btn-linktext" id="switchUser">別のアカウントでログインし直す</button></p>
           </div>
         </section>
 
@@ -71,11 +75,26 @@
       <div class="submit-section">
         <button type="button" class="btn-primary" id="publishBtn" disabled>公開してURLを発行する</button>
         <p class="note">公開するとURLとパスワードが発行されます。パスワードは発行時にしか表示されないので、URLと一緒に控えてください。</p>
+        <p class="error-message hidden" id="publishError" role="alert"></p>
       </div>
+
+      <section class="box hidden" id="result" aria-labelledby="resultTitle" aria-live="polite">
+        <div class="section-header" id="resultTitle"><span class="ja">公開しました</span></div>
+        <div class="input">
+          <div class="subhead-group"><span class="fl">ページ</span><p class="result-title" id="resultPage"></p></div>
+          <div class="subhead-group"><span class="fl">URL</span><input class="ctl result-input" id="resultUrl" readonly aria-label="共有URL"></div>
+          <div class="subhead-group"><span class="fl">パスワード</span><p class="result-password" id="resultPassword"></p></div>
+          <div class="subhead-group"><span class="fl">期限</span><p class="result-title" id="resultExpiry"></p></div>
+          <p class="caption">パスワードはこの画面でしか表示されません。URLとパスワードを、閲覧してほしい人に一緒に送ってください。</p>
+        </div>
+        <button type="button" class="btn-primary" id="copyAll">URLとパスワードをまとめてコピー</button>
+        <div class="actions"><a class="btn-tertiary btn-tertiary-blue btn-link" id="openPage" target="_blank" rel="noopener">ページを開く</a><button type="button" class="btn-tertiary" id="again">続けて別のページを公開する</button></div>
+      </section>
     </div>
 
   </div>
 </div>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script type="module" src="/app.js"></script>
 </body>
 </html>

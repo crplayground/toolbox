@@ -140,8 +140,30 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .btn-tertiary-blue{background:var(--color-btn-tertiary-blue-white);border-color:var(--color-btn-tertiary-blue-border);color:var(--color-btn-tertiary-blue-text)}
 @media(hover:hover){.btn-tertiary-blue:not(:disabled):hover{background:var(--color-btn-tertiary-blue-hover)}}
 
-/* ログイン欄（ログイン機能は Phase 2 で有効化） */
+/* ログイン欄 */
 .login-row{display:flex;align-items:center;gap:var(--spacing-gap-subhead-offset);flex-wrap:wrap}
+.user-line{margin:0;display:flex;align-items:baseline;gap:var(--spacing-gap-subhead-group);flex-wrap:wrap;line-height:1.6}
+.user-line strong{font-weight:var(--typo-weight-head-j)}
+.btn-linktext{
+  background:none;border:none;padding:0;cursor:pointer;font-family:var(--typo-font-font-j);font-weight:var(--typo-weight-label-j);
+  font-size:var(--typo-size-label-m);line-height:1;color:var(--color-text-accent);
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;
+}
+.btn-linktext:focus-visible{outline:1px solid var(--color-btn-tertiary-blue-focus);outline-offset:2px}
+
+/* 公開結果 */
+.result-title{margin:0;line-height:1.6;overflow-wrap:anywhere}
+.result-input{cursor:text;padding-right:var(--spacing-padding-textarea)}
+.result-password{margin:0;font-family:var(--typo-font-font-e);font-weight:var(--typo-weight-head-e);font-size:var(--typo-size-head-3);letter-spacing:.2em;color:var(--color-text-accent);line-height:1.6}
+.btn-link{display:inline-flex;align-items:center;text-decoration:none;cursor:pointer}
+
+/* ロック画面（閲覧者が最初に見る画面） */
+.lock-body{min-height:100vh;display:grid;place-items:center}
+.lock{width:min(480px,calc(100% - 32px));background:var(--color-bg-box);border-radius:var(--radius-section);padding:var(--spacing-padding-box);display:flex;flex-direction:column;gap:var(--spacing-gap-content);margin:var(--spacing-padding-page-y) 0}
+.lock h1{margin:0;font-family:var(--typo-font-font-e);font-weight:var(--typo-weight-head-e);font-size:var(--typo-size-head-3);line-height:1.2;color:var(--color-text-accent)}
+.lock .lead{margin:0;line-height:1.8}
+.lock-form{display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-offset)}
+.lock-input{cursor:text;padding-right:var(--spacing-padding-textarea);text-transform:uppercase;letter-spacing:.15em;font-family:var(--typo-font-font-e)}
 
 /* 入力コントロール（select） */
 .field-select{position:relative;color:var(--color-icon-blue)}

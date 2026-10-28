@@ -26,6 +26,15 @@ database_name = "cr-pages-db"
 database_id = "f745a864-65b9-45cc-bca9-08d825f6df4b"
 migrations_dir = "migrations"
 
+# 非機密の設定。
+[vars]
+# CR PAGES 専用の Google OAuth クライアントID（公開情報なので vars でよい）。
+# Google Cloud Console で作成したら、ここに貼る（SETUP.md「Googleログインの準備」）。空のままだとログインできない。
+GOOGLE_CLIENT_ID = "667021295506-c0dmplgif4mvvqbvsmn7nivfgee9c71c.apps.googleusercontent.com"
+
 # --- 機密は toml に書かない。`npx wrangler secret put <名前>` で登録する（SETUP.md） ---
-# Phase 2 以降で登録するもの：
-#   GOOGLE_CLIENT_SECRET / VIEW_TOKEN_SECRET / PASSWORD_PEPPER / USER_HASH_KEY / ADMIN_EMAILS
+#   GOOGLE_CLIENT_SECRET … 上のクライアントのシークレット（認可コードの交換に使う）
+#   VIEW_TOKEN_SECRET    … 閲覧用トークンの署名鍵（ランダムな長い文字列）
+#   PASSWORD_PEPPER      … パスワードの保存値を作る鍵（ランダムな長い文字列）
+#   USER_HASH_KEY        … 公開者の匿名ハッシュの鍵（ランダムな長い文字列。変更しない）
+# Phase 4 で追加：ADMIN_EMAILS
