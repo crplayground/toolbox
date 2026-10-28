@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>CR PAGES | HTMLを社内に共有</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="column">
+
+    <div class="header-area">
+      <h1>CR PAGES</h1>
+      <p class="lead">HTMLをドロップするだけで、社内に共有できる</p>
+      <p class="sub">作ったHTMLをCSSや画像も含めて、1個のURLにまとめて届けられます。URLごとにパスワードが付き、期限が来たら自動で消えます。</p>
+    </div>
+
+    <div class="section">
+      <div class="input-section">
+
+        <section class="box" aria-labelledby="step1">
+          <div class="section-header" id="step1"><span class="en">STEP 1</span><span class="ja">ログイン</span></div>
+          <div class="input">
+            <div class="login-row">
+              <button type="button" class="btn-tertiary btn-tertiary-blue" id="loginBtn" disabled>Googleでログイン</button>
+              <p class="caption" id="loginHint">@crazy.co.jp のアカウントでログインしてください。</p>
+            </div>
+            <p class="caption">Slackなどのアプリ内ブラウザでは、Googleログインが使えないことがあります。その場合は、ChromeかSafariでこのページを開いてください。</p>
+          </div>
+        </section>
+
+        <section class="box" aria-labelledby="step2">
+          <div class="section-header" id="step2"><span class="en">STEP 2</span><span class="ja">公開するファイル</span></div>
+          <div class="input">
+            <div class="dropzone" id="dropzone" tabindex="0" role="group" aria-label="ファイルのドロップ欄">
+              <span class="icon" aria-hidden="true"><svg width="30" height="34" viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H5a2 2 0 0 0-2 2v20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9z"/><path d="M14 2v7h7M8 15h8M8 20h8"/></svg></span>
+              <p class="title" id="dropTitle">HTML またはフォルダをドロップ</p>
+              <div class="actions">
+                <button type="button" class="btn-tertiary btn-tertiary-blue" id="pickFolder">フォルダを選ぶ</button>
+                <button type="button" class="btn-tertiary" id="pickHtml">HTMLを選ぶ</button>
+              </div>
+              <p class="selected hidden" id="selected"></p>
+              <p class="caption">CSS・画像が別ファイルなら、index.html が入ったフォルダごと。<br>HTMLに埋め込み済みなら、1ファイルだけで公開できます。</p>
+              <input type="file" id="htmlInput" accept=".html,.htm" hidden>
+              <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
+            </div>
+            <p class="caption">最大500ファイル・合計100MB・1ファイル10MBまで。</p>
+            <p class="error-message hidden" id="error" role="alert"></p>
+          </div>
+        </section>
+
+        <section class="box" aria-labelledby="step3">
+          <div class="section-header" id="step3"><span class="en">STEP 3</span><span class="ja">閲覧できる期間</span></div>
+          <div class="input">
+            <div class="subhead-group">
+              <label class="fl" for="expiry">期限</label>
+              <p class="caption">期限を過ぎると、ページは自動で削除されます。</p>
+            </div>
+            <div class="field-select"><select class="ctl" id="expiry"></select></div>
+          </div>
+        </section>
+
+      </div>
+
+      <div class="submit-section">
+        <button type="button" class="btn-primary" id="publishBtn" disabled>公開してURLを発行する</button>
+        <p class="note">公開するとURLとパスワードが発行されます。パスワードは発行時にしか表示されないので、URLと一緒に控えてください。</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+# Cloudflare Worker 設定ファイル（CR PAGES）
+# 設計書：Drive の toolbox/cr-pages/設計書.md
+# 公開リポジトリに置くファイル。秘密情報・メールアドレスは書かない。
+
+name = "cr-pages"
+main = "src/worker.js"
+compatibility_date = "2025-06-01"
+
+# 画面（静的ファイル）。/api・/s・/v だけ Worker が処理し、それ以外は静的ファイルをそのまま返す。
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*", "/s/*", "/v/*"]
+
+# 公開されたファイル本体の保管庫。バケットは SETUP.md の手順で作成する。
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "cr-pages-files"
+
+# ページ情報・パスワードのハッシュ・集計。
+# database_id は SETUP.md の手順で `wrangler d1 create` した後に、表示された値へ差し替える。
+# 下の 0 だけの値はローカル確認用の仮の値（このままではデプロイできない）。
+[[d1_databases]]
+binding = "DB"
+database_name = "cr-pages-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# --- 機密は toml に書かない。`npx wrangler secret put <名前>` で登録する（SETUP.md） ---
+# Phase 2 以降で登録するもの：
+#   GOOGLE_CLIENT_SECRET / VIEW_TOKEN_SECRET / PASSWORD_PEPPER / USER_HASH_KEY / ADMIN_EMAILS
