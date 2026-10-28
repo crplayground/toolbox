@@ -23,7 +23,7 @@ bucket_name = "cr-pages-files"
 [[d1_databases]]
 binding = "DB"
 database_name = "cr-pages-db"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "f745a864-65b9-45cc-bca9-08d825f6df4b"
 migrations_dir = "migrations"
 
 # --- 機密は toml に書かない。`npx wrangler secret put <名前>` で登録する（SETUP.md） ---
