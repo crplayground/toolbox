@@ -14,7 +14,7 @@ function t(name, ok, detail) { if (!ok) { failed++; console.log('NG  ' + name + 
 
 // ── 代用品 ──
 const db = new DatabaseSync(':memory:');
-db.exec(readFileSync(new URL('../migrations/0001_init.sql', import.meta.url), 'utf8'));
+for (const m of ['0001_init.sql', '0002_no_password.sql']) db.exec(readFileSync(new URL('../migrations/' + m, import.meta.url), 'utf8'));
 const wrap = (sql, params = []) => ({
   _sql: sql, _params: params,
   bind: (...p) => wrap(sql, p.map(v => v === undefined ? null : v)),
@@ -151,6 +151,7 @@ t('公開済みのページには送れない', (await call('/api/bundles/' + p1
 const lock = await call('/s/' + p1.id + '/');
 const lockHtml = await lock.text();
 t('ロック画面が出る（ページ名は出さない）', lock.status === 200 && lockHtml.includes('パスワード') && !lockHtml.includes('資料'));
+t('ロック画面：入力は伏せ字、表示切替ボタンあり、見出しなし、期限を表示', /type="password"/.test(lockHtml) && lockHtml.includes('パスワードを表示する') && !lockHtml.includes('<h1>') && /閲覧できる期限：\d{4}年\d{1,2}月\d{1,2}日 \d{2}:\d{2} まで/.test(lockHtml) && /script-src 'self'/.test(lock.headers.get('Content-Security-Policy')));
 t('ロック画面は sandbox ではなく厳しいCSP', !/sandbox/.test(lock.headers.get('Content-Security-Policy')) && /form-action 'self'/.test(lock.headers.get('Content-Security-Policy')) && lock.headers.get('Cache-Control') === 'no-store');
 t('/s/<id> は末尾スラッシュへ', (await call('/s/' + p1.id)).status === 301);
 t('/s/<id>/index.html でもロック画面（旧URL形式）', (await call('/s/' + p1.id + '/index.html')).status === 200);
@@ -318,6 +319,25 @@ t('管理者でない人には404（存在も示さない）', (await call('/api
 t('ログインなしは401', (await call('/api/admin/stats')).status === 401);
 t('ADMIN_EMAILS が未設定なら、誰も見られない', await (async () => { const saved = env.ADMIN_EMAILS; delete env.ADMIN_EMAILS; const r = (await call('/api/admin/stats', {headers: alice})).status; env.ADMIN_EMAILS = saved; return r === 404; })());
 t('空のデータでも集計できる', await (async () => { db.exec('DELETE FROM events'); db.exec('DELETE FROM views'); db.exec('DELETE FROM pages'); const s = await (await call('/api/admin/stats', {headers: alice})).json(); return s.totals.pages === 0 && s.totals.users === 0 && s.totals.views === 0 && s.months.every(m => m.pages === 0) && s.current.activePages === 0; })());
+
+// ── パスワードなしで公開 ──
+const pDef = await publish(alice, {...manifest, requirePassword: true});
+t('requirePassword を省略・true なら、パスワードあり（従来どおり）', typeof p1.result.password === 'string' && typeof pDef.result.password === 'string' && db.prepare('SELECT no_password n FROM pages WHERE id=?').get(pDef.id).n === 0);
+const pOpen = await publish(alice, {...manifest, requirePassword: false});
+t('requirePassword: false で公開でき、パスワードは null', pOpen.complete.status === 200 && pOpen.result.password === null && pOpen.result.url === ORIGIN + '/s/' + pOpen.id + '/');
+const openRow = db.prepare('SELECT no_password n, password_hash h FROM pages WHERE id=?').get(pOpen.id);
+t('DBにパスワードなしの印が付き、ハッシュは空', openRow.n === 1 && openRow.h === null);
+const openGet = await call('/s/' + pOpen.id + '/');
+const openLoc = openGet.headers.get('Location');
+t('パスワードなしのページは、入力画面を出さず閲覧URLへ送る', openGet.status === 303 && openLoc.startsWith('/v/' + pOpen.id + '/'));
+const openView = await call(openLoc);
+t('そのまま中身が見える', openView.status === 200 && (await openView.text()).includes('hello'));
+t('パスワードなしでも、期限切れのページは404', await (async () => { const sv = db.prepare('SELECT expires_at e FROM pages WHERE id=?').get(pOpen.id).e; db.prepare('UPDATE pages SET expires_at = ? WHERE id = ?').run(Math.floor(Date.now() / 1000) - 10, pOpen.id); const r = (await call('/s/' + pOpen.id + '/')).status; db.prepare('UPDATE pages SET expires_at = ? WHERE id = ?').run(sv, pOpen.id); return r === 404; })());
+t('パスワードあり側は、これまでどおりロック画面（印の流用で開いてしまわない）', (await call('/s/' + pDef.id + '/')).status === 200 && (await unlock(pDef.id, 'WRONG123')).headers.get('Location').endsWith('?e=wrong'));
+t('パスワードなしのページへの解除送信は、入口へ戻すだけ', (await unlock(pOpen.id, 'ANYTHING')).headers.get('Location') === '/s/' + pOpen.id + '/');
+const listedOpen = await (await list(alice)).json();
+t('一覧で、パスワードあり／なしを区別できる', listedOpen.pages.find(p => p.id === pOpen.id).protected === false && listedOpen.pages.find(p => p.id === pDef.id).protected === true);
+t('パスワードなしのページは再発行できない（400）', (await reissue(pOpen.id, alice)).status === 400);
 
 // ── その他 ──
 t('未知のAPIは404', (await call('/api/unknown')).status === 404);

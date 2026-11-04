@@ -73,6 +73,11 @@
               <p class="caption">期限を過ぎると、ページは自動で削除されます。</p>
             </div>
             <div class="field-select"><select class="ctl" id="expiry"></select></div>
+            <label class="check-row" for="usePassword">
+              <input type="checkbox" id="usePassword" checked>
+              <span>パスワードを設定する</span>
+            </label>
+            <p class="caption" id="passwordHint">オフにすると、URLを知っている人は誰でも開けます。社外に出してよい内容のときだけ、オフにしてください。</p>
           </div>
         </section>
 
@@ -80,7 +85,7 @@
 
       <div class="submit-section">
         <button type="button" class="btn-primary" id="publishBtn" disabled>公開してURLを発行する</button>
-        <p class="note">公開するとURLとパスワードが発行されます。パスワードは発行時にしか表示されないので、URLと一緒に控えてください。</p>
+        <p class="note">公開するとURLが発行されます。パスワードを設定した場合は、発行時にしか表示されないので、URLと一緒に控えてください。</p>
         <p class="error-message hidden" id="publishError" role="alert"></p>
       </div>
 
@@ -94,9 +99,9 @@
             <input class="ctl result-input" id="resultUrl" readonly aria-label="共有URL（クリックでコピー）">
             <p class="caption copy-feedback hidden" id="urlCopied" role="status"></p>
           </div>
-          <div class="subhead-group"><span class="fl">パスワード</span><p class="result-password" id="resultPassword"></p></div>
+          <div class="subhead-group" id="resultPasswordGroup"><span class="fl">パスワード</span><p class="result-password" id="resultPassword"></p></div>
           <div class="subhead-group"><span class="fl">期限</span><p class="result-title" id="resultExpiry"></p></div>
-          <p class="caption">パスワードはこの画面でしか表示されません。URLとパスワードを、閲覧してほしい人に一緒に送ってください。</p>
+          <p class="caption" id="resultNote">パスワードはこの画面でしか表示されません。URLとパスワードを、閲覧してほしい人に一緒に送ってください。</p>
         </div>
         <button type="button" class="btn-primary" id="copyAll">URLとパスワードをまとめてコピー</button>
         <div class="actions"><a class="btn-tertiary btn-tertiary-blue btn-link" id="openPage" target="_blank" rel="noopener">ページを開く</a><button type="button" class="btn-tertiary" id="again">続けて別のページを公開する</button></div>
@@ -104,7 +109,7 @@
 
       <section class="box hidden" id="mine" aria-labelledby="mineTitle">
         <div class="section-header" id="mineTitle"><span class="ja">自分の公開ページ</span></div>
-        <p class="caption">いま公開中の、あなたのページです。期限が切れたものは自動で消えます。パスワードは表示できません。忘れたときは、再発行してください。</p>
+        <p class="caption">いま公開中の、あなたのページです。期限が切れたものは自動で消えます。パスワードは表示できません。忘れたときは、再発行してください（パスワードなしのページを除く）。</p>
         <p class="error-message hidden" id="mineError" role="alert"></p>
         <ul class="page-list" id="pageList"></ul>
         <p class="caption hidden" id="pageListEmpty">公開中のページはありません。</p>

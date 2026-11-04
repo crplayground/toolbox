@@ -49,6 +49,7 @@ export async function createBundle(request, env, user) {
   const files = (() => { try { return validateEntries(body && body.files); } catch (e) { throw new HttpError(400, e.message); } })();
   if (!isExpiryHours(body.expiryHours)) throw new HttpError(400, '期限を選んでください。');
   const title = String(body.title || '').trim().slice(0, 60) || '無題';
+  const noPassword = body.requirePassword === false ? 1 : 0; // 指定がなければ、パスワードあり
 
   const t = now();
   const active = await env.DB.prepare("SELECT COUNT(*) AS c FROM pages WHERE owner_hash = ?1 AND status IN ('pending','active') AND expires_at > ?2").bind(user.ownerHash, t).first();
@@ -62,8 +63,8 @@ export async function createBundle(request, env, user) {
 
   const id = crypto.randomUUID();
   const expires = t + body.expiryHours * 3600; // 仮の期限。③の完了時に確定する
-  await env.DB.prepare('INSERT INTO pages (id, title, status, owner_hash, owner_email, files_json, file_count, total_bytes, created_at, expires_at, purge_at) VALUES (?1, ?2, \'pending\', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)')
-    .bind(id, title, user.ownerHash, user.email, JSON.stringify(files), files.length, total, t, expires, expires + LIMITS.purgeDays * 86400).run();
+  await env.DB.prepare('INSERT INTO pages (id, title, status, owner_hash, owner_email, files_json, file_count, total_bytes, created_at, expires_at, purge_at, no_password) VALUES (?1, ?2, \'pending\', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)')
+    .bind(id, title, user.ownerHash, user.email, JSON.stringify(files), files.length, total, t, expires, expires + LIMITS.purgeDays * 86400, noPassword).run();
   return jsonResponse({id});
 }
 
@@ -101,15 +102,15 @@ export async function completeBundle(request, env, user, id) {
   const t = now();
   const hours = Math.round((page.expires_at - page.created_at) / 3600);
   const expires = t + hours * 3600;
-  const password = generatePassword();
+  const password = page.no_password ? null : generatePassword();
   const s = summarize(files);
   const jst = jstParts(t);
   await env.DB.batch([
     env.DB.prepare("UPDATE pages SET status = 'active', password_hash = ?2, expires_at = ?3, purge_at = ?4 WHERE id = ?1 AND status = 'pending'")
-      .bind(id, await hashPassword(env.PASSWORD_PEPPER, id, password), expires, expires + LIMITS.purgeDays * 86400),
+      .bind(id, password && await hashPassword(env.PASSWORD_PEPPER, id, password), expires, expires + LIMITS.purgeDays * 86400),
     env.DB.prepare('INSERT INTO events (ts, month, year, user_hash, file_count, total_bytes, html_bytes, css_bytes, js_bytes, other_bytes) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)')
       .bind(t, jst.month, jst.year, user.ownerHash, s.files, s.bytes, s.html, s.css, s.js, s.other),
   ]);
-  // パスワードはここで一度だけ返す（サーバーには鍵付きハッシュしか残らない）
+  // パスワードはここで一度だけ返す（サーバーには鍵付きハッシュしか残らない）。パスワードなしのページは null。
   return jsonResponse({id, title: page.title, url: new URL(request.url).origin + '/s/' + id + '/', password, expiresAt: expires});
 }

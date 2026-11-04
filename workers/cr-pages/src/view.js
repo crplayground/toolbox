@@ -21,23 +21,30 @@ const MESSAGES = {
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c])); }
 
 // ロック画面。ページ名などの中身は一切出さない。画面自体は sandbox ではなく、厳しめの CSP で守る。
-function lockPage(id, code) {
+function expiryLabel(epochSeconds) {
+  const d = new Date((epochSeconds + 9 * 3600) * 1000); // 日本時間
+  const pad = n => String(n).padStart(2, '0');
+  return d.getUTCFullYear() + '年' + (d.getUTCMonth() + 1) + '月' + d.getUTCDate() + '日 ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
+}
+
+function lockPage(id, code, expiresAt) {
   const message = MESSAGES[code];
   const html = '<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     + '<meta name="robots" content="noindex,nofollow"><title>HELLO PAGES</title>'
     + '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">'
     + '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">'
     + '<link rel="stylesheet" href="/app.css"></head><body class="lock-body"><main class="lock">'
-    + '<h1>HELLO PAGES</h1><p class="lead">このページはパスワードで保護されています。</p>'
+    + '<p class="lead">このページはパスワードで保護されています。</p>'
     + '<form method="post" action="/s/' + esc(id) + '/unlock" class="lock-form">'
     + '<label class="fl" for="password">パスワード</label>'
-    + '<input class="ctl lock-input" id="password" name="password" type="text" maxlength="32" autocomplete="off" autocapitalize="characters" spellcheck="false" autofocus required>'
+    + '<input class="ctl lock-input" id="password" name="password" type="password" maxlength="32" autocomplete="off" autocapitalize="characters" spellcheck="false" autofocus required>'
+    + '<button type="button" class="text-btn" id="toggle-pw" aria-controls="password" aria-pressed="false">パスワードを表示する</button>'
     + (message ? '<p class="error-message" role="alert">' + esc(message) + '</p>' : '')
     + '<button type="submit" class="btn-primary">ページを開く</button></form>'
-    + '<p class="note">URLを共有した人から、パスワードを受け取ってください。</p></main></body></html>';
+    + '<p class="note">URLを共有した人から、パスワードを受け取ってください。<br>閲覧できる期限：' + esc(expiryLabel(expiresAt)) + ' まで</p></main><script src="/lock.js"></script></body></html>';
   return new Response(html, {headers: {
     'Content-Type': 'text/html; charset=utf-8',
-    'Content-Security-Policy': "default-src 'none'; img-src data:; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+    'Content-Security-Policy': "default-src 'none'; img-src data:; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
     'Cache-Control': 'no-store',
     'Referrer-Policy': 'no-referrer',
     'X-Content-Type-Options': 'nosniff',
@@ -50,7 +57,7 @@ function redirect(location) {
 }
 
 async function livePage(env, id) {
-  const row = await env.DB.prepare('SELECT id, password_hash, status, expires_at, locked_until FROM pages WHERE id = ?1').bind(id).first();
+  const row = await env.DB.prepare('SELECT id, password_hash, no_password, status, expires_at, locked_until FROM pages WHERE id = ?1').bind(id).first();
   return row && row.status === 'active' && row.expires_at > now() ? row : null;
 }
 
@@ -61,10 +68,12 @@ export async function handleShare(request, env, id, rest) {
   if (!page) return notFoundResponse();
 
   if (request.method === 'GET' && (rest === '' || rest === 'index.html')) {
+    if (page.no_password) return openPage(env, id, page, now());
     const code = new URL(request.url).searchParams.get('e');
-    return lockPage(id, MESSAGES[code] ? code : '');
+    return lockPage(id, MESSAGES[code] ? code : '', page.expires_at);
   }
   if (request.method !== 'POST' || rest !== 'unlock') return notFoundResponse();
+  if (page.no_password) return redirect('/s/' + id + '/');
 
   const back = code => redirect('/s/' + id + '/?e=' + code);
   const t = now();
@@ -81,10 +90,13 @@ export async function handleShare(request, env, id, rest) {
     return back(row && row.locked_until > t ? 'locked' : 'wrong');
   }
 
-  await env.DB.batch([
-    env.DB.prepare('UPDATE pages SET failed_count = 0 WHERE id = ?1').bind(id),
-    env.DB.prepare('INSERT INTO views (day, count) VALUES (?1, 1) ON CONFLICT(day) DO UPDATE SET count = count + 1').bind(jstParts(t).day),
-  ]);
+  await env.DB.prepare('UPDATE pages SET failed_count = 0 WHERE id = ?1').bind(id).run();
+  return openPage(env, id, page, t);
+}
+
+// 閲覧数を数え、閲覧用トークン付きURLへ送る（パスワード解除後、またはパスワードなしのページの入口）。
+async function openPage(env, id, page, t) {
+  await env.DB.prepare('INSERT INTO views (day, count) VALUES (?1, 1) ON CONFLICT(day) DO UPDATE SET count = count + 1').bind(jstParts(t).day).run();
   // トークンの失効は「2時間後」か「ページの期限」の早いほう。これで配信のたびにDBを見なくても期限が守られる。
   const token = await signViewToken(env.VIEW_TOKEN_SECRET, id, Math.min(t + VIEW.tokenSeconds, page.expires_at));
   return redirect('/v/' + id + '/' + token + '/index.html');

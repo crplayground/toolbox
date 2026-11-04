@@ -12,7 +12,7 @@ const now = () => Math.floor(Date.now() / 1000);
 // 自分の、いま公開中のページ
 async function ownPage(env, id, user) {
   if (!isId(id)) throw new HttpError(404, 'Not found');
-  const row = await env.DB.prepare("SELECT id, title, expires_at FROM pages WHERE id = ?1 AND owner_hash = ?2 AND status = 'active' AND expires_at > ?3").bind(id, user.ownerHash, now()).first();
+  const row = await env.DB.prepare("SELECT id, title, expires_at, no_password FROM pages WHERE id = ?1 AND owner_hash = ?2 AND status = 'active' AND expires_at > ?3").bind(id, user.ownerHash, now()).first();
   if (!row) throw new HttpError(404, 'Not found');
   return row;
 }
@@ -20,9 +20,9 @@ async function ownPage(env, id, user) {
 // GET /api/pages
 export async function listPages(env, user) {
   const {results} = await env.DB.prepare(
-    "SELECT id, title, created_at, expires_at, file_count, total_bytes FROM pages WHERE owner_hash = ?1 AND status = 'active' AND expires_at > ?2 ORDER BY created_at DESC LIMIT 50"
+    "SELECT id, title, created_at, expires_at, file_count, total_bytes, no_password FROM pages WHERE owner_hash = ?1 AND status = 'active' AND expires_at > ?2 ORDER BY created_at DESC LIMIT 50"
   ).bind(user.ownerHash, now()).all();
-  return jsonResponse({pages: results.map(r => ({id: r.id, title: r.title, createdAt: r.created_at, expiresAt: r.expires_at, files: r.file_count, bytes: r.total_bytes}))});
+  return jsonResponse({pages: results.map(r => ({id: r.id, title: r.title, createdAt: r.created_at, expiresAt: r.expires_at, files: r.file_count, bytes: r.total_bytes, protected: !r.no_password}))});
 }
 
 // DELETE /api/pages/<id> … ファイルを消し、URLをすぐ無効にする
@@ -37,7 +37,8 @@ export async function deletePage(request, env, user, id) {
 // POST /api/pages/<id>/password … 新しいパスワードを発行する（古いものは使えなくなり、ロックも解除される）
 export async function reissuePassword(request, env, user, id) {
   requireSameOrigin(request);
-  await ownPage(env, id, user);
+  const page = await ownPage(env, id, user);
+  if (page.no_password) throw new HttpError(400, 'パスワードなしで公開したページには、パスワードを発行できません。');
   const password = generatePassword();
   await env.DB.prepare('UPDATE pages SET password_hash = ?2, failed_count = 0, locked_until = 0 WHERE id = ?1')
     .bind(id, await hashPassword(env.PASSWORD_PEPPER, id, password)).run();

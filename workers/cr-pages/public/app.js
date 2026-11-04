@@ -274,7 +274,7 @@ async function publish() {
   try {
     const {files, title} = selected;
     button.textContent = '公開の準備中…';
-    const {id} = await api('/api/bundles', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title, expiryHours: Number($('expiry').value), files: files.map(f => ({path: f.path, size: f.file.size}))})});
+    const {id} = await api('/api/bundles', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title, expiryHours: Number($('expiry').value), requirePassword: $('usePassword').checked, files: files.map(f => ({path: f.path, size: f.file.size}))})});
     let next = 0, done = 0, failure;
     await Promise.all(Array.from({length: Math.min(4, files.length)}, async () => {
       while (!failure) {
@@ -303,7 +303,13 @@ async function publish() {
 function showResult(r) {
   $('resultPage').textContent = r.title;
   $('resultUrl').value = r.url;
-  $('resultPassword').textContent = r.password;
+  const hasPassword = r.password !== null;
+  $('resultPasswordGroup').classList.toggle('hidden', !hasPassword);
+  $('resultPassword').textContent = hasPassword ? r.password : '';
+  $('resultNote').textContent = hasPassword
+    ? 'パスワードはこの画面でしか表示されません。URLとパスワードを、閲覧してほしい人に一緒に送ってください。'
+    : 'パスワードなしで公開しています。URLを知っている人は誰でも開けるので、URLの共有先に気をつけてください。';
+  $('copyAll').textContent = hasPassword ? 'URLとパスワードをまとめてコピー' : 'URLと期限をまとめてコピー';
   $('resultExpiry').textContent = formatDate(r.expiresAt);
   $('openPage').href = r.url;
   $('result').classList.remove('hidden');
@@ -346,14 +352,14 @@ function renderMine(pages) {
     title.textContent = p.title;
     const meta = document.createElement('p');
     meta.className = 'page-meta';
-    meta.textContent = '公開 ' + formatStamp(p.createdAt) + ' ／ 期限 ' + formatDate(p.expiresAt) + '（' + remaining(p.expiresAt) + '）／ ' + p.files + 'ファイル';
+    meta.textContent = '公開 ' + formatStamp(p.createdAt) + ' ／ 期限 ' + formatDate(p.expiresAt) + '（' + remaining(p.expiresAt) + '）／ ' + p.files + 'ファイル' + (p.protected === false ? ' ／ パスワードなし' : '');
     const actions = document.createElement('div');
     actions.className = 'page-actions';
     const copy = button('URLをコピー', 'btn-tertiary-blue', async () => {
       try { await navigator.clipboard.writeText(url); copy.textContent = 'コピーしました ✓'; setTimeout(() => { copy.textContent = 'URLをコピー'; }, 2200); }
       catch { showError($('mineError'), 'コピーできませんでした。URL：' + url); }
     });
-    const reissue = button('パスワードを再発行', '', async () => {
+    const reissue = p.protected === false ? null : button('パスワードを再発行', '', async () => {
       if (!confirm('新しいパスワードを発行します。いまのパスワードは使えなくなります。よろしいですか？')) return;
       reissue.disabled = true;
       try {
@@ -368,7 +374,7 @@ function renderMine(pages) {
       try { await api('/api/pages/' + p.id, {method: 'DELETE', headers: {}}); await loadMine(); }
       catch (e) { showError($('mineError'), e instanceof Error ? e.message : '削除できませんでした。'); remove.disabled = false; }
     });
-    actions.append(copy, reissue, remove);
+    actions.append(...[copy, reissue, remove].filter(Boolean));
     li.append(title, meta, actions);
     list.append(li);
   }
@@ -410,18 +416,19 @@ $('resultUrl').addEventListener('click', () => void copyUrl());
 $('resultUrl').addEventListener('keydown', e => { if (e.key === 'Enter') void copyUrl(); });
 $('copyAll').addEventListener('click', async () => {
   if (!lastResult) return;
-  const text = '【' + lastResult.title + '】\nURL: ' + lastResult.url + '\nパスワード: ' + lastResult.password + '\n期限: ' + formatDate(lastResult.expiresAt);
+  const text = '【' + lastResult.title + '】\nURL: ' + lastResult.url + (lastResult.password === null ? '' : '\nパスワード: ' + lastResult.password) + '\n期限: ' + formatDate(lastResult.expiresAt);
   const button = $('copyAll');
   try {
     await navigator.clipboard.writeText(text);
     button.textContent = 'コピーしました ✓';
-    setTimeout(() => { button.textContent = 'URLとパスワードをまとめてコピー'; }, 2200);
+    setTimeout(() => { button.textContent = lastResult && lastResult.password === null ? 'URLと期限をまとめてコピー' : 'URLとパスワードをまとめてコピー'; }, 2200);
   } catch { showError($('publishError'), 'コピーできませんでした。URLとパスワードを選択してコピーしてください。'); }
 });
 $('again').addEventListener('click', () => {
   lastResult = null;
   $('result').classList.add('hidden');
   $('resultPassword').textContent = '';
+  $('usePassword').checked = true; // 次の公開も、初期値はパスワードあり
   $('resultUrl').value = '';
   $('urlCopied').classList.add('hidden');
   window.scrollTo({top: 0, behavior: 'smooth'});
