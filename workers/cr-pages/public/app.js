@@ -264,6 +264,23 @@ function remaining(epochSeconds) {
 
 let lastResult = null;
 
+// ===== パスワードの控え（このブラウザだけ）=================================
+// 公開したときのパスワードを、このブラウザの localStorage にだけ残す。サーバーには送らない（サーバーはハッシュしか持たない）。
+// 公開したページは sandbox（allow-same-origin なし）で配信されるので、この値には触れない。
+const PW_KEY = 'hp-pw:';
+function savePassword(id, password) { try { localStorage.setItem(PW_KEY + id, password); } catch { /* 保存できない環境では、控えなしで動く */ } }
+function savedPassword(id) { try { return localStorage.getItem(PW_KEY + id); } catch { return null; } }
+// 一覧にないページ（期限切れ・削除済み）の控えを消す
+function pruneSavedPasswords(liveIds) {
+  try {
+    for (const key of Object.keys(localStorage)) if (key.startsWith(PW_KEY) && !liveIds.has(key.slice(PW_KEY.length))) localStorage.removeItem(key);
+  } catch { /* 何もしない */ }
+}
+async function copyText(text, buttonEl, label) {
+  try { await navigator.clipboard.writeText(text); buttonEl.textContent = 'コピーしました ✓'; setTimeout(() => { buttonEl.textContent = label; }, 2200); }
+  catch { showError($('mineError'), 'コピーできませんでした。'); }
+}
+
 async function publish() {
   if (busy || !selected) return;
   if (!auth.idToken || expired()) { signOut(); showError($('publishError'), 'ログインの有効期限が切れました。もう一度ログインしてください。'); return; }
@@ -301,6 +318,7 @@ async function publish() {
 }
 
 function showResult(r) {
+  if (r.password !== null) savePassword(r.id, r.password);
   $('resultPage').textContent = r.title;
   $('resultUrl').value = r.url;
   const hasPassword = r.password !== null;
@@ -327,6 +345,7 @@ async function loadMine() {
   try {
     const {pages} = await api('/api/pages', {method: 'GET', headers: {}});
     showError($('mineError'), '');
+    pruneSavedPasswords(new Set(pages.map(p => p.id)));
     renderMine(pages);
   } catch (e) { showError($('mineError'), e instanceof Error ? e.message : '一覧を読み込めませんでした。'); }
 }
@@ -355,47 +374,38 @@ function renderMine(pages) {
     meta.textContent = '公開 ' + formatStamp(p.createdAt) + ' ／ 期限 ' + formatDate(p.expiresAt) + '（' + remaining(p.expiresAt) + '）／ ' + p.files + 'ファイル' + (p.protected === false ? ' ／ パスワードなし' : '');
     const actions = document.createElement('div');
     actions.className = 'page-actions';
-    const copy = button('URLをコピー', 'btn-tertiary-blue', async () => {
-      try { await navigator.clipboard.writeText(url); copy.textContent = 'コピーしました ✓'; setTimeout(() => { copy.textContent = 'URLをコピー'; }, 2200); }
-      catch { showError($('mineError'), 'コピーできませんでした。URL：' + url); }
-    });
-    const reissue = p.protected === false ? null : button('パスワードを再発行', '', async () => {
-      if (!confirm('新しいパスワードを発行します。いまのパスワードは使えなくなります。よろしいですか？')) return;
-      reissue.disabled = true;
-      try {
-        const {password} = await api('/api/pages/' + p.id + '/password', {method: 'POST', headers: {}});
-        showNewPassword(li, p, url, password);
-      } catch (e) { showError($('mineError'), e instanceof Error ? e.message : '再発行できませんでした。'); }
-      reissue.disabled = false;
-    });
+    const copy = button('URLをコピー', 'btn-tertiary-blue', () => void copyText(url, copy, 'URLをコピー'));
+    const buttons = [copy];
+    if (p.protected !== false) {
+      const saved = savedPassword(p.id);
+      if (saved) {
+        const pwCopy = button('パスワードをコピー', 'btn-tertiary-blue', () => void copyText(saved, pwCopy, 'パスワードをコピー'));
+        buttons.push(pwCopy);
+      } else {
+        // このブラウザに控えがないページ（別のPCで公開した・以前に公開した）は、再発行して新しいパスワードを控える
+        const reissue = button('パスワードを再発行', '', async () => {
+          if (!confirm('このブラウザにはパスワードの控えがありません。新しいパスワードを発行します。いまのパスワードは使えなくなります。よろしいですか？')) return;
+          reissue.disabled = true;
+          try {
+            const {password} = await api('/api/pages/' + p.id + '/password', {method: 'POST', headers: {}});
+            savePassword(p.id, password);
+            await loadMine();
+          } catch (e) { showError($('mineError'), e instanceof Error ? e.message : '再発行できませんでした。'); reissue.disabled = false; }
+        });
+        buttons.push(reissue);
+      }
+    }
     const remove = button('削除', 'btn-danger', async () => {
       if (!confirm('「' + p.title + '」を削除します。URLはすぐに開けなくなり、元に戻せません。よろしいですか？')) return;
       remove.disabled = true;
       try { await api('/api/pages/' + p.id, {method: 'DELETE', headers: {}}); await loadMine(); }
       catch (e) { showError($('mineError'), e instanceof Error ? e.message : '削除できませんでした。'); remove.disabled = false; }
     });
-    actions.append(...[copy, reissue, remove].filter(Boolean));
+    buttons.push(remove);
+    actions.append(...buttons);
     li.append(title, meta, actions);
     list.append(li);
   }
-}
-
-function showNewPassword(li, p, url, password) {
-  li.querySelector('.page-newpw')?.remove();
-  const box = document.createElement('div');
-  box.className = 'page-newpw';
-  const label = document.createElement('span');
-  label.className = 'caption';
-  label.textContent = '新しいパスワード（この画面でしか表示されません）';
-  const pw = document.createElement('p');
-  pw.className = 'result-password';
-  pw.textContent = password;
-  const copy = button('URLとパスワードをまとめてコピー', 'btn-tertiary-blue', async () => {
-    try { await navigator.clipboard.writeText('【' + p.title + '】\nURL: ' + url + '\nパスワード: ' + password + '\n期限: ' + formatDate(p.expiresAt)); copy.textContent = 'コピーしました ✓'; setTimeout(() => { copy.textContent = 'URLとパスワードをまとめてコピー'; }, 2200); }
-    catch { showError($('mineError'), 'コピーできませんでした。'); }
-  });
-  box.append(label, pw, copy);
-  li.append(box);
 }
 
 $('publishBtn').addEventListener('click', () => void publish());

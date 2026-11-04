@@ -173,8 +173,6 @@ textarea.ctl.paste-input{height:auto;min-height:160px;resize:vertical;cursor:tex
 .btn-danger{color:var(--color-warning-text);border-color:var(--color-warning-text)}
 @media(hover:hover){.btn-danger:not(:disabled):hover{background:var(--color-warning-bg)}}
 .btn-danger:focus-visible{outline-color:var(--color-warning-text)}
-.page-newpw{display:flex;flex-direction:column;gap:var(--spacing-gap-subhead-group);background:var(--color-bg-hover);border-radius:var(--radius-button-s);padding:var(--spacing-padding-textarea)}
-.page-newpw .result-password{font-size:var(--typo-size-head-4)}
 
 /* 管理者ボード */
 .column.wide{max-width:1100px}
