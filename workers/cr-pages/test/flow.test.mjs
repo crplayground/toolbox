@@ -188,13 +188,21 @@ const p2 = await publish();
 t('他のページ用のトークンは使えない', (await call('/v/' + p2.id + '/' + token + '/index.html')).status === 404);
 t('署名を1文字変えると使えない', (await call('/v/' + p1.id + '/' + token.slice(0, -1) + (token.endsWith('0') ? '1' : '0') + '/index.html')).status === 404);
 const past = await signViewToken(env.VIEW_TOKEN_SECRET, p1.id, Math.floor(Date.now() / 1000) - 5);
-t('失効したトークンは使えない', (await call('/v/' + p1.id + '/' + past + '/index.html')).status === 404);
+const pastOpen = await call('/v/' + p1.id + '/' + past + '/index.html');
+t('失効したトークンでページを開くと、中身は出さず共有URL（ロック画面）へ戻す', pastOpen.status === 303 && pastOpen.headers.get('Location') === '/s/' + p1.id + '/' && pastOpen.headers.get('Cache-Control') === 'no-store');
+t('失効したトークンで、フォルダ形式のURL（末尾が /）も共有URLへ戻す', (await call('/v/' + p1.id + '/' + past + '/')).headers.get('Location') === '/s/' + p1.id + '/');
+t('失効したトークンでは、CSS・画像などは読めない（404）', (await call('/v/' + p1.id + '/' + past + '/css/a.css')).status === 404);
+const pastForged = past.slice(0, -1) + (past.endsWith('0') ? '1' : '0');
+t('署名が合わない失効トークンは、戻さず404', (await call('/v/' + p1.id + '/' + pastForged + '/index.html')).status === 404);
+const pastOther = await signViewToken(env.VIEW_TOKEN_SECRET, p2.id, Math.floor(Date.now() / 1000) - 5);
+t('他のページ用の失効トークンは、戻さず404', (await call('/v/' + p1.id + '/' + pastOther + '/index.html')).status === 404);
 t('トークンの有効時間は最長2時間', Number(token.split('.')[0]) - Date.now() / 1000 <= VIEW.tokenSeconds + 5);
 
 // 期限切れ・削除
 db.prepare('UPDATE pages SET expires_at = ? WHERE id = ?').run(Math.floor(Date.now() / 1000) - 1, p1.id);
 t('期限が切れたページはロック画面も出ない（404）', (await call('/s/' + p1.id + '/')).status === 404);
 t('期限が切れたページの解除も404', (await unlock(p1.id, p1.result.password)).status === 404);
+t('期限が切れたページは、失効トークンでも戻さず404', (await call('/v/' + p1.id + '/' + past + '/index.html')).status === 404);
 const early = db.prepare('SELECT 1').get() && await (async () => {
   db.prepare('UPDATE pages SET expires_at = ? WHERE id = ?').run(Math.floor(Date.now() / 1000) + 30, p2.id);
   const loc = (await unlock(p2.id, p2.result.password)).headers.get('Location');
@@ -332,6 +340,10 @@ const openLoc = openGet.headers.get('Location');
 t('パスワードなしのページは、入力画面を出さず閲覧URLへ送る', openGet.status === 303 && openLoc.startsWith('/v/' + pOpen.id + '/'));
 const openView = await call(openLoc);
 t('そのまま中身が見える', openView.status === 200 && (await openView.text()).includes('hello'));
+const openPast = await signViewToken(env.VIEW_TOKEN_SECRET, pOpen.id, Math.floor(Date.now() / 1000) - 5);
+const openAgain = await call('/v/' + pOpen.id + '/' + openPast + '/index.html');
+const openAgainLoc = openAgain.headers.get('Location');
+t('パスワードなし：2時間たった閲覧URLを開いても、共有URL経由でそのまま見える', openAgain.status === 303 && openAgainLoc === '/s/' + pOpen.id + '/' && await (async () => { const s = await call(openAgainLoc); const v = await call(s.headers.get('Location')); return v.status === 200 && (await v.text()).includes('hello'); })());
 t('パスワードなしでも、期限切れのページは404', await (async () => { const sv = db.prepare('SELECT expires_at e FROM pages WHERE id=?').get(pOpen.id).e; db.prepare('UPDATE pages SET expires_at = ? WHERE id = ?').run(Math.floor(Date.now() / 1000) - 10, pOpen.id); const r = (await call('/s/' + pOpen.id + '/')).status; db.prepare('UPDATE pages SET expires_at = ? WHERE id = ?').run(sv, pOpen.id); return r === 404; })());
 t('パスワードあり側は、これまでどおりロック画面（印の流用で開いてしまわない）', (await call('/s/' + pDef.id + '/')).status === 200 && (await unlock(pDef.id, 'WRONG123')).headers.get('Location').endsWith('?e=wrong'));
 t('パスワードなしのページへの解除送信は、入口へ戻すだけ', (await unlock(pOpen.id, 'ANYTHING')).headers.get('Location') === '/s/' + pOpen.id + '/');

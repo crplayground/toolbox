@@ -36,10 +36,11 @@ export async function signViewToken(secret, id, exp) {
   return exp + '.' + await hmacHex(secret, 'view:' + id + ':' + exp);
 }
 
-export async function verifyViewToken(secret, id, token, now) {
+// 'valid'＝使える／'expired'＝このページ用に正しく発行されたが失効した／'invalid'＝形式・署名が合わない（他ページ用・改ざん）
+export async function viewTokenState(secret, id, token, now) {
   const m = /^(\d{1,12})\.([a-f0-9]{64})$/.exec(token || '');
-  if (!m || Number(m[1]) <= now) return false;
-  return safeEqual(m[2], await hmacHex(secret, 'view:' + id + ':' + m[1]));
+  if (!m || !safeEqual(m[2], await hmacHex(secret, 'view:' + id + ':' + m[1]))) return 'invalid';
+  return Number(m[1]) <= now ? 'expired' : 'valid';
 }
 
 // 日本時間の日付・月・年（集計用）。

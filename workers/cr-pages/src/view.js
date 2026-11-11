@@ -2,7 +2,7 @@
 // 閲覧者はログイン不要。Cookie は使わない。
 import {isId, validPath, mime} from '../public/js/bundle.js';
 import {contentHeaders, notFoundResponse} from './headers.js';
-import {hashPassword, jstParts, safeEqual, signViewToken, verifyViewToken} from './crypto.js';
+import {hashPassword, jstParts, safeEqual, signViewToken, viewTokenState} from './crypto.js';
 
 export const VIEW = {
   tokenSeconds: 2 * 60 * 60, // 解除してから閲覧できる時間
@@ -105,12 +105,22 @@ async function openPage(env, id, page, t) {
 // GET /v/<id>/<token>/<path>
 export async function handleView(request, env, id, token, rawPath) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return notFoundResponse();
-  if (!isId(id) || !(await verifyViewToken(env.VIEW_TOKEN_SECRET, id, token, now()))) return notFoundResponse();
+  if (!isId(id)) return notFoundResponse();
+  const state = await viewTokenState(env.VIEW_TOKEN_SECRET, id, token, now());
+  if (state === 'invalid') return notFoundResponse();
 
   let path;
   try { path = decodeURIComponent(rawPath); } catch { return notFoundResponse(); }
   if (path === '' || path.endsWith('/')) path += 'index.html';
   if (!validPath(path)) return notFoundResponse();
+
+  if (state === 'expired') {
+    // 閲覧URLはアドレスバーに出るため、ブックマーク・転送されがち。2時間で失効しても、ページ自体が公開中なら
+    // 共有URL（ロック画面。パスワードなしならそのまま閲覧）へ戻す。中身は返さないので、守りは弱まらない。
+    // 戻すのはページ（HTML）を開いたときだけ。CSS・画像などは従来どおり404。
+    if (/\.html?$/i.test(path) && await livePage(env, id)) return redirect('/s/' + id + '/');
+    return notFoundResponse();
+  }
 
   const range = request.headers.get('Range');
   const object = await env.BUCKET.get('bundles/' + id + '/' + path, range ? {range: request.headers} : undefined);
