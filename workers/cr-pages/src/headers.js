@@ -16,6 +16,17 @@ export function contentHeaders(contentType) {
   });
 }
 
+// 閲覧配信（/v/<id>/<token>/<path>）で、ファイルを返すときだけに使う。
+// sandbox のページは出身不明（origin が null）になるため、<script type="module">・Webフォント・fetch() のような
+// CORS で読み込むものは、Access-Control-Allow-Origin がないとブラウザが止める。* を付けても sandbox の制限は残る。
+// 付けることで新たにできるのは「トークン込みの閲覧URLを知っている他サイトの JS が中身を読む」ことだけで、
+// その URL を知っていれば直接開けるため、守りはほぼ変わらない。404・ロック画面・API・管理画面には付けない。
+export function viewHeaders(contentType) {
+  const headers = contentHeaders(contentType);
+  headers.set('Access-Control-Allow-Origin', '*');
+  return headers;
+}
+
 export function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,

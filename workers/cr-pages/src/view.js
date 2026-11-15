@@ -1,7 +1,7 @@
 // 閲覧側：ロック画面（/s/<id>/）→ パスワード確認 → 閲覧用トークン付きURL（/v/<id>/<token>/…）。
 // 閲覧者はログイン不要。Cookie は使わない。
 import {isId, validPath, mime} from '../public/js/bundle.js';
-import {contentHeaders, notFoundResponse} from './headers.js';
+import {viewHeaders, notFoundResponse} from './headers.js';
 import {hashPassword, jstParts, safeEqual, signViewToken, viewTokenState} from './crypto.js';
 
 export const VIEW = {
@@ -126,7 +126,7 @@ export async function handleView(request, env, id, token, rawPath) {
   const object = await env.BUCKET.get('bundles/' + id + '/' + path, range ? {range: request.headers} : undefined);
   if (!object) return notFoundResponse();
 
-  const headers = contentHeaders(object.httpMetadata?.contentType || mime(path));
+  const headers = viewHeaders(object.httpMetadata?.contentType || mime(path));
   headers.set('Accept-Ranges', 'bytes');
   if (range && object.range && object.range.offset !== undefined) {
     const start = object.range.offset, length = object.range.length ?? object.size - start;

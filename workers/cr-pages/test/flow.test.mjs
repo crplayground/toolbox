@@ -176,11 +176,12 @@ t('解除でビュー数が1増え、失敗回数が戻る', db.prepare('SELECT 
 
 // ── 閲覧 ──
 const page = await call(viewUrl);
-t('閲覧できる（sandbox・nosniff・no-store 付き）', page.status === 200 && (await page.clone().text()).includes('hello') && /^sandbox allow-scripts/.test(page.headers.get('Content-Security-Policy')) && page.headers.get('Cache-Control') === 'private, no-store' && page.headers.get('Access-Control-Allow-Origin') === null);
+t('閲覧できる（sandbox・nosniff・no-store・Access-Control-Allow-Origin: * 付き）', page.status === 200 && (await page.clone().text()).includes('hello') && /^sandbox allow-scripts/.test(page.headers.get('Content-Security-Policy')) && page.headers.get('Cache-Control') === 'private, no-store' && page.headers.get('Access-Control-Allow-Origin') === '*');
 const css = await call(viewUrl.replace('index.html', 'css/a.css'));
-t('相対パスのCSSが同じトークンで読め、型が正しい', css.status === 200 && css.headers.get('Content-Type') === 'text/css; charset=utf-8' && await css.text() === 'p{color:red}');
-t('範囲指定(Range)は206', await (async () => { const r = await call(viewUrl.replace('index.html', 'css/a.css'), {headers: {Range: 'bytes=0-3'}}); return r.status === 206 && r.headers.get('Content-Range') === 'bytes 0-3/12' && await r.text() === 'p{co'; })());
-t('存在しないファイルは404', (await call(viewUrl.replace('index.html', 'nope.css'))).status === 404);
+t('相対パスのCSSが同じトークンで読め、型が正しい（Access-Control-Allow-Origin: * 付き）', css.status === 200 && css.headers.get('Content-Type') === 'text/css; charset=utf-8' && css.headers.get('Access-Control-Allow-Origin') === '*' && await css.text() === 'p{color:red}');
+t('範囲指定(Range)は206', await (async () => { const r = await call(viewUrl.replace('index.html', 'css/a.css'), {headers: {Range: 'bytes=0-3'}}); return r.status === 206 && r.headers.get('Content-Range') === 'bytes 0-3/12' && r.headers.get('Access-Control-Allow-Origin') === '*' && await r.text() === 'p{co'; })());
+t('存在しないファイルは404で、Access-Control-Allow-Origin は付けない', await (async () => { const r = await call(viewUrl.replace('index.html', 'nope.css')); return r.status === 404 && r.headers.get('Access-Control-Allow-Origin') === null; })());
+t('ロック画面・APIには Access-Control-Allow-Origin を付けない', (await call('/s/' + p1.id + '/')).headers.get('Access-Control-Allow-Origin') === null && (await call('/api/config')).headers.get('Access-Control-Allow-Origin') === null);
 t('隠しファイル・..は404', (await call(viewUrl.replace('index.html', '.env'))).status === 404 && (await call(viewUrl.replace('index.html', '%2e%2e/x'))).status === 404);
 t('トークンなしでは読めない', (await call('/v/' + p1.id + '/x/index.html')).status === 404 && (await call('/v/' + p1.id + '/index.html')).status === 404);
 const token = viewUrl.split('/')[3];
@@ -189,7 +190,7 @@ t('他のページ用のトークンは使えない', (await call('/v/' + p2.id 
 t('署名を1文字変えると使えない', (await call('/v/' + p1.id + '/' + token.slice(0, -1) + (token.endsWith('0') ? '1' : '0') + '/index.html')).status === 404);
 const past = await signViewToken(env.VIEW_TOKEN_SECRET, p1.id, Math.floor(Date.now() / 1000) - 5);
 const pastOpen = await call('/v/' + p1.id + '/' + past + '/index.html');
-t('失効したトークンでページを開くと、中身は出さず共有URL（ロック画面）へ戻す', pastOpen.status === 303 && pastOpen.headers.get('Location') === '/s/' + p1.id + '/' && pastOpen.headers.get('Cache-Control') === 'no-store');
+t('失効したトークンでページを開くと、中身は出さず共有URL（ロック画面）へ戻す', pastOpen.status === 303 && pastOpen.headers.get('Location') === '/s/' + p1.id + '/' && pastOpen.headers.get('Cache-Control') === 'no-store' && pastOpen.headers.get('Access-Control-Allow-Origin') === null);
 t('失効したトークンで、フォルダ形式のURL（末尾が /）も共有URLへ戻す', (await call('/v/' + p1.id + '/' + past + '/')).headers.get('Location') === '/s/' + p1.id + '/');
 t('失効したトークンでは、CSS・画像などは読めない（404）', (await call('/v/' + p1.id + '/' + past + '/css/a.css')).status === 404);
 const pastForged = past.slice(0, -1) + (past.endsWith('0') ? '1' : '0');

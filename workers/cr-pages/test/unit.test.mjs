@@ -5,7 +5,7 @@ import {
   validPath, mime, classify, summarize, validateEntries, isId,
 } from '../public/js/bundle.js';
 import {PASSWORD_ALPHABET, PASSWORD_LENGTH, generatePassword, normalizePassword} from '../src/password.js';
-import {contentHeaders, notFoundResponse, CONTENT_CSP} from '../src/headers.js';
+import {contentHeaders, viewHeaders, notFoundResponse, CONTENT_CSP} from '../src/headers.js';
 import worker from '../src/worker.js';
 
 let failed = 0;
@@ -54,10 +54,12 @@ t('入力の表記ゆれを吸収', normalizePassword(' ab-cd 23 ') === 'ABCD23'
 // ── 配信ヘッダー ──
 const h = contentHeaders('text/css; charset=utf-8');
 t('配信ヘッダーに sandbox・nosniff・no-store', h.get('Content-Security-Policy') === CONTENT_CSP && /^sandbox allow-scripts /.test(CONTENT_CSP) && h.get('X-Content-Type-Options') === 'nosniff' && h.get('Cache-Control') === 'private, no-store');
-t('配信ヘッダーに Access-Control-Allow-Origin を付けない', h.get('Access-Control-Allow-Origin') === null);
+t('共通の配信ヘッダー（404などにも使う）には Access-Control-Allow-Origin を付けない', h.get('Access-Control-Allow-Origin') === null);
+const vh = viewHeaders('text/javascript; charset=utf-8');
+t('閲覧配信のヘッダーは、共通の配信ヘッダーに Access-Control-Allow-Origin: * を足したもの（module JS・Webフォントのため）', vh.get('Access-Control-Allow-Origin') === '*' && vh.get('Content-Security-Policy') === CONTENT_CSP && vh.get('X-Content-Type-Options') === 'nosniff' && vh.get('Cache-Control') === 'private, no-store' && vh.get('Referrer-Policy') === 'no-referrer');
 t('allow-same-origin を含まない（出身不明扱いを保つ）', !/allow-same-origin/.test(CONTENT_CSP));
 const nf = notFoundResponse();
-t('見つからない画面は404で sandbox 付き', nf.status === 404 && nf.headers.get('Content-Security-Policy') === CONTENT_CSP);
+t('見つからない画面は404で sandbox 付き・Access-Control-Allow-Origin なし', nf.status === 404 && nf.headers.get('Content-Security-Policy') === CONTENT_CSP && nf.headers.get('Access-Control-Allow-Origin') === null);
 
 // ── Worker の入口 ──
 const env = {
