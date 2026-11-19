@@ -15,7 +15,7 @@
 送信すると Notion のデータベースにページが1つ作られ、依頼者がそのページのURLを Slack でクリエイティブ室に共有する。
 
 - フォーム: `https://crplayground.github.io/toolbox/creative-process/`
-- Worker: `https://creative-process.yukimiyakawa.workers.dev`
+- Worker: `https://creative-process.crplayground.workers.dev`
 - 保存先: Notion データベース「クリエイティブプロジェクト」（`37f6d45e-597d-8046-b35e-e0a310821fd3`）
 
 **Notionページが唯一の正本。** 依頼内容の確認・修正はNotionページ上で直接行う。フォーム側に編集機能は持たせない。
