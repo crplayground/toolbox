@@ -34,11 +34,11 @@ npx wrangler d1 migrations apply cr-pages-db --remote
 npx wrangler deploy
 ```
 
-終わると `https://cr-pages.yukimiyakawa.workers.dev` で開ける。
+終わると `https://cr-pages.crplayground.workers.dev` で開ける。
 
 ## 3. 動作確認
 
-`https://cr-pages.yukimiyakawa.workers.dev/api/health` を開き、次の表示になれば成功。
+`https://cr-pages.crplayground.workers.dev/api/health` を開き、次の表示になれば成功。
 
 ```
 {"ok":true,"r2":true,"d1":true}
@@ -83,7 +83,7 @@ HELLO PAGES 専用の OAuth クライアントを作る（無料。Creative Proc
 2. 「APIとサービス」→「認証情報」→「認証情報を作成」→「OAuth クライアント ID」。
 3. アプリケーションの種類＝「ウェブ アプリケーション」、名前＝`cr-pages`。
 4. 「承認済みの JavaScript 生成元」に次の2つを追加する。
-   - `https://cr-pages.yukimiyakawa.workers.dev`
+   - `https://cr-pages.crplayground.workers.dev`
    - `http://localhost:8787`（ローカルでの確認用）
 5. 「作成」を押す。表示される**クライアント ID**を `wrangler.toml` の `GOOGLE_CLIENT_ID = ""` に貼る（公開してよい値）。
 6. 表示される**クライアント シークレット**は、次の「秘密情報の登録」で使う。**チャット・ファイル・Drive には貼らない。** 作成直後にしか見られないことがあるので、すぐにコピーする。ダウンロードできる JSON は保存しない。
@@ -119,7 +119,7 @@ npx wrangler secret list
 
 ## 管理者ボード（Phase 4）
 
-管理者ボードは `https://cr-pages.yukimiyakawa.workers.dev/admin/`。見られるのは、`ADMIN_EMAILS` に載っている人だけ（それ以外の人には「見つかりません」と出る。一般の画面にリンクはない）。
+管理者ボードは `https://cr-pages.crplayground.workers.dev/admin/`。見られるのは、`ADMIN_EMAILS` に載っている人だけ（それ以外の人には「見つかりません」と出る。一般の画面にリンクはない）。
 
 管理者のメールアドレスを登録する。**メールアドレスはリポジトリに書かないため、Secret にする。** 実行して聞かれたら、会社のメールアドレスを入力する。複数人にするときは、カンマで区切る（例：`a@crazy.co.jp,b@crazy.co.jp`）。
 

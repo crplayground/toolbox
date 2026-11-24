@@ -390,9 +390,9 @@ function buildNotionProperties(data) {
 
   const productTypes = asProductTypeList(data.productTypes);
 
-  if (data.brand) props["対象事業・部署"] = { select: { name: data.brand } };
+  if (data.brand) props["対象事業・部署"] = { select: { name: canonicalBrand(data.brand) } };
   if (productTypes.length) props["制作物の種別"] = { multi_select: productTypes.map((n) => ({ name: n })) };
-  if (data.requesterDept) props["所属部署"] = { select: { name: data.requesterDept } };
+  if (data.requesterDept) props["所属部署"] = { select: { name: canonicalDept(data.requesterDept) } };
   if (data.requesterName) props["依頼者"] = { rich_text: [{ text: { content: data.requesterName } }] };
   if (data.dataStorage) props["データ格納先"] = { url: data.dataStorage };
   // 【V1-5.9】起票番号は廃止（採番・プロパティ書き込みとも行わない・2026-08-12決定）
@@ -625,6 +625,9 @@ const DRIVE_BRAND_FOLDERS = {
   "HR｜ハピネス室・組織開発に関する制作物": "1cVDtUY_dV16cB2ZWvB4mCPs7z9TDTPTi",
   // 【互換】2026-08-12のNotion選択肢リネーム前の旧名。同上。
   "HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物": "1cVDtUY_dV16cB2ZWvB4mCPs7z9TDTPTi",
+  "IWO-婚礼｜婚礼に関する制作物": "1-qUTHhUDMojziFirGsowOmu4c4DHsdzt",
+  "IWO-館内｜館内備品等に関する制作物": "1qv9_Tt5BxwfVOYjs9jViDiGLrWatd3ve",
+  // 【互換】2026-11-25のNotion選択肢リネーム（IWAI→IWO）前の旧名。同上。
   "IWAI-婚礼｜婚礼に関する制作物": "1-qUTHhUDMojziFirGsowOmu4c4DHsdzt",
   "IWAI-館内｜館内備品等に関する制作物": "1qv9_Tt5BxwfVOYjs9jViDiGLrWatd3ve",
   "MT-the-Terrace｜the Terraceに関する制作物": "1A4XwDKHz6A_cR3Eyq0_H1MIPrt-jnyL8",
@@ -684,7 +687,7 @@ const DRIVE_API = "https://www.googleapis.com/drive/v3/files";
 const DRIVE_UPLOAD_API = "https://www.googleapis.com/upload/drive/v3/files";
 const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
-// 対象事業・部署の「｜」より前が略称（ANV / IWAI-婚礼 / MT-the-Terrace …）。
+// 対象事業・部署の「｜」より前が略称（ANV / IWO-婚礼 / MT-the-Terrace …）。
 // 18件すべてこの形式なので、対応表を持たずに切り出せる。
 function brandShortName(brand) {
   const s = String(brand || "").trim();
@@ -1007,14 +1010,34 @@ async function resolveKaiteiPlacement(sourceUrl, token) {
   return OUTSIDE;
 }
 
-// 略称（[IWAI-婚礼] の中身）→ 対象事業・部署の正式名。相談フォルダ配下の案件の事業推定に使う。
+// 略称（[IWO-婚礼] の中身）→ 対象事業・部署の正式名。相談フォルダ配下の案件の事業推定に使う。
 function brandFromShortName(short) {
   const s = String(short || "").trim();
   if (!s) return "";
   for (const brand of Object.keys(DRIVE_BRAND_FOLDERS)) {
-    if (brandShortName(brand) === s) return brand;
+    if (brandShortName(brand) === s) return canonicalBrand(brand);
   }
   return "";
+}
+
+// 旧名（【互換】キー）→ 現在の正式名。Notionへ旧名を書くと選択肢が分裂するため、書き込み前に必ず通す。
+// 同じフォルダIDの先頭キー＝正式名（DRIVE_FOLDER_TO_BRAND）に寄せる。未知の値はそのまま返す。
+function canonicalBrand(brand) {
+  const s = String(brand || "").trim();
+  const id = DRIVE_BRAND_FOLDERS[s];
+  return (id && DRIVE_FOLDER_TO_BRAND[id]) || s;
+}
+
+// 所属部署の旧名 → 現在の名前。2026-11-25 の IWAI→IWO リネーム（開きっぱなしの旧フォームからの送信対策）。
+const LEGACY_DEPTS = {
+  "IWAI-BP": "IWO-BP",
+  "IWAI-D": "IWO-D",
+  "IWAI-Kitchen": "IWO-Kitchen",
+  "IWAI-P": "IWO-P",
+};
+function canonicalDept(dept) {
+  const s = String(dept || "").trim();
+  return LEGACY_DEPTS[s] || s;
 }
 
 // 【V1-5.9】nextSeqNumber（Notionからの採番）は起票番号の廃止に伴い撤去した。

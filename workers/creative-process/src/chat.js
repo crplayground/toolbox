@@ -66,8 +66,8 @@ const CHAT_BRAND_OPTIONS = [
   "CW｜CWブランド全体の婚礼・営業に関する制作物",
   "CWA｜CWAに関する制作物",
   "HR｜ハピネス室・組織開発に関する制作物",
-  "IWAI-婚礼｜婚礼に関する制作物",
-  "IWAI-館内｜館内備品等に関する制作物",
+  "IWO-婚礼｜婚礼に関する制作物",
+  "IWO-館内｜館内備品等に関する制作物",
   "MT-the-Terrace｜the Terraceに関する制作物",
   "MT-婚礼｜婚礼に関する制作物",
   "MT-館内｜館内備品等に関する制作物",
@@ -183,7 +183,8 @@ function normalizeBrand(v) {
   const s = String(v || "").trim();
   if (!s) return "";
   if (CHAT_BRAND_OPTIONS.includes(s)) return s;
-  const short = (s.split("｜")[0] || "").trim();
+  // 2026-11-25 IWAI→IWO リネーム：旧略称（IWAI-婚礼 等）も新しい名前に救う
+  const short = (s.split("｜")[0] || "").trim().replace(/^IWAI-/, "IWO-");
   if (!short) return "";
   return CHAT_BRAND_OPTIONS.find((b) => b.split("｜")[0] === short) || "";
 }

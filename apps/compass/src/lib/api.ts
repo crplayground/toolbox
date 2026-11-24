@@ -6,7 +6,7 @@ import { DEPARTMENTS, PRODUCT_TYPES } from "../types";
 import { parseLooseDate, todayKey } from "./date";
 import { buildPlan, type Plan, type RawPlan } from "./plan";
 
-export const WORKER_URL = "https://compass.yukimiyakawa.workers.dev";
+export const WORKER_URL = "https://compass.crplayground.workers.dev";
 const TOKEN_KEY = "compass_app_token";
 // 旧名（CR Board）時代の合言葉を引き継ぐ
 if (!localStorage.getItem(TOKEN_KEY) && localStorage.getItem("pmb_app_token")) {

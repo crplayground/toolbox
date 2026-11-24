@@ -49,7 +49,7 @@ toolbox/
 | 部分 | どこで動くか | 反映のしかた |
 |---|---|---|
 | 画面（各 `index.html`） | GitHub Pages | `main` に push すると自動で公開 |
-| Worker（保存・Notion連携・AI） | Cloudflare（`*.yukimiyakawa.workers.dev`） | 各 `workers/<tool>/` で `npx wrangler deploy`（手動） |
+| Worker（保存・Notion連携・AI） | Cloudflare（`*.crplayground.workers.dev`） | 各 `workers/<tool>/` で `npx wrangler deploy`（手動） |
 
 - **公開URLは「リポジトリ名＋フォルダ名」で決まる。** `toolbox` というリポジトリ名と、`compass/`・`creative-process/` のフォルダ名は変えないこと（変えるとURLが変わり、ツールが止まる）。
 - このローカルフォルダの名前（`メインデータ_GitHub/toolbox`）も変えない。Compass の学習ルーティンがここを作業フォルダにしている。

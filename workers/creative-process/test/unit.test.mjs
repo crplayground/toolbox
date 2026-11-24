@@ -115,7 +115,7 @@ t("案内ページ：問い合わせ先（クリエイティブ室）を案内�
 // ---- 6. Notionプロパティ ----
 section("6. buildNotionProperties");
 const propsFull = buildNotionProperties({
-  title: "夏フェア バナー", category: "新規", brand: "IWAI-婚礼｜婚礼に関する制作物",
+  title: "夏フェア バナー", category: "新規", brand: "IWO-婚礼｜婚礼に関する制作物",
   productTypes: ["バナー・告知画像"], requesterDept: "MKT・広報",
   requesterName: "太郎", requesterEmail: "taro@crazy.co.jp",
   dataStorage: "https://drive.google.com/x",
@@ -124,7 +124,7 @@ t("案件名（title）", propsFull["案件名"].title[0].text.content === "夏�
 t("依頼種別（select）", propsFull["依頼種別"].select.name === "新規");
 t("制作物の種別（multi_select）", propsFull["制作物の種別"].multi_select[0].name === "バナー・告知画像");
 // 2026-07-26 Notion DB改称に追従（プロパティ名がずれるとNotion登録が丸ごと失敗するため固定する）
-t("対象事業・部署（旧「対象ブランド・部署」）", propsFull["対象事業・部署"].select.name === "IWAI-婚礼｜婚礼に関する制作物");
+t("対象事業・部署（旧「対象ブランド・部署」）", propsFull["対象事業・部署"].select.name === "IWO-婚礼｜婚礼に関する制作物");
 t("所属部署（旧「依頼者部署」）", propsFull["所属部署"].select.name === "MKT・広報");
 t("依頼者（rich_text）に氏名が入る", propsFull["依頼者"].rich_text[0].text.content === "太郎");
 t("データ格納先（url）", propsFull["データ格納先"].url === "https://drive.google.com/x");
@@ -235,7 +235,7 @@ t("2桁でも種別名でなければ棚ではない", !looksLikeShelf("01_春�
 t("種別名で始まっても番号なしは棚ではない", !looksLikeShelf("バナー・告知画像まとめ"));
 
 section("11. V1-5 略称の切り出し（brandShortName）");
-t("IWAI-婚礼｜… → IWAI-婚礼", brandShortName("IWAI-婚礼｜婚礼に関する制作物") === "IWAI-婚礼");
+t("IWO-婚礼｜… → IWO-婚礼", brandShortName("IWO-婚礼｜婚礼に関する制作物") === "IWO-婚礼");
 t("MT-the-Terrace｜… → MT-the-Terrace", brandShortName("MT-the-Terrace｜the Terraceに関する制作物") === "MT-the-Terrace");
 t("その他｜… → その他", brandShortName("その他｜AI推進・BD・食企画・経営企画等に関する制作物") === "その他");
 t("｜が無ければ全体を返す", brandShortName("CR室") === "CR室");
@@ -266,7 +266,7 @@ t("空入力は空", extractDriveFolderId("") === "" && extractDriveFolderId(und
 
 section("14. V1-5 フォルダID対応表");
 const brandKeys = Object.keys(DRIVE_BRAND_FOLDERS);
-t("Notionの18選択肢＋互換キー3件（旧CRAZY名×2・旧HR名×1）＝21件", brandKeys.length === 21);
+t("Notionの18選択肢＋互換キー5件（旧CRAZY名×2・旧HR名×1・旧IWAI名×2）＝23件", brandKeys.length === 23);
 t("すべてDriveのファイルID形式", brandKeys.every((k) => /^[A-Za-z0-9_-]{20,}$/.test(DRIVE_BRAND_FOLDERS[k])));
 t("旧CRAZY名（2026-08-06リネームの旧名）は現行と同じフォルダを指す（リネーム漏れの保険）",
   DRIVE_BRAND_FOLDERS["CRAZY｜全社周年・自社WEBサイト等に関する制作物"] ===
@@ -278,7 +278,7 @@ t("旧HR名（2026-08-12リネームの旧名）は現行と同じフォルダ�
   DRIVE_BRAND_FOLDERS["HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物"] ===
   DRIVE_BRAND_FOLDERS["HR｜ハピネス室・組織開発に関する制作物"]);
 t("相談フォルダIDはブランドと重複しない", !Object.values(DRIVE_BRAND_FOLDERS).includes(DRIVE_SOUDAN_FOLDER_ID));
-t("フォルダIDに重複がない（互換キーの3件を除く）", new Set(Object.values(DRIVE_BRAND_FOLDERS)).size === 18);
+t("フォルダIDに重複がない（互換キーの5件を除く）", new Set(Object.values(DRIVE_BRAND_FOLDERS)).size === 18);
 t("サブフォルダは3点セット", JSON.stringify(DRIVE_SUBFOLDERS) === JSON.stringify(["01_支給素材", "02_作業データ", "03_納品データ"]));
 t("サブフォルダ名は番号順に並ぶ", [...DRIVE_SUBFOLDERS].sort().join(",") === DRIVE_SUBFOLDERS.join(","));
 
@@ -312,14 +312,23 @@ section("14c. V1-5.7 改訂の親フォルダ制限・略称の逆引き");
 t("02_案件管理のルートIDを定数で持つ", /^[A-Za-z0-9_-]{20,}$/.test(DRIVE_KANRI_FOLDER_ID));
 t("ルートIDは事業フォルダ・相談と重複しない",
   !Object.values(DRIVE_BRAND_FOLDERS).includes(DRIVE_KANRI_FOLDER_ID) && DRIVE_KANRI_FOLDER_ID !== DRIVE_SOUDAN_FOLDER_ID);
-t("略称→正式名の逆引き（IWAI-婚礼）", brandFromShortName("IWAI-婚礼") === "IWAI-婚礼｜婚礼に関する制作物");
+t("略称→正式名の逆引き（IWO-婚礼）", brandFromShortName("IWO-婚礼") === "IWO-婚礼｜婚礼に関する制作物");
 t("略称→正式名の逆引き（MT-the-Terrace）", brandFromShortName("MT-the-Terrace") === "MT-the-Terrace｜the Terraceに関する制作物");
 t("未知の略称は空", brandFromShortName("存在しない部署") === "" && brandFromShortName("") === "");
 t("18略称すべてが往復できる（互換キーは除く＝正式名は逆引き表の値と一致）", Object.values(DRIVE_FOLDER_TO_BRAND)
   .every((b) => brandFromShortName(brandShortName(b)) === b));
+// 2026-11-25 IWAI→IWO リネームの互換
+t("旧略称（IWAI-婚礼）は新しい正式名に寄せる", brandFromShortName("IWAI-婚礼") === "IWO-婚礼｜婚礼に関する制作物");
+t("逆引き表がIWOのIDを新しい正式名に解決する（互換キーに負けない）",
+  DRIVE_FOLDER_TO_BRAND[DRIVE_BRAND_FOLDERS["IWAI-館内｜館内備品等に関する制作物"]] === "IWO-館内｜館内備品等に関する制作物");
+const propsLegacy = buildNotionProperties({ title: "旧フォーム", category: "新規", brand: "IWAI-婚礼｜婚礼に関する制作物", requesterDept: "IWAI-BP" });
+t("旧フォームの事業名はNotionへ新しい名前で書く", propsLegacy["対象事業・部署"].select.name === "IWO-婚礼｜婚礼に関する制作物");
+t("旧フォームの所属部署はNotionへ新しい名前で書く", propsLegacy["所属部署"].select.name === "IWO-BP");
+const propsOther = buildNotionProperties({ title: "他", category: "新規", brand: "MT-婚礼｜婚礼に関する制作物", requesterDept: "MT-BP" });
+t("他の事業・部署はそのまま", propsOther["対象事業・部署"].select.name === "MT-婚礼｜婚礼に関する制作物" && propsOther["所属部署"].select.name === "MT-BP");
 
 section("15. V1-5.9 起票番号はNotionに書かない");
-const propsSeq = buildNotionProperties({ title: "テスト", category: "新規", brand: "IWAI-婚礼｜婚礼に関する制作物", seqLabel: "no00007" });
+const propsSeq = buildNotionProperties({ title: "テスト", category: "新規", brand: "IWO-婚礼｜婚礼に関する制作物", seqLabel: "no00007" });
 t("旧seqLabelが紛れ込んでも起票番号プロパティを送らない", !("起票番号" in propsSeq));
 const propsNoSeq = buildNotionProperties({ title: "テスト", category: "新規" });
 t("通常データでも起票番号プロパティを送らない", !("起票番号" in propsNoSeq));
@@ -432,9 +441,10 @@ t("転用の除外種別＝イベント・キャンペーンとその他",
 
 // ---- 20. 事業名の正規化（P2検品指定＝18件のいずれかに正規化） ----
 section("20. チャット: normalizeBrand（事業名は18件に完全一致へ正規化）");
-t("完全一致はそのまま通す", normalizeBrand("IWAI-婚礼｜婚礼に関する制作物") === "IWAI-婚礼｜婚礼に関する制作物");
+t("完全一致はそのまま通す", normalizeBrand("IWO-婚礼｜婚礼に関する制作物") === "IWO-婚礼｜婚礼に関する制作物");
 t("前後の空白はtrimして一致させる", normalizeBrand("  CWA｜CWAに関する制作物 ") === "CWA｜CWAに関する制作物");
-t("略称だけでも正式名に解決（IWAI-婚礼）", normalizeBrand("IWAI-婚礼") === "IWAI-婚礼｜婚礼に関する制作物");
+t("略称だけでも正式名に解決（IWO-婚礼）", normalizeBrand("IWO-婚礼") === "IWO-婚礼｜婚礼に関する制作物");
+t("旧名（IWAI-館内｜…）は新しい正式名に救う", normalizeBrand("IWAI-館内｜館内備品等に関する制作物") === "IWO-館内｜館内備品等に関する制作物");
 t("略称だけでも正式名に解決（MT-the-Terrace）", normalizeBrand("MT-the-Terrace") === "MT-the-Terrace｜the Terraceに関する制作物");
 t("略称＋崩れた説明文でも略称で救う", normalizeBrand("HR｜ハピネス室（採用・人事・労務）・組織開発に関する制作物") === "HR｜ハピネス室・組織開発に関する制作物");
 t("判定不能は空欄（依頼者が選ぶ）", normalizeBrand("存在しない事業") === "");
@@ -472,12 +482,12 @@ t("改訂なのにURL無し→転用に落とす（§3-7-5）", drFall.category 
 t("URLらしくない文字列だけでも転用に落とす", normalizeDraft({ category: "改訂", title: "x", sourceUrls: ["共有ドライブのどこか"] }).category === "転用");
 t("不明な種別は既定＝新規", normalizeDraft({ category: "未定", title: "x" }).category === "新規");
 const drShin = normalizeDraft({
-  category: "新規", title: "夏フェア バナー", brand: "IWAI-婚礼",
+  category: "新規", title: "夏フェア バナー", brand: "IWO-婚礼",
   productTypes: ["バナー・告知画像", "チラシ・ポスター・パネル"],
   purpose: " 集客 ", prStatus: "これから",
   schedule: [{ date: "2026/09/01", text: "入稿" }],
 });
-t("brandは正式名へ正規化される", drShin.brand === "IWAI-婚礼｜婚礼に関する制作物");
+t("brandは正式名へ正規化される", drShin.brand === "IWO-婚礼｜婚礼に関する制作物");
 t("productTypesは先頭1件のみ（単一選択）", JSON.stringify(drShin.productTypes) === JSON.stringify(["バナー・告知画像"]));
 t("自由文はtrimされる", drShin.purpose === "集客");
 t("scheduleが正規化されて入る", drShin.schedule[0].date === "2026-09-01");
